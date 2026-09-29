@@ -1,0 +1,26 @@
+name: Build Nova
+on:
+  push:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Preparar
+        shell: bash
+        run: |
+          rm -f build/installer.nsh
+          node -e 'const fs=require("fs");const p=JSON.parse(fs.readFileSync("package.json"));p.scripts.dist="electron-builder --win --publish never";delete p.build.nsis.include;p.build.win.target=["nsis","portable"];p.build.portable={artifactName:"Nova-Portable-${version}.exe"};fs.writeFileSync("package.json",JSON.stringify(p,null,2))'
+      - run: npm install
+      - run: npm run dist
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.1.0.${{ github.run_number }}
+          name: Nova 1.1.0 (build ${{ github.run_number }})
+          files: dist/*.exe
