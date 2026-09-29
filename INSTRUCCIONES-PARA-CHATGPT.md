@@ -1,7 +1,7 @@
-# Instrucciones para ChatGPT: completar el setup de Nova 1.2.0
+# Instrucciones para ChatGPT: completar el setup de Nova 2.1.0
 
 ## PROMPT PARA PEGAR (copia desde aquí)
-Actúa como guía paciente de GitHub y Windows. Te paso el proyecto "Nova" (un navegador basado en Chromium/Electron) y tu misión es que yo termine con el instalador `Nova-Setup-1.2.0.exe` y el portable `Nova-Portable-1.2.0.exe` descargables en la pestaña Releases de mi repositorio https://github.com/sdraiky99/NovaBrowser.
+Actúa como guía paciente de GitHub y Windows. Te paso el proyecto "Nova" (un navegador basado en Chromium/Electron) y tu misión es que yo termine con el instalador `Nova-Setup-2.1.0.exe` y el portable `Nova-Portable-2.1.0.exe` descargables en la pestaña Releases de mi repositorio https://github.com/sdraiky99/NovaBrowser.
 REGLAS: (1) NO tengo administrador, ni CMD, ni PowerShell, ni puedo instalar programas: todo debe hacerse desde el navegador web con clics. (2) Háblame en español, con pasos cortos y numerados, UNA acción cada vez. (3) Después de cada bloque pídeme una captura o que te diga qué veo. (4) Si algo falla, pídeme el texto en rojo del log de Actions antes de proponer cambios. (5) No me pidas comandos de terminal. (6) No inventes botones: si no estás seguro de cómo se llama algo en GitHub, dilo.
 Contexto técnico y procedimiento: sigue el documento de abajo.
 
@@ -9,9 +9,9 @@ Contexto técnico y procedimiento: sigue el documento de abajo.
 Nova es una app Electron (Chromium por dentro). El .exe NO se compila en mi PC: lo compila GitHub Actions (Windows) cada vez que se sube código, y lo publica solo en Releases.
 Estructura correcta en la RAÍZ del repositorio (no dentro de una carpeta "nova"):
 - package.json, main.js, README.md, LEEME-SIN-ADMIN.txt, COPIA-build.yml
-- shell/ (index.html, extras.js, extras2.js, newtab.html, splash.html, themes.css)
+- shell/ (index.html, newtab.html, splash.html, themes.css)
 - assets/ (icon.png, icon.ico, wallpapers/)
-- build/ (installerSidebar.bmp, uninstallerSidebar.bmp, LICENSE.txt, installer.nsh.OPCIONAL)
+- build/ (installerHeader.bmp, installerSidebar.bmp, uninstallerSidebar.bmp, LICENSE.txt, installer.nsh)
 - .github/workflows/build.yml  <- imprescindible; sin él no hay compilación
 
 ## 2. Procedimiento (guíame así)
@@ -20,7 +20,7 @@ Estructura correcta en la RAÍZ del repositorio (no dentro de una carpeta "nova"
 3. Comprobar en la página principal del repo que se ven package.json, main.js, shell, assets, build. Si veo una carpeta "nova" que lo contiene todo, está mal: hay que resubir el contenido de dentro.
 4. Comprobar que existe .github/workflows/build.yml. Si no: Add file > Create new file > nombre `.github/workflows/build.yml` > pegar el contenido de COPIA-build.yml > Commit.
 5. Pestaña Actions: debe aparecer "Build Nova". Amarillo = compilando (5-8 min), verde = listo, rojo = fallo.
-6. Repo > Releases (barra derecha) > release más reciente "Nova 1.2.0" > descargar Nova-Portable-1.2.0.exe (recomendado, no instala nada) o Nova-Setup-1.2.0.exe (instala solo para mi usuario, sin admin).
+6. Repo > Releases (barra derecha) > release más reciente "Nova 2.1.0" > descargar Nova-Portable-2.1.0.exe (recomendado, no instala nada) o Nova-Setup-2.1.0.exe (instala solo para mi usuario, sin admin).
 
 ## 3. Diagnóstico
 | Síntoma | Causa probable | Solución |
@@ -43,3 +43,8 @@ Estructura correcta en la RAÍZ del repositorio (no dentro de una carpeta "nova"
 - Nova IA usa una clave de API de Anthropic que el usuario pega en Ajustes > Nova IA.
 - Los fondos online vienen de Wikimedia Commons en tiempo de ejecución (necesita internet).
 - Limitación conocida: esta versión nunca se ha ejecutado en Windows por quien la escribió; espera pequeños fallos y corrígelos con el log.
+
+
+## Estructura Nova 2.1
+
+El proyecto ya viene preparado para subir directamente al repositorio. No hay que crear manualmente carpetas de runtime adicionales: `.github/workflows/build.yml` es el workflow de compilación y `build/installer.nsh` el script de personalización del instalador.

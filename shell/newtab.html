@@ -1,36 +1,28 @@
-<!doctype html><html><head><meta charset="utf-8"><title>Nova</title>
-<link rel="stylesheet" href="themes.css"><link rel="icon" href="../assets/icon.png">
-<style>
-body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;background:var(--bg) center/cover no-repeat}
-body::before{content:"";position:fixed;inset:0;background:linear-gradient(#0006,#0009);z-index:0}
-body.t-win95::before,body.t-aero::before{background:none}
-main{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:20px;width:min(640px,90vw)}
-.logo{width:84px;animation:pop .8s cubic-bezier(.2,1.4,.4,1) both}
-h1{margin:0;font-size:64px;font-weight:200;letter-spacing:.06em;color:var(--fg)}
-form{width:100%}
-input{width:100%;padding:14px 18px;background:var(--bar);border:1px solid var(--bd);border-radius:var(--r);color:var(--fg);outline:none;font-size:16px}
-input:focus{border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 35%,transparent)}
-.q{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
-.q a{padding:8px 16px;background:var(--bar);border:1px solid var(--bd);border-radius:var(--r);color:var(--fg);text-decoration:none}
-.q a:hover{border-color:var(--acc);color:var(--acc)}
-body.t-win95 h1,body.t-undertale h1,body.t-code h1{font-weight:700;letter-spacing:0}
-body.t-code h1::before{content:"> ";color:var(--acc)}body.t-code h1::after{content:"_";animation:bl 1s steps(1) infinite}
-body.t-win95 input,body.t-win95 .q a{box-shadow:inset 1px 1px #808080,inset -1px -1px #fff;border:0}
-body.t-win95 h1{text-shadow:1px 1px #fff}
-body.t-undertale input,body.t-undertale .q a{border-width:3px}
-body.t-aero{background-image:linear-gradient(160deg,#9fd0f5,#e8f4fd 60%,#b6e0a5)}
-body.t-aero input,body.t-aero .q a{backdrop-filter:blur(8px);box-shadow:inset 0 1px #fff}
-#clock{color:var(--fg);font-size:18px;opacity:.85}
-@keyframes pop{from{transform:scale(.3);opacity:0}}@keyframes bl{50%{opacity:0}}
-@media(prefers-reduced-motion:reduce){*{animation:none!important}}
-</style></head><body>
-<main><img class="logo" src="../assets/icon.png"><h1>Nova</h1><div id="clock"></div>
-<form id="f"><input id="s" placeholder="Busca o escribe una dirección" autofocus></form>
-<div class="q"><a href="https://www.youtube.com">YouTube</a><a href="https://github.com">GitHub</a><a href="https://store.steampowered.com">Steam</a><a href="https://www.wikipedia.org">Wikipedia</a></div></main>
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Nova</title><link rel="stylesheet" href="themes.css"><link rel="icon" href="../assets/icon.png"></head>
+<body class="t-nova">
+<div class="new-wrap">
+  <div class="hero"><img src="../assets/icon.png" class="logo"><div class="eyebrow">NOVA BROWSER</div><h1>Tu espacio web.</h1><p id="greeting">Busca, navega y crea.</p></div>
+  <form id="search"><div class="searchbox"><span>⌕</span><input id="q" autofocus autocomplete="off" placeholder="Busca o escribe una dirección"><button type="submit">Ir</button></div></form>
+  <div class="quick" id="quick"></div>
+  <div class="lower"><section><div class="sec-head"><h2>Privacidad Nova</h2><span class="mut">Protección activa</span></div><div class="recent-item"><b>🛡 Bloqueador de anuncios</b><span>Menos anuncios y rastreadores en la navegación.</span></div><div class="recent-item"><b>⚡ Pestañas rápidas</b><span>Ctrl+T · Ctrl+Shift+N · Ctrl+Shift+T</span></div></section>
+    <section><div class="sec-head"><h2>Recientes</h2><span class="mut">Esta sesión</span></div><div id="recent" class="recent"></div></section>
+    <section><div class="sec-head"><h2>Favoritos</h2><span class="mut">Acceso rápido</span></div><div id="marks" class="recent"></div></section>
+  </div>
+  <footer><span id="clock"></span><span>Nova 2.1 · Chromium · Ctrl+K para comandos</span></footer>
+</div>
 <script>
-const p=new URLSearchParams(location.search);document.body.className='t-'+(p.get('t')||'nova');
-if(p.get('wp'))document.body.style.backgroundImage=`url("${p.get('wp')}")`;
-const tick=()=>clock.textContent=new Date().toLocaleString('es',{weekday:'long',hour:'2-digit',minute:'2-digit',day:'numeric',month:'long'});tick();setInterval(tick,3e4);
-f.onsubmit=e=>{e.preventDefault();const v=s.value.trim();if(!v)return;
-location.href=/^[\w-]+(\.[\w-]+)+(\/.*)?$/.test(v)||/^https?:\/\//.test(v)?(v.startsWith('http')?v:'https://'+v):(p.get('s')||'https://duckduckgo.com/?q=')+encodeURIComponent(v)};
+const p=new URLSearchParams(location.search);const d=JSON.parse(p.get('data')||'{}');document.body.className='t-'+(d.t||'nova');
+if(d.wp)document.body.style.backgroundImage=`url("${d.wp}")`;
+if(d.a)document.body.style.setProperty('--acc',d.a);
+const q=document.getElementById('q'), search=d.s||'https://duckduckgo.com/?q=';
+const go=v=>{v=v.trim();if(!v)return;location.href=/^(https?|file):\/\//i.test(v)?v:/^[\w.-]+\.[a-z]{2,}(\/.*)?$/i.test(v)||/^localhost/i.test(v)?'https://'+v:search+encodeURIComponent(v)};
+document.getElementById('search').onsubmit=e=>{e.preventDefault();go(q.value)};
+const quick=[['YouTube','https://youtube.com','▶'],['GitHub','https://github.com','⌘'],['Wikipedia','https://wikipedia.org','W'],['Steam','https://store.steampowered.com','S'],['Discord','https://discord.com','D'],['Reddit','https://reddit.com','R']];
+document.getElementById('quick').innerHTML=quick.map(([n,u,i])=>`<a class="quick-card" href="${u}"><span class="quick-icon">${i}</span><b>${n}</b></a>`).join('');
+const n=d.n?`Hola, ${d.n}. `:'Hola. ';document.getElementById('greeting').textContent=n+(d.private?'Estás en una pestaña privada.':'¿Qué hacemos hoy?');
+const fmt=x=>new Date(x).toLocaleString('es-ES',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+const render=(id,items)=>{const el=document.getElementById(id);el.innerHTML=(items||[]).slice(0,6).map(x=>`<a class="recent-item" href="${x.url}"><b>${(x.title||x.url).replace(/</g,'')}</b><span>${x.url} · ${x.time?fmt(x.time):''}</span></a>`).join('')||'<div class="empty">Nada todavía.</div>'};
+render('recent',d.h||[]);render('marks',d.b||[]);
+const tick=()=>document.getElementById('clock').textContent=new Date().toLocaleString('es-ES',{weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'});tick();setInterval(tick,30000);
 </script></body></html>

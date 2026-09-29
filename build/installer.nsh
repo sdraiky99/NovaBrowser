@@ -1,71 +1,95 @@
-; Opciones de personalización del instalador de Nova
 !include nsDialogs.nsh
 !include LogicLib.nsh
-Var NvDlg
-Var NvR1
-Var NvR2
-Var NvR3
-Var NvR4
-Var NvR5
-Var NvAd
+
+Var NvPage
+Var NvName
 Var NvTheme
-Var NvAdblock
+Var NvThemeNova
+Var NvThemeNeon
+Var NvAd
+Var NvDesktop
+Var NvRestore
+Var NvPrivate
+Var NvShortcut
 
 !macro customPageAfterChangeDir
-  Page custom NovaPage NovaLeave
+  Page custom NovaOptionsPage NovaOptionsLeave
 !macroend
 
-Function NovaPage
+Function NovaOptionsPage
   nsDialogs::Create 1018
-  Pop $NvDlg
-  ${NSD_CreateLabel} 0 0 100% 12u "Elige tu tema inicial (podras cambiarlo cuando quieras)"
+  Pop $NvPage
+  ${If} $NvPage == error
+    Abort
+  ${EndIf}
+
+  ${NSD_CreateLabel} 0 0 100% 18u "Personaliza tu instalación de Nova"
   Pop $0
-  ${NSD_CreateRadioButton} 0 18u 100% 12u "Nova (oscuro moderno)"
-  Pop $NvR1
-  ${NSD_Check} $NvR1
-  ${NSD_CreateRadioButton} 0 34u 100% 12u "Windows 95"
-  Pop $NvR2
-  ${NSD_CreateRadioButton} 0 50u 100% 12u "Codigo"
-  Pop $NvR3
-  ${NSD_CreateRadioButton} 0 66u 100% 12u "Undertale"
-  Pop $NvR4
-  ${NSD_CreateRadioButton} 0 82u 100% 12u "Windows Aero"
-  Pop $NvR5
-  ${NSD_CreateCheckbox} 0 106u 100% 12u "Activar bloqueador de anuncios"
+  ${NSD_CreateLabel} 0 20u 100% 24u "Elige tu experiencia inicial. Puedes cambiarlo todo más tarde desde Ajustes."
+  Pop $0
+
+  ${NSD_CreateLabel} 0 50u 55u 12u "Nombre"
+  Pop $0
+  ${NSD_CreateText} 58u 47u 175u 14u ""
+  Pop $NvName
+
+  ${NSD_CreateLabel} 0 76u 55u 12u "Tema"
+  Pop $0
+  ${NSD_CreateRadioButton} 58u 73u 80u 12u "Nova"
+  Pop $NvThemeNova
+  ${NSD_Check} $NvThemeNova
+  ${NSD_CreateRadioButton} 140u 73u 80u 12u "Neón"
+  Pop $NvThemeNeon
+
+  ${NSD_CreateCheckbox} 0 101u 225u 12u "Activar bloqueador de anuncios y rastreadores"
   Pop $NvAd
   ${NSD_Check} $NvAd
+
+  ${NSD_CreateCheckbox} 0 120u 225u 12u "Restaurar mis pestañas al volver a abrir Nova"
+  Pop $NvRestore
+  ${NSD_Check} $NvRestore
+
+  ${NSD_CreateCheckbox} 0 139u 225u 12u "Crear acceso directo en el escritorio"
+  Pop $NvDesktop
+  ${NSD_Check} $NvDesktop
+
+  ${NSD_CreateLabel} 0 165u 100% 22u "Consejo: Nova se instala solo para tu usuario y no necesita permisos de administrador."
+  Pop $0
   nsDialogs::Show
 FunctionEnd
 
-Function NovaLeave
+Function NovaOptionsLeave
   StrCpy $NvTheme "nova"
-  ${NSD_GetState} $NvR2 $0
-  ${If} $0 == 1
-    StrCpy $NvTheme "win95"
-  ${EndIf}
-  ${NSD_GetState} $NvR3 $0
-  ${If} $0 == 1
-    StrCpy $NvTheme "code"
-  ${EndIf}
-  ${NSD_GetState} $NvR4 $0
-  ${If} $0 == 1
-    StrCpy $NvTheme "undertale"
-  ${EndIf}
-  ${NSD_GetState} $NvR5 $0
-  ${If} $0 == 1
-    StrCpy $NvTheme "aero"
+  ${NSD_GetState} $NvThemeNeon $4
+  ${If} $4 == 1
+    StrCpy $NvTheme "neon"
   ${EndIf}
   ${NSD_GetState} $NvAd $0
   ${If} $0 == 1
-    StrCpy $NvAdblock "true"
+    StrCpy $0 "true"
   ${Else}
-    StrCpy $NvAdblock "false"
+    StrCpy $0 "false"
   ${EndIf}
+  ${NSD_GetState} $NvRestore $1
+  ${If} $1 == 1
+    StrCpy $1 "true"
+  ${Else}
+    StrCpy $1 "false"
+  ${EndIf}
+  ${NSD_GetText} $NvName $2
+
+  CreateDirectory "$APPDATA\Nova"
+  FileOpen $3 "$APPDATA\Nova\install.cfg" w
+  FileWrite $3 "theme=$NvTheme$\r$\n"
+  FileWrite $3 "adblock=$0$\r$\n"
+  FileWrite $3 "restoreTabs=$1$\r$\n"
+  FileWrite $3 "name=$2$\r$\n"
+  FileClose $3
 FunctionEnd
 
 !macro customInstall
-  CreateDirectory "$APPDATA\Nova"
-  FileOpen $0 "$APPDATA\Nova\install.json" w
-  FileWrite $0 '{"theme":"$NvTheme","adblock":$NvAdblock}'
-  FileClose $0
+  ${NSD_GetState} $NvDesktop $0
+  ${If} $0 == 1
+    CreateShortCut "$DESKTOP\Nova Browser.lnk" "$INSTDIR\Nova Browser.exe"
+  ${EndIf}
 !macroend

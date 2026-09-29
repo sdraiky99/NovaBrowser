@@ -1,9 +1,10 @@
 {
   "name": "nova-browser",
-  "productName": "Nova",
-  "version": "1.2.0",
-  "description": "Nova Browser 2.0",
+  "productName": "Nova Browser",
+  "version": "2.1.0",
+  "description": "Nova Browser 2.1 — navegador de escritorio moderno con pestañas, favoritos, historial, descargas, privacidad, herramientas y personalización.",
   "author": "Nova",
+  "license": "MIT",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -18,7 +19,7 @@
   },
   "build": {
     "appId": "com.nova.browser",
-    "productName": "Nova",
+    "productName": "Nova Browser",
     "artifactName": "Nova-Setup-${version}.exe",
     "directories": {
       "output": "dist"
@@ -27,32 +28,37 @@
       "main.js",
       "shell/**",
       "assets/**",
+      "build/**",
       "package.json"
     ],
+    "asar": true,
+    "compression": "maximum",
     "win": {
       "target": [
         "nsis",
         "portable"
       ],
-      "icon": "assets/icon.ico"
+      "icon": "assets/icon.ico",
+      "artifactName": "Nova-Setup-${version}.exe"
     },
     "nsis": {
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
+      "createDesktopShortcut": "never",
       "createStartMenuShortcut": true,
-      "shortcutName": "Nova",
+      "shortcutName": "Nova Browser",
       "installerIcon": "assets/icon.ico",
       "uninstallerIcon": "assets/icon.ico",
       "installerHeaderIcon": "assets/icon.ico",
-      "language": "1034",
-      "runAfterFinish": true,
       "installerSidebar": "build/installerSidebar.bmp",
       "uninstallerSidebar": "build/uninstallerSidebar.bmp",
-      "license": "build/LICENSE.txt",
+      "installerHeader": "build/installerHeader.bmp",
+      "include": "build/installer.nsh",
+      "language": 1034,
+      "runAfterFinish": true,
       "deleteAppDataOnUninstall": false,
-      "uninstallDisplayName": "Nova"
+      "uninstallDisplayName": "Nova Browser"
     },
     "portable": {
       "artifactName": "Nova-Portable-${version}.exe"

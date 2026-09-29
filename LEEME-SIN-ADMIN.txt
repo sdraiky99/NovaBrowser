@@ -1,5 +1,3 @@
-ACTUALIZAR A 1.1.0 (sin admin ni terminal)
-1. Extrae el zip (clic derecho > Extraer todo) y entra en la carpeta "nova".
-2. En tu repo de GitHub: Add file > Upload files. Ctrl+A dentro de "nova" y arrastra todo.
-   (GitHub sustituye los archivos que ya existen.) Commit changes.
-3. Tu build.yml actual sirve, no hace falta tocarlo. Espera 5-8 min y mira Releases.
+Nova Browser 2.1
+
+El proyecto se compila en GitHub Actions para Windows. El instalador es por usuario (sin administrador) y también existe una versión portable.

@@ -1,174 +1,579 @@
-<!doctype html><html><head><meta charset="utf-8"><title>Nova</title>
-<link rel="stylesheet" href="themes.css"><link rel="icon" href="../assets/icon.png">
-<style>
-#app{display:flex;flex-direction:column;height:100vh}
-#top{height:38px;display:flex;align-items:flex-end;background:var(--bar);border-bottom:1px solid var(--bd);-webkit-app-region:drag;padding-left:8px}
-#brand{display:flex;align-items:center;gap:6px;padding:0 10px 8px 0;font-weight:600}#brand img{width:18px}
-#tabs{display:flex;gap:2px;flex:1;min-width:0;align-items:flex-end}
-.tab{-webkit-app-region:no-drag;display:flex;align-items:center;gap:6px;height:30px;padding:0 8px;min-width:60px;max-width:210px;flex:1;background:transparent;border:1px solid transparent;border-bottom:0;border-radius:var(--r) var(--r) 0 0;cursor:default;position:relative;animation:tin .22s ease-out}
-.tab.on{background:var(--bg);border-color:var(--bd);color:var(--fg)}
-.tab:not(.on){color:var(--mut)}.tab:not(.on):hover{background:color-mix(in srgb,var(--fg) 8%,transparent)}
-.tab img{width:14px;height:14px}.tab span{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.tab.ld::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:40%;background:var(--acc);animation:ld 1s infinite}
-.ib{-webkit-app-region:no-drag;width:30px;height:30px;display:grid;place-items:center;background:none;border:0;border-radius:var(--r);cursor:pointer;color:var(--fg)}
-.ib:hover{background:color-mix(in srgb,var(--fg) 12%,transparent)}.ib svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.ib.sm{width:22px;height:22px}.ib.sm svg{width:11px}
-#wc{display:flex;align-self:stretch}#wc .ib{width:46px;height:38px;border-radius:0}#wc .ib:last-child:hover{background:#e81123;color:#fff}
-#bar{display:flex;align-items:center;gap:4px;padding:6px 8px;background:var(--bg);border-bottom:1px solid var(--bd)}
-#addr{flex:1;height:30px;padding:0 14px;background:var(--bar);border:1px solid var(--bd);border-radius:calc(var(--r) * 2);outline:none}
-#addr:focus{border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 30%,transparent)}
-#mid{flex:1;display:flex;min-height:0}
-#side{width:52px;background:var(--bar);border-right:1px solid var(--bd);display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 0}
-#side .ib{width:38px;height:38px}#side .ib.on{background:color-mix(in srgb,var(--acc) 25%,transparent);color:var(--acc)}
-#side .ai svg{width:28px;height:28px;stroke:none;fill:none;animation:spin 14s linear infinite;filter:drop-shadow(0 0 5px #8b5cf6)}
-#side .ai:hover svg{filter:drop-shadow(0 0 10px #22d3ee)}
-#view{flex:1;position:relative;min-width:0;background:#fff}
-webview{position:absolute;inset:0;width:100%;height:100%;display:none}webview.on{display:flex}
-#panel{width:0;overflow:hidden;background:var(--bar);border-left:1px solid var(--bd);transition:width .25s cubic-bezier(.2,.8,.2,1)}
-#panel.open{width:340px}#pin{width:340px;height:100%;padding:14px;overflow:auto;display:flex;flex-direction:column;gap:12px}
-h3{margin:0;font-size:15px}.mut{color:var(--mut);font-size:12px}
-.btn{padding:7px 12px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);cursor:pointer}.btn:hover,.btn.on{border-color:var(--acc);color:var(--acc)}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.fld{width:100%;padding:8px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);outline:none}
-.th{height:60px;border:2px solid var(--bd);cursor:pointer;display:grid;place-items:center;font-weight:600;border-radius:var(--r)}.th.on{border-color:var(--acc)}
-.wp{aspect-ratio:16/10;background:center/cover;border:2px solid var(--bd);border-radius:var(--r);cursor:pointer}.wp:hover{border-color:var(--acc)}
-#chat{flex:1;display:flex;flex-direction:column;gap:8px;overflow:auto;min-height:120px}
-.m{padding:8px 10px;border-radius:var(--r);white-space:pre-wrap;max-width:92%}.m.u{align-self:flex-end;background:var(--acc);color:#fff}.m.a{background:var(--bg);border:1px solid var(--bd)}
-.sw{width:36px;height:20px;border-radius:20px;background:var(--bd);position:relative;cursor:pointer;flex:none}.sw::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.15s}.sw.on{background:var(--acc)}.sw.on::after{left:18px}
-#find{position:absolute;top:8px;right:14px;z-index:5;display:none;gap:4px}#find.on{display:flex}
-@keyframes tin{from{opacity:0;transform:translateY(8px) scale(.9)}}@keyframes ld{from{left:-40%}to{left:100%}}@keyframes spin{to{transform:rotate(360deg)}}
-body.noanim *{animation:none!important;transition:none!important}
-@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Nova Browser</title>
+  <link rel="icon" href="../assets/icon.png">
+  <link rel="stylesheet" href="themes.css">
+</head>
+<body class="t-nova">
+<div id="app">
+  <header id="topbar">
+    <div id="brand"><img src="../assets/icon.png" alt="Nova"><div><b>Nova</b><small>Browser</small></div></div>
+    <div id="tabs"></div>
+    <button class="winbtn" id="newtab" title="Nueva pestaña (Ctrl+T)">+</button>
+    <div id="window-controls"><button class="winbtn" data-win="min">—</button><button class="winbtn" data-win="max">□</button><button class="winbtn close" data-win="close">×</button></div>
+  </header>
 
-/* ---------- Windows 95 ---------- */
-.t-win95 #top{background:linear-gradient(90deg,#000080,#1084d0);color:#fff;border:0}
-.t-win95 .tab{border-radius:0;border:0;box-shadow:inset -1px -1px #404040,inset 1px 1px #fff;background:#c0c0c0;color:#000}
-.t-win95 .tab.on{font-weight:700;box-shadow:inset -1px -1px #808080,inset 1px 1px #fff,0 0 0 1px #000}
-.t-win95 #wc .ib{color:#000;background:#c0c0c0;width:22px;height:20px;margin:9px 1px;box-shadow:inset -1px -1px #404040,inset 1px 1px #fff}
-.t-win95 .ib,.t-win95 .btn{box-shadow:inset -1px -1px #404040,inset 1px 1px #fff;background:#c0c0c0;border:0;border-radius:0}
-.t-win95 .ib:active,.t-win95 .btn:active{box-shadow:inset 1px 1px #404040,inset -1px -1px #fff}
-.t-win95 #addr,.t-win95 .fld{background:#fff;border:0;border-radius:0;box-shadow:inset 1px 1px #808080,inset -1px -1px #fff,inset 2px 2px #404040}
-.t-win95 #bar,.t-win95 #side,.t-win95 #panel{border-color:#808080}.t-win95 .m.u{background:#000080}.t-win95 .th{border-radius:0}
-.t-win95 .sw{border-radius:0;background:#808080}.t-win95 .sw::after{border-radius:0;background:#c0c0c0}
-/* ---------- Código ---------- */
-.t-code .tab.on::before{content:"$";color:var(--acc)}.t-code #addr::placeholder{color:var(--mut)}
-.t-code #bar::before{content:"~/nova";color:var(--acc);margin-right:6px}.t-code .tab{border-radius:0}
-.t-code #brand{color:var(--acc)}.t-code .btn,.t-code .fld,.t-code .th,.t-code .wp{border-radius:2px}
-.t-code #top{background-image:repeating-linear-gradient(0deg,#0000 0 2px,#39ff1408 2px 3px)}
-/* ---------- Undertale ---------- */
-.t-undertale #top,.t-undertale #bar,.t-undertale #side,.t-undertale #panel{border-color:#fff;border-width:3px}
-.t-undertale .tab.on{color:var(--acc);border:3px solid #fff;border-bottom:0;background:#000}.t-undertale .tab.on::before{content:"♥";color:#f00}
-.t-undertale .tab{border-radius:0}.t-undertale #addr{border:3px solid #fff;border-radius:0}
-.t-undertale .btn:hover,.t-undertale .ib:hover{color:var(--acc);background:none}.t-undertale .btn:hover::before{content:"♥ ";color:#f00}
-.t-undertale #addr:focus{border-color:var(--acc);box-shadow:none}.t-undertale .m.a{border:3px solid #fff}.t-undertale .m.u{background:#000;color:var(--acc);border:3px solid var(--acc)}
-.t-undertale .sw{border-radius:0}.t-undertale .sw::after{border-radius:0}.t-undertale *{animation-timing-function:steps(6)!important}
-/* ---------- Aero ---------- */
-.t-aero{background:linear-gradient(160deg,#8fc3ee,#dcecf9)}
-.t-aero #top{background:linear-gradient(#ffffffb0,#ffffff30 48%,#7fb8e880 50%,#a9d3f5aa);backdrop-filter:blur(14px);box-shadow:inset 0 1px #fff,0 1px 8px #0004;border-color:#5b8db8}
-.t-aero .tab{background:linear-gradient(#ffffff90,#ffffff20 50%,#ffffff10);border:1px solid #ffffffa0;box-shadow:inset 0 1px #fff}
-.t-aero .tab.on{background:linear-gradient(#fff,#e9f4ff 50%,#cfe6fb);border-color:#5b8db8;color:#0b2238}
-.t-aero #bar,.t-aero #side,.t-aero #panel{background:linear-gradient(#ffffffa0,#bcdcf5a0);backdrop-filter:blur(12px);border-color:#ffffffa0}
-.t-aero .ib:hover,.t-aero .btn:hover{background:linear-gradient(#fff8,#7fc6f088);box-shadow:inset 0 0 0 1px #fff,0 0 8px #7fd0ff}
-.t-aero .btn,.t-aero .fld,.t-aero #addr{background:linear-gradient(#fff,#e6f2fc);border:1px solid #7ea6c8;box-shadow:inset 0 1px #fff}
-.t-aero #wc .ib{height:22px;margin-top:0;align-self:flex-start;width:40px;background:linear-gradient(#ffffff90,#9cc8ee);border:1px solid #5b8db8;border-top:0;border-radius:0 0 6px 6px}
-.t-aero #wc .ib:last-child{background:linear-gradient(#f6b1a6,#d8412a 50%,#b81e0c);color:#fff;width:52px}
-</style></head><body class="t-nova"><div id="app">
-<div id="top"><div id="brand"><img src="../assets/icon.png">Nova</div><div id="tabs"></div>
-<button class="ib" id="nt" title="Nueva pestaña (Ctrl+T)"></button>
-<div id="wc"><button class="ib" data-w="min"></button><button class="ib" data-w="max"></button><button class="ib" data-w="close"></button></div></div>
-<div id="bar"><button class="ib" id="bk"></button><button class="ib" id="fw"></button><button class="ib" id="rl"></button>
-<input id="addr" placeholder="Busca o escribe una dirección"><button class="ib" id="st" title="Favorito"></button><button class="ib" id="sh" title="Captura"></button></div>
-<div id="mid"><div id="side"></div><div id="view"><div id="find"><input class="fld" id="fi" placeholder="Buscar en la página"><button class="btn" id="fx">✕</button></div></div><div id="panel"><div id="pin"></div></div></div></div>
+  <section id="toolbar">
+    <div class="navgroup">
+      <button class="iconbtn" id="back" title="Atrás (Alt+←)">‹</button>
+      <button class="iconbtn" id="forward" title="Adelante (Alt+→)">›</button>
+      <button class="iconbtn" id="reload" title="Recargar (Ctrl+R)">↻</button>
+      <button class="iconbtn" id="home" title="Inicio (Alt+Home)">⌂</button>
+    </div>
+    <div id="address-wrap">
+      <span id="security">◉</span>
+      <input id="address" autocomplete="off" spellcheck="false" placeholder="Busca o escribe una dirección" aria-label="Dirección o búsqueda">
+      <div id="address-suggestions" class="suggestions hidden"></div>
+      <button id="clear-address" class="tinybtn" title="Borrar">×</button>
+      <button id="privacy-badge" class="tinybtn" title="Protección y privacidad">🛡</button>
+      <button id="bookmark" class="tinybtn" title="Añadir a favoritos (Ctrl+D)">☆</button>
+    </div>
+    <div class="toolbar-actions">
+      <span id="blocked-count" class="pill">0 bloqueados</span>
+      <button class="iconbtn" id="findbtn" title="Buscar en la página (Ctrl+F)">⌕</button>
+      <button class="iconbtn" id="printbtn" title="Guardar como PDF">⤓</button>
+      <button class="iconbtn" id="menu-btn" title="Menú">☰</button>
+    </div>
+  </section>
+
+  <main id="body">
+    <aside id="sidebar">
+      <button class="sidebtn active" data-panel="home" title="Inicio">⌂</button>
+      <button class="sidebtn" data-panel="bookmarks" title="Favoritos">☆</button>
+      <button class="sidebtn" data-panel="history" title="Historial">◷</button>
+      <button class="sidebtn" data-panel="downloads" title="Descargas">⇩</button>
+      <button class="sidebtn" data-panel="notes" title="Notas">✎</button>
+      <button class="sidebtn" data-panel="tools" title="Herramientas">✦</button>
+      <div class="side-spacer"></div>
+      <button class="sidebtn" data-panel="settings" title="Ajustes">⚙</button>
+      <button class="sidebtn private" id="private-tab" title="Nueva pestaña privada (Ctrl+Shift+N)">◉</button>
+    </aside>
+
+    <section id="workspace">
+      <div id="view"></div>
+      <div id="findbar"><input id="findinput" placeholder="Buscar en la página"><span id="findcount">0 / 0</span><button class="tinybtn" id="findprev">↑</button><button class="tinybtn" id="findnext">↓</button><button class="tinybtn" id="findclose">×</button></div>
+      <div id="sidepanel"><div id="panel-content"></div></div>
+    </section>
+  </main>
+
+  <footer id="statusbar"><span id="status">Listo</span><span id="shortcut-hint">Ctrl+K comandos · Ctrl+Shift+N privada · Ctrl+Shift+T reabrir</span></footer>
+</div>
+
+<div id="command-palette" class="overlay hidden"><div class="palette"><input id="command-search" placeholder="¿Qué quieres hacer?" autofocus><div id="command-list"></div></div></div>
+<div id="tab-menu" class="tab-menu hidden">
+  <button data-tab-action="new">Nueva pestaña a la derecha</button>
+  <button data-tab-action="duplicate">Duplicar pestaña</button>
+  <button data-tab-action="pin">Fijar / desfijar</button>
+  <button data-tab-action="mute">Silenciar / activar sonido</button>
+  <div class="menu-sep"></div>
+  <button data-tab-action="close">Cerrar pestaña</button>
+  <button data-tab-action="close-others">Cerrar las demás</button>
+  <button data-tab-action="close-right">Cerrar las de la derecha</button>
+</div>
+<div id="toast-stack"></div>
+
 <script>
-const {ipcRenderer:ipc}=require('electron'),fs=require('fs'),path=require('path'),{pathToFileURL}=require('url');
-const $=s=>document.querySelector(s);
-const P={back:'M15 6l-6 6 6 6',fwd:'M9 6l6 6-6 6',rl:'M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5',star:'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z',
-mods:'M4 7h10M18 7h2M4 17h2M10 17h10M16 5v4M8 15v4',walls:'M4 5h16v14H4zM4 16l4-4 4 4 3-3 5 5',marks:'M6 3h12v18l-6-4-6 4z',set:'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2',
-cam:'M4 8h4l2-3h4l2 3h4v11H4zM12 11a3 3 0 1 0 0 6 3 3 0 0 0 0-6',plus:'M12 5v14M5 12h14',x:'M6 6l12 12M18 6L6 18',min:'M5 18h14',max:'M5 5h14v14H5z',hist:'M12 7v5l3 2M4 12a8 8 0 1 0 2.3-5.7M4 4v4h4'};
-const ic=n=>`<svg viewBox="0 0 24 24"><path d="${P[n]}"/></svg>`;
-const AI=`<svg viewBox="0 0 32 32"><defs><linearGradient id="ng" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".5" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f43f5e"/></linearGradient></defs><ellipse cx="16" cy="16" rx="14.5" ry="5.5" fill="none" stroke="url(#ng)" stroke-width="1.2" transform="rotate(-25 16 16)"/><path d="M16 2l3.2 10.8L30 16l-10.8 3.2L16 30l-3.2-10.8L2 16l10.8-3.2z" fill="url(#ng)"/><circle cx="16" cy="16" r="2.6" fill="#fff"/></svg>`;
-[['bk','back'],['fw','fwd'],['rl','rl'],['st','star'],['sh','cam'],['nt','plus']].forEach(([i,n])=>$('#'+i).innerHTML=ic(n));
-document.querySelectorAll('[data-w]').forEach(b=>{b.innerHTML=ic({min:'min',max:'max',close:'x'}[b.dataset.w]);b.onclick=()=>ipc.send('win',b.dataset.w)});
+const { ipcRenderer: ipc } = require('electron');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+const { pathToFileURL } = require('url');
 
-const ud=ipc.sendSync('userdata');
-const S=Object.assign({theme:'nova',search:'https://duckduckgo.com/?q=',adblock:true,anim:true,sec:'videojuegos',wp:'',marks:[],key:'',mods:{}},JSON.parse(localStorage.nova||'{}'));
-const save=()=>localStorage.nova=JSON.stringify(S);
-const THEMES={nova:'Nova',win95:'Windows 95',code:'Código',undertale:'Undertale',aero:'Aero'};
-const SECS={coches:'Coches',videojuegos:'Videojuegos',codigo:'Código'};
-const MODS={dark:['Modo oscuro forzado','html{filter:invert(1) hue-rotate(180deg)}img,video,picture{filter:invert(1) hue-rotate(180deg)}'],
-reader:['Modo lectura','header,nav,aside,footer,[class*=ad-],[id*=banner]{display:none!important}body{max-width:720px!important;margin:auto!important;font:18px/1.7 Georgia,serif!important}'],
-noanim:['Sin animaciones web','*{animation:none!important;transition:none!important;scroll-behavior:auto!important}'],
-zoom:['Texto grande','html{zoom:1.2}']};
-function applyTheme(){document.body.className='t-'+S.theme+(S.anim?'':' noanim');ipc.invoke('adblock',S.adblock)}
+const $ = (s, root = document) => root.querySelector(s);
+const $$ = (s, root = document) => [...root.querySelectorAll(s)];
+const ud = ipc.sendSync('userdata');
 
-/* ---- Tabs ---- */
-let tabs=[],cur=null;
-const NT=()=>pathToFileURL(path.join(__dirname,'newtab.html')).href+'?t='+S.theme+'&s='+encodeURIComponent(S.search)+(S.wp?'&wp='+encodeURIComponent(pathToFileURL(S.wp).href):'');
-const isNT=u=>u&&u.includes('newtab.html');
-function newTab(u){
-  const wv=document.createElement('webview');wv.setAttribute('allowpopups','');wv.src=u||NT();$('#view').appendChild(wv);
-  const el=document.createElement('div');el.className='tab';el.innerHTML='<img src="../assets/icon.png"><span>Nueva pestaña</span><button class="ib sm">'+ic('x')+'</button>';
-  const t={wv,el};tabs.push(t);$('#tabs').appendChild(el);
-  el.onmousedown=e=>{if(e.button===1)closeTab(t)};el.onclick=e=>{if(e.target.closest('button'))closeTab(t);else sel(t)};
-  const up=()=>{if(cur===t){const x=wv.getURL?.call(wv)||'';$('#addr').value=isNT(x)?'':x;$('#st').style.color=S.marks.some(m=>m.u===x)?'var(--acc)':''}};
-  wv.addEventListener('page-title-updated',e=>el.querySelector('span').textContent=e.title);
-  wv.addEventListener('page-favicon-updated',e=>el.querySelector('img').src=e.favicons[0]);
-  wv.addEventListener('did-start-loading',()=>el.classList.add('ld'));wv.addEventListener('did-stop-loading',()=>{el.classList.remove('ld');up()});
-  wv.addEventListener('did-navigate',()=>{if(isNT(wv.getURL()))el.querySelector('img').src='../assets/icon.png';up()});
-  wv.addEventListener('did-navigate-in-page',up);
-  wv.addEventListener('dom-ready',()=>{Object.keys(S.mods).forEach(k=>S.mods[k]&&mod(wv,k,true))});
-  sel(t);return t;
+const defaults = {
+  theme: 'nova', search: 'https://duckduckgo.com/?q=', home: '', adblock: true,
+  anim: true, name: '', wp: '', bookmarks: [], history: [], downloads: [], notes: '',
+  zoom: 1, accent: '', recent: [], restoreTabs: true, compactTabs: false, openTabs: [], startupMode: 'restore', showNewTab: true
+};
+const S = Object.assign({}, defaults, JSON.parse(localStorage.nova || '{}'));
+const save = () => localStorage.nova = JSON.stringify(S);
+const THEMES = { nova: 'Nova', neon: 'Neón', code: 'Código', win95: 'Windows 95', undertale: 'Undertale', aero: 'Aero' };
+const SEARCHERS = {
+  duck: ['DuckDuckGo', 'https://duckduckgo.com/?q='], google: ['Google', 'https://www.google.com/search?q='],
+  bing: ['Bing', 'https://www.bing.com/search?q='], brave: ['Brave', 'https://search.brave.com/search?q=']
+};
+const MODS = {
+  dark: ['Oscuro forzado', 'html{filter:invert(1) hue-rotate(180deg)} img,video,canvas{filter:invert(1) hue-rotate(180deg)}'],
+  reader: ['Modo lectura', 'header,nav,aside,footer,[class*=ad-],[id*=banner],[role=banner]{display:none!important}body{max-width:820px!important;margin:auto!important;font:18px/1.75 Georgia,serif!important}'],
+  noanim: ['Sin animaciones web', '*{animation:none!important;transition:none!important;scroll-behavior:auto!important}'],
+  large: ['Texto grande', 'html{zoom:1.15}']
+};
+S.mods = S.mods || {};
+S.wallSection = S.wallSection || 'videojuegos';
+S.privateBlocked = S.privateBlocked ?? true;
+
+function applyTheme() {
+  document.body.className = `t-${S.theme}${S.anim ? '' : ' noanim'}`;
+  if (S.accent) document.body.style.setProperty('--acc', S.accent); else document.body.style.removeProperty('--acc');
+  ipc.invoke('adblock', !!S.adblock);
 }
-function sel(t){cur=t;tabs.forEach(x=>{x.el.classList.toggle('on',x===t);x.wv.classList.toggle('on',x===t)});try{const u=t.wv.getURL();$('#addr').value=isNT(u)?'':u}catch{$('#addr').value=''}}
-function closeTab(t){const i=tabs.indexOf(t);t.wv.remove();t.el.remove();tabs.splice(i,1);if(!tabs.length)return ipc.send('win','close');if(cur===t)sel(tabs[Math.max(0,i-1)])}
-function go(v){v=v.trim();if(!v)return;const u=/^https?:\/\//.test(v)?v:/^[\w-]+(\.[\w-]+)+(:\d+)?(\/.*)?$/.test(v)||/^localhost/.test(v)?'https://'+v:S.search+encodeURIComponent(v);cur.wv.loadURL(u)}
-function mod(wv,k,on){wv.executeJavaScript(`(()=>{let s=document.getElementById('nm-${k}');if(${on}){if(!s){s=document.createElement('style');s.id='nm-${k}';s.textContent=${JSON.stringify(MODS[k][1])};document.head.appendChild(s)}}else if(s)s.remove()})()`).catch(()=>{})}
-$('#addr').onkeydown=e=>{if(e.key==='Enter')go(e.target.value)};$('#addr').onfocus=e=>e.target.select();
-$('#bk').onclick=()=>cur.wv.canGoBack()&&cur.wv.goBack();$('#fw').onclick=()=>cur.wv.canGoForward()&&cur.wv.goForward();$('#rl').onclick=()=>cur.wv.reload();$('#nt').onclick=()=>newTab();
-$('#st').onclick=()=>{const u=cur.wv.getURL();if(isNT(u))return;const i=S.marks.findIndex(m=>m.u===u);i>=0?S.marks.splice(i,1):S.marks.push({u,t:cur.el.querySelector('span').textContent});save();$('#st').style.color=i>=0?'':'var(--acc)'};
-$('#sh').onclick=async()=>{const img=await cur.wv.capturePage();const f=await ipc.invoke('save-shot',img.toPNG());toast('Captura guardada en '+f)};
-function toast(t){const d=document.createElement('div');d.textContent=t;d.style.cssText='position:fixed;bottom:18px;left:50%;transform:translateX(-50%);padding:9px 16px;background:var(--acc);color:#fff;border-radius:var(--r);z-index:9';document.body.appendChild(d);setTimeout(()=>d.remove(),2600)}
-const key=k=>{if(k==='t')newTab();if(k==='w')closeTab(cur);if(k==='l'){$('#addr').focus()}if(k==='f'){$('#find').classList.add('on');$('#fi').focus()}if(k==='d')$('#st').click()};
-ipc.on('key',(_,k)=>key(k));ipc.on('open-tab',(_,u)=>newTab(u));
-document.addEventListener('keydown',e=>{if(e.ctrlKey&&'twlfd'.includes(e.key)){e.preventDefault();key(e.key)}if(e.key==='Escape'){$('#find').classList.remove('on');cur.wv.stopFindInPage('clearSelection')}});
-$('#fi').oninput=e=>e.target.value?cur.wv.findInPage(e.target.value):cur.wv.stopFindInPage('clearSelection');$('#fx').onclick=()=>$('#find').classList.remove('on');
 
-/* ---- Sidebar + panels ---- */
-const SIDE=[['ai','Nova IA'],['mods','Mods'],['walls','Fondos'],['marks','Favoritos'],['set','Ajustes']];
-let panel=null;
-$('#side').innerHTML=SIDE.map(([k,n])=>`<button class="ib ${k==='ai'?'ai':''}" data-p="${k}" title="${n}">${k==='ai'?AI:ic(k)}</button>`).join('');
-$('#side').onclick=e=>{const b=e.target.closest('[data-p]');if(!b)return;panel=panel===b.dataset.p?null:b.dataset.p;draw()};
-const sw=(k,on)=>`<div class="sw ${on?'on':''}" data-k="${k}"></div>`;
-function wallList(sec){const out=[];[path.join(__dirname,'..','assets','wallpapers',sec),path.join(ud,'wallpapers',sec)].forEach(d=>{try{fs.readdirSync(d).forEach(f=>/\.(jpe?g|png|webp|svg)$/i.test(f)&&out.push(path.join(d,f)))}catch{}});return out}
-let chat=[];
-function draw(){
-  document.querySelectorAll('#side .ib').forEach(b=>b.classList.toggle('on',b.dataset.p===panel));
-  $('#panel').classList.toggle('open',!!panel);if(!panel)return;const p=$('#pin');
-  if(panel==='ai'){p.innerHTML=`<div class="row"><h3>Nova IA</h3><span class="mut">${S.key?'conectada':'sin clave API'}</span></div><button class="btn" id="sum">Resumir esta página</button><div id="chat">${chat.map(m=>`<div class="m ${m.role==='user'?'u':'a'}">${esc(m.content)}</div>`).join('')||'<span class="mut">Pregúntame lo que quieras o pídeme que resuma la página abierta.</span>'}</div><div class="row"><input class="fld" id="q" placeholder="Escribe a Nova IA…"><button class="btn" id="go">Enviar</button></div>`;
-    const c=$('#chat');c.scrollTop=1e9;$('#go').onclick=()=>ask($('#q').value);$('#q').onkeydown=e=>e.key==='Enter'&&ask(e.target.value);
-    $('#sum').onclick=async()=>{const t=await cur.wv.executeJavaScript('document.body.innerText.slice(0,12000)').catch(()=>'');ask('Resume en español, en pocos puntos, esta página:\n\n'+t,'Resume esta página')}}
-  if(panel==='mods'){p.innerHTML='<h3>Mods</h3><span class="mut">Se aplican a todas las páginas.</span>'+Object.entries(MODS).map(([k,[n]])=>`<div class="row"><span>${n}</span>${sw(k,S.mods[k])}</div>`).join('')+'<h3>Herramientas</h3><button class="btn" id="m1">Captura de pantalla</button><button class="btn" id="m2">Buscar en página (Ctrl+F)</button>';
-    p.querySelectorAll('.sw').forEach(s=>s.onclick=()=>{const k=s.dataset.k;S.mods[k]=!S.mods[k];save();tabs.forEach(t=>{try{mod(t.wv,k,S.mods[k])}catch{}});draw()});$('#m1').onclick=()=>$('#sh').click();$('#m2').onclick=()=>key('f')}
-  if(panel==='walls'){const l=wallList(S.sec);p.innerHTML=`<h3>Fondos de pantalla</h3><div class="row">${Object.entries(SECS).map(([k,n])=>`<button class="btn ${S.sec===k?'on':''}" data-s="${k}">${n}</button>`).join('')}</div><div class="grid">${l.map(f=>`<div class="wp" data-f="${f.replace(/"/g,'')}" style="background-image:url('${pathToFileURL(f).href}')"></div>`).join('')}</div><button class="btn" id="add">Añadir mis imágenes</button><button class="btn" id="nowp">Quitar fondo</button>`;
-    p.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{S.sec=b.dataset.s;save();draw()});p.querySelectorAll('.wp').forEach(w=>w.onclick=()=>setWp(w.dataset.f));$('#add').onclick=async()=>{await ipc.invoke('pick-wp',S.sec);draw()};$('#nowp').onclick=()=>setWp('')}
-  if(panel==='marks'){p.innerHTML='<h3>Favoritos</h3>'+(S.marks.map((m,i)=>`<div class="row"><button class="btn" style="flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" data-u="${i}">${esc(m.t||m.u)}</button></div>`).join('')||'<span class="mut">Pulsa la estrella (Ctrl+D) para guardar la página actual.</span>');p.querySelectorAll('[data-u]').forEach(b=>b.onclick=()=>cur.wv.loadURL(S.marks[b.dataset.u].u))}
-  if(panel==='set'){p.innerHTML=`<h3>Ajustes</h3><span class="mut">Tema (cambia toda la interfaz)</span><div class="grid">${Object.entries(THEMES).map(([k,n])=>`<div class="th ${S.theme===k?'on':''}" data-t="${k}" style="background:var(--bg)">${n}</div>`).join('')}</div>
-  <span class="mut">Buscador</span><select class="fld" id="se"><option value="https://duckduckgo.com/?q=">DuckDuckGo</option><option value="https://www.google.com/search?q=">Google</option><option value="https://www.bing.com/search?q=">Bing</option><option value="https://search.brave.com/search?q=">Brave</option></select>
-  <div class="row"><span>Bloqueador de anuncios</span>${sw('adblock',S.adblock)}</div><div class="row"><span>Animaciones de la interfaz</span>${sw('anim',S.anim)}</div>
-  <span class="mut">Clave API de Nova IA (Anthropic)</span><input class="fld" id="ak" type="password" placeholder="sk-ant-…" value="${S.key}"><span class="mut">Nova 2.0 · basado en Chromium</span>`;
-    $('#se').value=S.search;$('#se').onchange=e=>{S.search=e.target.value;save()};$('#ak').onchange=e=>{S.key=e.target.value.trim();save()};
-    p.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{S.theme=b.dataset.t;save();applyTheme();refreshNT();draw()});
-    p.querySelectorAll('.sw').forEach(s=>s.onclick=()=>{S[s.dataset.k]=!S[s.dataset.k];save();applyTheme();draw()})}
+function esc(v) { return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c])); }
+function isInternal(url) { return url && url.includes('/shell/newtab.html'); }
+function normalize(v) {
+  const value = v.trim();
+  if (!value) return '';
+  if (/^(https?|file):\/\//i.test(value)) return value;
+  if (/^[\w.-]+\.[a-z]{2,}(:\d+)?(\/.*)?$/i.test(value) || /^localhost(:\d+)?(\/.*)?$/i.test(value) || /^127\.0\.0\.1(:\d+)?/.test(value)) return `https://${value}`;
+  return S.search + encodeURIComponent(value);
 }
-function setWp(f){S.wp=f;save();refreshNT()}
-function refreshNT(){tabs.forEach(t=>{try{if(isNT(t.wv.getURL()))t.wv.loadURL(NT())}catch{}})}
-const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-async function ask(text,shown){if(!text.trim())return;if(!S.key){chat.push({role:'assistant',content:'Añade tu clave API en Ajustes para activar Nova IA.'});return draw()}
-  chat.push({role:'user',content:shown||text});const hist=chat.slice(-12).map(m=>({...m}));hist[hist.length-1].content=text;chat.push({role:'assistant',content:'…'});draw();
-  try{const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':S.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:'Eres Nova IA, el asistente integrado del navegador Nova. Responde en el idioma del usuario, breve y claro.',messages:hist.filter(m=>m.content!=='…')})});
-    const d=await r.json();chat[chat.length-1].content=d.content?.map(c=>c.text||'').join('')||d.error?.message||'Error desconocido'}catch(e){chat[chat.length-1].content='Sin conexión: '+e.message}
-  if(panel==='ai')draw()}
+function newTabURL(privateMode = false) {
+  const payload = {
+    t: S.theme, s: S.search, n: S.name || '', a: S.accent || '', wp: S.wp || '',
+    b: (S.bookmarks || []).slice(0, 8), h: (S.history || []).slice(0, 6), private: privateMode
+  };
+  return pathToFileURL(path.join(__dirname, 'newtab.html')).href + '?data=' + encodeURIComponent(JSON.stringify(payload));
+}
 
-(async()=>{if(!localStorage.nova){const c=await ipc.invoke('install-cfg');if(c.theme)S.theme=c.theme;if(c.adblock===false)S.adblock=false;save()}applyTheme();newTab()})();
-</script></body></html>
+let tabs = [];
+let current = null;
+let panel = 'home';
+let closedTabs = JSON.parse(localStorage.novaClosed || '[]');
+let downloads = Array.isArray(S.downloads) ? S.downloads : [];
+let blocked = 0;
+let contextTab = null;
+let draggingTab = null;
+
+function updateAddress() {
+  if (!current) return;
+  const url = current.wv.getURL() || '';
+  $('#address').value = isInternal(url) ? '' : url;
+  const secure = /^https:\/\//i.test(url);
+  $('#security').textContent = secure ? '🔒' : '◉';
+  $('#security').style.opacity = secure ? '1' : '.5';
+  const mark = S.bookmarks.some(m => m.url === url);
+  $('#bookmark').textContent = mark ? '★' : '☆';
+  $('#bookmark').classList.toggle('on', mark);
+  if (current.wv.isCrashed?.()) $('#status').textContent = 'La pestaña tuvo un problema';
+}
+
+function addHistory(t) {
+  if (!t || t.privateMode) return;
+  const url = t.wv.getURL();
+  if (!url || isInternal(url) || /^https:\/\/(localhost|127\.0\.0\.1)/.test(url)) return;
+  const title = t.title || url;
+  S.history = (S.history || []).filter(h => h.url !== url);
+  S.history.unshift({ title, url, time: Date.now() });
+  S.history = S.history.slice(0, 300);
+  save();
+}
+
+
+function saveSession() {
+  S.openTabs = tabs.filter(t => !t.privateMode).map(t => ({ url: t.wv.getURL(), pinned: !!t.pinned, title: t.title })).filter(x => x.url && !isInternal(x.url)).slice(0, 24);
+  save();
+}
+function reorderTab(a, b) {
+  const from = tabs.indexOf(a), to = tabs.indexOf(b);
+  if (from < 0 || to < 0 || from === to) return;
+  const item = tabs.splice(from, 1)[0];
+  tabs.splice(to, 0, item);
+  if (from < to) $('#tabs').insertBefore(item.el, tabs[to]?.el || null);
+  else $('#tabs').insertBefore(item.el, tabs[to].el);
+  saveSession();
+}
+function showTabMenu(x, y) {
+  const m = $('#tab-menu'); m.classList.remove('hidden');
+  m.style.left = `${Math.min(window.innerWidth - 260, Math.max(8, x))}px`;
+  m.style.top = `${Math.min(window.innerHeight - 330, Math.max(52, y))}px`;
+}
+function hideTabMenu() { $('#tab-menu').classList.add('hidden'); contextTab = null; }
+function toggleTabMute(tab) {
+  if (!tab) return;
+  tab.muted = !tab.muted;
+  try { tab.wv.setAudioMuted(tab.muted); } catch {}
+  $('.tab-state', tab.el).textContent = tab.muted ? '🔇' : '';
+  saveSession();
+  toast(tab.muted ? 'Pestaña silenciada' : 'Sonido activado');
+}
+function toggleTabPin(tab) {
+  if (!tab) return;
+  tab.pinned = !tab.pinned;
+  tab.el.classList.toggle('pinned', tab.pinned);
+  const title = $('.tab-title', tab.el);
+  title.style.display = tab.pinned ? 'none' : '';
+  saveSession();
+}
+function duplicateTab(tab) {
+  if (!tab) return;
+  createTab(tab.wv.getURL() || newTabURL(false), tab.privateMode, true);
+}
+function toggleCurrentMod(key) {
+  if (!current) return;
+  S.mods[key] = !S.mods[key];
+  save();
+  applyMod(current.wv, key, S.mods[key]);
+  toast(`${MODS[key]?.[0] || key}: ${S.mods[key] ? 'activado' : 'desactivado'}`);
+}
+
+function createTab(url = newTabURL(false), privateMode = false, activate = true) {
+  const wv = document.createElement('webview');
+  wv.setAttribute('allowpopups', '');
+  wv.setAttribute('partition', privateMode ? 'nova-private' : 'persist:nova');
+  wv.setAttribute('webpreferences', 'contextIsolation=no');
+  wv.src = url;
+  $('#view').appendChild(wv);
+
+  const el = document.createElement('div');
+  el.className = 'tab';
+  el.draggable = true; el.innerHTML = `<span class="pin-mark" title="Fijada">◆</span><span class="tab-favicon"><img src="../assets/icon.png"></span><span class="tab-title">Nueva pestaña</span><span class="tab-state"></span><span class="private-dot">${privateMode ? '◉' : ''}</span><button class="tab-close" title="Cerrar">×</button>`;
+  $('#tabs').appendChild(el);
+  const tab = { id: crypto.randomUUID(), wv, el, title: 'Nueva pestaña', privateMode, lastUrl: url, pinned: false, muted: false };
+  tabs.push(tab);
+
+  el.onmousedown = e => { if (e.button === 1) { e.preventDefault(); closeTab(tab); } };
+  el.onclick = e => { if (e.target.closest('.tab-close')) closeTab(tab); else selectTab(tab); };
+  el.addEventListener('contextmenu', e => { e.preventDefault(); contextTab = tab; showTabMenu(e.clientX, e.clientY); });
+  el.addEventListener('dragstart', e => { draggingTab = tab; e.dataTransfer.effectAllowed = 'move'; el.classList.add('dragging'); });
+  el.addEventListener('dragend', () => { draggingTab = null; el.classList.remove('dragging'); });
+  el.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+  el.addEventListener('drop', e => { e.preventDefault(); if (draggingTab && draggingTab !== tab) reorderTab(draggingTab, tab); });
+
+  const sync = () => {
+    tab.lastUrl = wv.getURL();
+    if (current === tab) updateAddress();
+    if (tab.lastUrl && !isInternal(tab.lastUrl)) addHistory(tab);
+  };
+  wv.addEventListener('page-title-updated', e => { tab.title = e.title || 'Nueva pestaña'; $('.tab-title', el).textContent = tab.title; sync(); });
+  wv.addEventListener('page-favicon-updated', e => { const icon = e.favicons?.[0]; if (icon) $('.tab-favicon img', el).src = icon; });
+  wv.addEventListener('media-started-playing', () => { $('.tab-state', el).textContent = tab.muted ? '🔇' : '♪'; });
+  wv.addEventListener('media-paused', () => { $('.tab-state', el).textContent = tab.muted ? '🔇' : ''; });
+  wv.addEventListener('did-start-loading', () => { el.classList.add('loading'); $('#status').textContent = 'Cargando…'; });
+  wv.addEventListener('did-stop-loading', () => { el.classList.remove('loading'); $('#status').textContent = 'Listo'; sync(); });
+  wv.addEventListener('did-navigate', sync);
+  wv.addEventListener('did-navigate-in-page', sync);
+  wv.addEventListener('dom-ready', () => {
+    Object.keys(S.mods || {}).forEach(k => S.mods[k] && applyMod(wv, k, true));
+    wv.setZoomFactor?.(S.zoom || 1);
+  });
+  wv.addEventListener('page-fail-load', e => { if (!e.isMainFrame) return; toast(`No se pudo cargar la página (${e.errorCode})`); });
+
+  if (activate) selectTab(tab);
+  return tab;
+}
+
+function selectTab(tab) {
+  if (!tab) return;
+  current = tab;
+  tabs.forEach(t => { t.el.classList.toggle('active', t === tab); t.wv.classList.toggle('visible', t === tab); });
+  updateAddress();
+}
+
+function closeTab(tab, record = true) {
+  if (!tab) return;
+  const idx = tabs.indexOf(tab);
+  if (record && !tab.privateMode) {
+    closedTabs.unshift({ url: tab.wv.getURL() || newTabURL(false), title: tab.title });
+    closedTabs = closedTabs.slice(0, 15);
+    localStorage.novaClosed = JSON.stringify(closedTabs);
+  }
+  try { tab.wv.remove(); } catch {}
+  tab.el.remove();
+  tabs.splice(idx, 1);
+  if (!tabs.length) return createTab();
+  if (current === tab) selectTab(tabs[Math.max(0, idx - 1)]);
+  saveSession();
+}
+
+function reopenClosed() {
+  const item = closedTabs.shift();
+  localStorage.novaClosed = JSON.stringify(closedTabs);
+  if (item) createTab(item.url || newTabURL(false)); else toast('No hay pestañas cerradas para reabrir');
+}
+
+function navigate(value) {
+  const url = normalize(value);
+  if (!url || !current) return;
+  $('#status').textContent = 'Cargando…';
+  current.wv.loadURL(url);
+}
+
+function goHome() {
+  if (!current) return;
+  current.wv.loadURL(S.home ? normalize(S.home) : newTabURL(current.privateMode));
+}
+
+function toggleBookmark() {
+  if (!current) return;
+  const url = current.wv.getURL();
+  if (!url || isInternal(url)) return;
+  const i = S.bookmarks.findIndex(m => m.url === url);
+  if (i >= 0) { S.bookmarks.splice(i, 1); toast('Eliminado de favoritos'); }
+  else { const title = window.prompt('Nombre del favorito:', current.title || url); if (title === null) return; S.bookmarks.unshift({ title: title.trim() || url, url, time: Date.now() }); S.bookmarks = S.bookmarks.slice(0, 200); toast('Añadido a favoritos'); }
+  save(); updateAddress(); if (panel === 'bookmarks') renderPanel();
+}
+
+function applyMod(wv, key, enabled) {
+  const css = MODS[key]?.[1];
+  if (!css) return;
+  const id = `nova-mod-${key}`;
+  wv.executeJavaScript(`(()=>{let s=document.getElementById(${JSON.stringify(id)});if(${enabled}){if(!s){s=document.createElement('style');s.id=${JSON.stringify(id)};s.textContent=${JSON.stringify(css)};document.head.appendChild(s)}}else if(s)s.remove()})()`).catch(() => {});
+}
+
+function setPanel(name) {
+  panel = panel === name ? null : name;
+  $$('.sidebtn').forEach(b => b.classList.toggle('active', b.dataset.panel === panel));
+  $('#sidepanel').classList.toggle('open', !!panel);
+  renderPanel();
+}
+
+
+function exportBookmarksHTML() {
+  const rows = (S.bookmarks||[]).map(b => `<DT><A HREF="${esc(b.url)}" ADD_DATE="${Math.floor((b.time||Date.now())/1000)}">${esc(b.title||b.url)}</A>`).join('\n');
+  const html = `<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">\n<TITLE>Nova Bookmarks</TITLE>\n<H1>Nova Bookmarks</H1>\n<DL><p>\n${rows}\n</DL><p>`;
+  const f=path.join(os.homedir(),'Downloads','Nova-Favoritos.html'); fs.writeFileSync(f,html,'utf8'); toast('Favoritos exportados en Descargas');
+}
+function importBookmarksHTML(e) {
+  const file=e.target.files?.[0]; if(!file) return;
+  const r=new FileReader(); r.onload=()=>{
+    try {
+      const doc=new DOMParser().parseFromString(String(r.result),'text/html');
+      const found=[...doc.querySelectorAll('a[href]')].map(a=>({title:(a.textContent||a.href).trim(),url:a.href,time:Date.now()})).filter(x=>/^https?:/i.test(x.url));
+      const map=new Map((S.bookmarks||[]).map(x=>[x.url,x])); found.forEach(x=>map.set(x.url,x)); S.bookmarks=[...map.values()].slice(0,500); save(); renderPanel(); toast(`${found.length} favoritos importados`);
+    } catch { toast('Archivo de favoritos no válido'); }
+  }; r.readAsText(file);
+}
+
+function renderPanel() {
+  if (!panel) return;
+  const p = $('#panel-content');
+  if (panel === 'home') {
+    p.innerHTML = `<div class="panel-head"><div><span class="eyebrow">NOVA</span><h2>Centro</h2></div><span class="mut">${tabs.length} pestañas</span></div>
+      <div class="panel-grid"><button class="card-btn" data-act="new"><b>Nueva pestaña</b><span>Ctrl+T</span></button><button class="card-btn" data-act="private"><b>Privada</b><span>Ctrl+Shift+N</span></button><button class="card-btn" data-act="closed"><b>Reabrir</b><span>Ctrl+Shift+T</span></button><button class="card-btn" data-act="clear"><b>Limpiar datos</b><span>Cookies + caché</span></button></div><div class="nova-stats"><div><b>${tabs.length}</b><span>Pestañas</span></div><div><b>${(S.bookmarks||[]).length}</b><span>Favoritos</span></div><div><b>${(S.history||[]).length}</b><span>Historial</span></div></div>
+      <div class="section"><h3>Acceso rápido</h3><div class="quick-grid">${[['YouTube','https://youtube.com'],['GitHub','https://github.com'],['Wikipedia','https://wikipedia.org'],['Steam','https://store.steampowered.com'],['Discord','https://discord.com'],['Reddit','https://reddit.com']].map(([n,u])=>`<button class="quick" data-url="${u}">${n}</button>`).join('')}</div></div>`;
+    p.onclick = e => {
+      const b = e.target.closest('[data-url]'); if (b) createTab(b.dataset.url);
+      const a = e.target.closest('[data-act]'); if (!a) return;
+      if (a.dataset.act === 'new') createTab();
+      if (a.dataset.act === 'private') createTab(newTabURL(true), true);
+      if (a.dataset.act === 'closed') reopenClosed();
+      if (a.dataset.act === 'clear') clearData();
+    };
+  }
+  if (panel === 'bookmarks') {
+    p.innerHTML = `<div class="panel-head"><div><span class="eyebrow">BIBLIOTECA</span><h2>Favoritos</h2></div><div class="tool-row"><button class="btn-mini" id="sortmarks">↕ Ordenar</button><button class="btn-mini" id="exportmarks">Exportar</button><label class="btn-mini">Importar<input hidden type="file" id="importmarks" accept=".html,.htm"></label></div></div>
+      <input class="field" id="markq" placeholder="Buscar favoritos…">
+      <div class="list" id="marklist"></div>`;
+    const draw = () => { const q = $('#markq').value.toLowerCase(); $('#marklist').innerHTML = S.bookmarks.filter(m => `${m.title} ${m.url}`.toLowerCase().includes(q)).map((m, i) => `<div class="list-item"><button class="list-main" data-url="${esc(m.url)}"><b>${esc(m.title || m.url)}</b><span>${esc(m.url)}</span></button><button class="xbtn" data-remove="${i}">×</button></div>`).join('') || '<div class="empty">No hay favoritos todavía.</div>'; };
+    draw();
+    $('#markq').oninput = draw;
+    p.querySelector('#sortmarks').onclick = () => { S.bookmarks.sort((a,b) => String(a.title).localeCompare(String(b.title))); save(); draw(); };
+    p.querySelector('#exportmarks').onclick = exportBookmarksHTML;
+    p.querySelector('#importmarks').onchange = importBookmarksHTML;
+    p.onclick = e => { const b = e.target.closest('[data-url]'); if (b) current.wv.loadURL(b.dataset.url); const x = e.target.closest('[data-remove]'); if (x) { S.bookmarks.splice(+x.dataset.remove,1); save(); draw(); updateAddress(); } };
+  }
+  if (panel === 'history') {
+    p.innerHTML = `<div class="panel-head"><div><span class="eyebrow">BIBLIOTECA</span><h2>Historial</h2></div><button class="btn-mini" id="clearhist">Borrar todo</button></div><input class="field" id="histq" placeholder="Buscar historial…"><div class="list" id="histlist"></div>`;
+    const draw = () => { const q = $('#histq').value.toLowerCase(); $('#histlist').innerHTML = (S.history || []).filter(h => `${h.title} ${h.url}`.toLowerCase().includes(q)).map((h,i) => `<div class="list-item"><button class="list-main" data-url="${esc(h.url)}"><b>${esc(h.title || h.url)}</b><span>${new Date(h.time).toLocaleString('es-ES', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'})} · ${esc(h.url)}</span></button><button class="xbtn" data-remove="${i}">×</button></div>`).join('') || '<div class="empty">Todavía no hay historial.</div>'; };
+    draw(); $('#histq').oninput = draw; $('#clearhist').onclick = () => { S.history = []; save(); draw(); toast('Historial borrado'); };
+    p.onclick = e => { const b=e.target.closest('[data-url]'); if (b) createTab(b.dataset.url); const x=e.target.closest('[data-remove]'); if(x){S.history.splice(+x.dataset.remove,1);save();draw();} };
+  }
+  if (panel === 'downloads') {
+    p.innerHTML = `<div class="panel-head"><div><span class="eyebrow">BIBLIOTECA</span><h2>Descargas</h2></div><button class="btn-mini" id="cleardl">Limpiar</button></div><div class="list" id="dllist"></div>`;
+    const render = () => $('#dllist').innerHTML = downloads.slice().reverse().map(d => `<div class="download-item"><div class="download-top"><b>${esc(d.name)}</b><span>${d.privateMode ? 'Privada' : ''}</span></div><div class="progress"><i style="width:${d.total>0?Math.min(100,(d.received/d.total)*100):100}%"></i></div><div class="download-meta"><span>${d.state || 'progresando'} · ${d.total ? `${Math.round(d.received/1024)} KB / ${Math.round(d.total/1024)} KB` : ''}</span><span>${d.state==='progressing' ? `<button class="linkbtn" data-dl="${d.id}" data-da="${d.paused?'resume':'pause'}">${d.paused?'Reanudar':'Pausar'}</button>` : ''} <button class="linkbtn" data-open="${esc(d.path)}">Abrir</button> <button class="linkbtn" data-show="${esc(d.path)}">Carpeta</button></span></div></div>`).join('') || '<div class="empty">No has descargado nada todavía.</div>';
+    render();
+    $('#cleardl').onclick = () => { downloads=[]; S.downloads=[]; save(); render(); };
+    p.onclick = e => { const o=e.target.closest('[data-open]'); if(o) ipc.invoke('open-path', o.dataset.open); const s=e.target.closest('[data-show]'); if(s) ipc.invoke('show-item', s.dataset.show); const c=e.target.closest('[data-dl]'); if(c) ipc.invoke('download-control', c.dataset.dl, c.dataset.da); };
+  }
+  if (panel === 'notes') {
+    p.innerHTML = `<div class="panel-head"><div><span class="eyebrow">UTILIDAD</span><h2>Notas rápidas</h2></div><button class="btn-mini" id="clearnote">Limpiar</button></div><textarea id="notes" class="notes" placeholder="Ideas, enlaces, recordatorios…">${esc(S.notes || '')}</textarea><div class="mut">Se guarda automáticamente en este PC.</div>`;
+    $('#notes').oninput = e => { S.notes = e.target.value; save(); };
+    $('#clearnote').onclick = () => { S.notes=''; save(); $('#notes').value=''; };
+  }
+  if (panel === 'tools') {
+    p.innerHTML = `<div class="panel-head"><div><span class="eyebrow">NOVA LAB</span><h2>Herramientas</h2></div></div>
+      <div class="tool-card"><b>Calculadora</b><div class="calc"><input id="calc" readonly value="0"><div class="calc-grid">${['7','8','9','÷','4','5','6','×','1','2','3','−','C','0','=','+'].map(x=>`<button data-calc="${x}">${x}</button>`).join('')}</div></div></div>
+      <div class="tool-card"><b>Acciones rápidas</b><div class="tool-row"><button class="btn" id="toolshot">Captura PNG</button><button class="btn" id="toolpage">Guardar HTML</button><button class="btn" id="tooldev">DevTools</button></div></div>
+      <div class="tool-card"><b>Atajos</b><div class="shortcut-list"><span>Ctrl+T</span><b>Nueva pestaña</b><span>Ctrl+Tab</span><b>Siguiente pestaña</b><span>Ctrl+Shift+N</span><b>Pestaña privada</b><span>Ctrl+Shift+T</span><b>Reabrir pestaña</b><span>Ctrl+K</span><b>Paleta de comandos</b><span>Ctrl+J</span><b>Descargas</b><span>Ctrl+H</span><b>Historial</b><span>Ctrl+Shift+Delete</span><b>Limpiar datos</b><span>F11</span><b>Pantalla completa</b></div></div>`;
+    $('#toolshot').onclick=capturePage; $('#toolpage').onclick=savePage; $('#tooldev').onclick=()=>current?.wv.openDevTools();
+    let calc = '0';
+    p.querySelectorAll('[data-calc]').forEach(b => b.onclick = () => { const v=b.dataset.calc; if(v==='C') calc='0'; else if(v==='='){ try{calc=String(Function(`return ${calc.replaceAll('×','*').replaceAll('÷','/') .replaceAll('−','-')}`)());}catch{calc='Error';} } else calc = calc==='0'||calc==='Error' ? v : calc+v; $('#calc').value=calc; });
+  }
+  if (panel === 'settings') renderSettings(p);
+}
+
+function renderSettings(p) {
+  p.innerHTML = `<div class="panel-head"><div><span class="eyebrow">PERSONALIZACIÓN</span><h2>Ajustes</h2></div></div>
+    <div class="settings-grid">
+      <label>Nombre<input class="field" id="set-name" value="${esc(S.name)}" placeholder="Tu nombre"></label>
+      <label>Buscador<select class="field" id="set-search">${Object.values(SEARCHERS).map(([n,u])=>`<option value="${u}">${n}</option>`).join('')}</select></label>
+      <label>Página de inicio<input class="field" id="set-home" value="${esc(S.home)}" placeholder="Vacío = Nova"></label>
+      <label>Color de acento<input class="field" id="set-accent" value="${esc(S.accent)}" placeholder="#8b5cf6"></label>
+      <div class="settings-box"><b>Tema</b><div class="theme-row">${Object.entries(THEMES).map(([k,n])=>`<button class="theme-pill ${S.theme===k?'on':''}" data-theme="${k}">${n}</button>`).join('')}</div></div>
+      <div class="settings-box"><b>Privacidad</b><div class="toggle-row"><span>Bloqueador de anuncios</span><button class="switch ${S.adblock?'on':''}" data-toggle="adblock"></button></div><div class="toggle-row"><span>Animaciones</span><button class="switch ${S.anim?'on':''}" data-toggle="anim"></button></div></div>
+      <div class="settings-box"><b>Comportamiento</b><div class="toggle-row"><span>Abrir pestaña nueva al iniciar</span><button class="switch ${S.showNewTab?'on':''}" data-toggle="showNewTab"></button></div><div class="toggle-row"><span>Restaurar última sesión</span><button class="switch ${S.restoreTabs?'on':''}" data-toggle="restoreTabs"></button></div></div>
+      <div class="settings-box"><b>Herramientas</b><div class="tool-row"><button class="btn" id="pickwall">Añadir fondo</button><button class="btn" id="clearcache">Limpiar datos</button><button class="btn" id="capturecfg">Captura</button><button class="btn" id="savepagecfg">Guardar página</button><button class="btn" id="exportcfg">Exportar</button><label class="btn">Importar<input hidden type="file" id="importcfg" accept=".json"></label></div></div>
+    </div>`;
+  $('#set-search').value = S.search; $('#set-name').oninput = e => {S.name=e.target.value;save();refreshNewTabs();};
+  $('#set-search').onchange = e => {S.search=e.target.value;save();}; $('#set-home').onchange=e=>{S.home=e.target.value.trim();save();}; $('#set-accent').onchange=e=>{S.accent=e.target.value.trim();save();applyTheme();};
+  $$('.theme-pill', p).forEach(b=>b.onclick=()=>{S.theme=b.dataset.theme;save();applyTheme();refreshNewTabs();renderSettings(p);});
+  $$('.switch', p).forEach(b=>b.onclick=()=>{const k=b.dataset.toggle;S[k]=!S[k];save();if(k==='adblock')ipc.invoke('adblock',S.adblock);applyTheme();renderSettings(p);});
+  $('#pickwall').onclick=async()=>{await ipc.invoke('pick-wp', S.wallSection); toast('Fondos añadidos');};
+  $('#clearcache').onclick=clearData;
+  $('#capturecfg').onclick=()=>capturePage();
+  $('#savepagecfg').onclick=()=>savePage();
+  $('#exportcfg').onclick=()=>{const f=path.join(os.homedir(),'Downloads','nova-ajustes.json');fs.writeFileSync(f,JSON.stringify(S,null,2));toast('Ajustes exportados');};
+  $('#importcfg').onchange=e=>{const file=e.target.files?.[0];if(!file)return;const r=new FileReader();r.onload=()=>{try{Object.assign(S,JSON.parse(r.result));save();applyTheme();refreshNewTabs();renderSettings(p);toast('Ajustes importados');}catch{toast('Archivo no válido');}};r.readAsText(file)};
+}
+
+async function clearData() { await ipc.invoke('clear'); S.history=[]; save(); toast('Cookies, caché e historial local limpiados'); }
+function refreshNewTabs() { tabs.filter(t=>isInternal(t.wv.getURL())).forEach(t=>t.wv.loadURL(newTabURL(t.privateMode))); }
+
+async function savePDF() {
+  if (!current) return;
+  try { const f = await ipc.invoke('print-pdf', current.wv.getWebContentsId()); toast('PDF guardado en '+f); } catch(e) { toast('No se pudo crear el PDF: '+e.message); }
+}
+
+function openFind() { $('#findbar').classList.add('open'); $('#findinput').focus(); $('#findinput').select(); }
+function doFind() { if(!current)return; current.wv.findInPage($('#findinput').value, { forward:true, findNext:true }); }
+
+
+async function capturePage() {
+  if (!current) return;
+  try { const f = await ipc.invoke('capture-page', current.wv.getWebContentsId()); toast('Captura guardada en ' + f); }
+  catch (e) { toast('No se pudo capturar la página: ' + e.message); }
+}
+async function savePage() {
+  if (!current) return;
+  try { const f = await ipc.invoke('save-page', current.wv.getWebContentsId()); if (f) toast('Página guardada en ' + f); }
+  catch (e) { toast('No se pudo guardar la página: ' + e.message); }
+}
+function switchTab(delta) {
+  if (!tabs.length || !current) return;
+  const i = tabs.indexOf(current);
+  selectTab(tabs[(i + delta + tabs.length) % tabs.length]);
+}
+function closeOthers(tab) {
+  tabs.slice().forEach(t => { if (t !== tab && !t.pinned) closeTab(t, false); });
+  saveSession();
+}
+function closeRight(tab) {
+  const i = tabs.indexOf(tab);
+  tabs.slice(i + 1).forEach(t => { if (!t.pinned) closeTab(t, false); });
+  saveSession();
+}
+function addressSuggestions(query) {
+  const box = $('#address-suggestions');
+  if (!query.trim()) { box.classList.add('hidden'); box.innerHTML=''; return; }
+  const all = [...(S.bookmarks||[]).map(x=>({...x,type:'★ Favorito'})), ...(S.history||[]).map(x=>({...x,type:'Historial'}))];
+  const q=query.toLowerCase();
+  const items=all.filter(x=>`${x.title} ${x.url}`.toLowerCase().includes(q)).slice(0,7);
+  box.innerHTML=items.length ? items.map(x=>`<button data-surl="${esc(x.url)}"><b>${esc(x.title||x.url)}</b><span>${esc(x.type)} · ${esc(x.url)}</span></button>`).join('') : `<div class="suggestion-empty">Pulsa Enter para buscar «${esc(query)}»</div>`;
+  box.classList.remove('hidden');
+  box.querySelectorAll('[data-surl]').forEach(b=>b.onclick=()=>{ $('#address').value=b.dataset.surl; navigate(b.dataset.surl); box.classList.add('hidden'); });
+}
+
+function toast(message) { const d=document.createElement('div'); d.className='toast'; d.textContent=message; $('#toast-stack').appendChild(d); setTimeout(()=>d.remove(),2800); }
+
+const COMMANDS = [
+  ['Nueva pestaña', 'Ctrl+T', () => createTab()],
+  ['Nueva pestaña privada', 'Ctrl+Shift+N', () => createTab(newTabURL(true), true)],
+  ['Reabrir pestaña cerrada', 'Ctrl+Shift+T', reopenClosed],
+  ['Duplicar pestaña', '', () => duplicateTab(current)],
+  ['Fijar / desfijar pestaña', '', () => toggleTabPin(current)],
+  ['Silenciar pestaña', '', () => toggleTabMute(current)],
+  ['Favorito actual', 'Ctrl+D', toggleBookmark],
+  ['Descargas', 'Ctrl+J', () => setPanel('downloads')],
+  ['Historial', 'Ctrl+H', () => setPanel('history')],
+  ['Favoritos', 'Ctrl+B', () => setPanel('bookmarks')],
+  ['Configuración', 'Ctrl+,', () => setPanel('settings')],
+  ['Buscar en página', 'Ctrl+F', openFind],
+  ['Guardar página como HTML', '', savePage],
+  ['Guardar página como PDF', 'Ctrl+Shift+P', savePDF],
+  ['Capturar página como PNG', '', capturePage],
+  ['Modo lectura', '', () => toggleCurrentMod('reader')],
+  ['Oscuro forzado', '', () => toggleCurrentMod('dark')],
+  ['Sin animaciones web', '', () => toggleCurrentMod('noanim')],
+  ['Texto grande', '', () => toggleCurrentMod('large')],
+  ['Herramientas', '', () => setPanel('tools')],
+  ['Inicio', 'Alt+Home', goHome],
+  ['Pantalla completa', 'F11', () => ipc.invoke('fullscreen')],
+  ['Desarrollador', 'Ctrl+Shift+I', () => current?.wv.openDevTools()]
+];
+function palette() { $('#command-palette').classList.remove('hidden'); $('#command-search').value=''; renderCommands(''); $('#command-search').focus(); }
+function renderCommands(q) { const list=$('#command-list'); const items=COMMANDS.filter(c=>`${c[0]} ${c[1]}`.toLowerCase().includes(q.toLowerCase())); list.innerHTML=items.map((c,i)=>`<button class="command" data-ci="${i}"><span>${c[0]}</span><small>${c[1]}</small></button>`).join(''); list.onclick=e=>{const b=e.target.closest('[data-ci]');if(!b)return; const c=items[+b.dataset.ci]; $('#command-palette').classList.add('hidden'); c[2]();}; }
+
+$('#command-search').oninput=e=>renderCommands(e.target.value);
+$('#command-palette').onclick=e=>{if(e.target===e.currentTarget)e.currentTarget.classList.add('hidden');};
+$('#menu-btn').onclick=palette;
+$('#newtab').onclick=()=>createTab();
+$('#private-tab').onclick=()=>createTab(newTabURL(true),true);
+$('#back').onclick=()=>current?.wv.canGoBack()&&current.wv.goBack();
+$('#forward').onclick=()=>current?.wv.canGoForward()&&current.wv.goForward();
+$('#reload').onclick=()=>current?.wv.reload();
+$('#home').onclick=goHome;
+$('#bookmark').onclick=toggleBookmark;
+$('#printbtn').onclick=savePDF;
+$('#findbtn').onclick=openFind;
+$('#findclose').onclick=()=>{$('#findbar').classList.remove('open');current?.wv.stopFindInPage('clearSelection');};
+$('#findinput').oninput=doFind; $('#findnext').onclick=doFind; $('#findprev').onclick=()=>current?.wv.findInPage($('#findinput').value,{forward:false,findNext:true});
+$('#clear-address').onclick=()=>{$('#address').value='';$('#address').focus();};
+$('#address').onkeydown=e=>{if(e.key==='Enter'){navigate(e.target.value);$('#address-suggestions').classList.add('hidden');} if(e.key==='Escape'){updateAddress();$('#address-suggestions').classList.add('hidden');}}; $('#address').onfocus=e=>{e.target.select();addressSuggestions(e.target.value)}; $('#address').oninput=e=>addressSuggestions(e.target.value);
+
+$$('[data-win]').forEach(b=>b.onclick=()=>ipc.send('win',b.dataset.win));
+$$('.sidebtn[data-panel]').forEach(b=>b.onclick=()=>setPanel(b.dataset.panel));
+$('#privacy-badge').onclick=()=>setPanel('settings');
+$('#tab-menu').onclick=e=>{ const b=e.target.closest('[data-tab-action]'); if(!b||!contextTab)return; const a=b.dataset.tabAction; if(a==='new') createTab(newTabURL(contextTab.privateMode), contextTab.privateMode); if(a==='duplicate') duplicateTab(contextTab); if(a==='pin') toggleTabPin(contextTab); if(a==='mute') toggleTabMute(contextTab); if(a==='close') closeTab(contextTab); if(a==='close-others') closeOthers(contextTab); if(a==='close-right') closeRight(contextTab); hideTabMenu(); };
+document.addEventListener('click', e=>{ if(!e.target.closest('#tab-menu')) hideTabMenu(); if(!e.target.closest('#address-wrap')) $('#address-suggestions').classList.add('hidden'); });
+
+
+ipc.on('open-tab', (_e,url)=>createTab(url));
+ipc.on('context-action', (_e,action)=>{
+  if(action==='back')$('#back').click(); if(action==='forward')$('#forward').click(); if(action==='reload')$('#reload').click();
+  if(action==='print')savePDF(); if(action==='save-page')savePage(); if(action==='capture')capturePage(); if(action==='find')openFind(); if(action==='devtools') current?.wv.openDevTools();
+});
+ipc.on('blocked',()=>{blocked++;$('#blocked-count').textContent=`${blocked.toLocaleString('es-ES')} bloqueados`;});
+ipc.on('download',(_e,d)=>{const i=downloads.findIndex(x=>x.id===d.id); if(i>=0)downloads[i]=d; else downloads.push(d); downloads=downloads.slice(-50); S.downloads=downloads; save(); if(panel==='downloads')renderPanel(); ipc.invoke('set-badge', downloads.filter(x=>x.state==='progressing').length);});
+
+document.addEventListener('keydown', e => {
+  if(e.key==='F11'){e.preventDefault();ipc.invoke('fullscreen');return;}
+  if(e.ctrlKey && e.shiftKey && e.key.toLowerCase()==='w'){e.preventDefault();ipc.send('win','close');return;}
+  if(e.ctrlKey && e.key==='PageUp'){e.preventDefault();switchTab(-1);return;}
+  if(e.ctrlKey && e.key==='PageDown'){e.preventDefault();switchTab(1);return;}
+  if(e.ctrlKey && e.shiftKey && e.key==='Tab'){e.preventDefault();switchTab(-1);return;}
+  if(e.ctrlKey && !e.shiftKey && e.key==='Tab'){e.preventDefault();switchTab(1);return;}
+  if(e.ctrlKey && e.shiftKey && e.key.toLowerCase()==='delete'){e.preventDefault();clearData();return;}
+  if(e.ctrlKey && e.shiftKey && e.key.toLowerCase()==='i'){e.preventDefault();current?.wv.openDevTools();return;}
+  if(e.ctrlKey && !e.shiftKey && /^[1-9]$/.test(e.key)){e.preventDefault();const i=Math.min(Number(e.key)-1,tabs.length-1);if(i>=0)selectTab(tabs[i]);return;}
+  if(e.ctrlKey && !e.shiftKey && e.key.toLowerCase()==='t'){e.preventDefault();createTab();}
+  else if(e.ctrlKey && e.shiftKey && e.key.toLowerCase()==='t'){e.preventDefault();reopenClosed();}
+  else if(e.ctrlKey && e.shiftKey && e.key.toLowerCase()==='n'){e.preventDefault();createTab(newTabURL(true),true);}
+  else if(e.ctrlKey && e.key.toLowerCase()==='w'){e.preventDefault();closeTab(current);}
+  else if(e.ctrlKey && e.key.toLowerCase()==='l'){e.preventDefault();$('#address').focus();}
+  else if(e.ctrlKey && e.key.toLowerCase()==='d'){e.preventDefault();toggleBookmark();}
+  else if(e.ctrlKey && e.key.toLowerCase()==='f'){e.preventDefault();openFind();}
+  else if(e.ctrlKey && e.key.toLowerCase()==='j'){e.preventDefault();setPanel('downloads');}
+  else if(e.ctrlKey && e.key.toLowerCase()==='h'){e.preventDefault();setPanel('history');}
+  else if(e.ctrlKey && e.key.toLowerCase()==='b'){e.preventDefault();setPanel('bookmarks');}
+  else if(e.ctrlKey && e.key.toLowerCase()==='k'){e.preventDefault();palette();}
+  else if(e.ctrlKey && e.key==='+'){e.preventDefault();S.zoom=Math.min(2,S.zoom+0.1);current?.wv.setZoomFactor(S.zoom);save();toast(`Zoom ${Math.round(S.zoom*100)}%`);}
+  else if(e.ctrlKey && e.key==='-'){e.preventDefault();S.zoom=Math.max(.5,S.zoom-0.1);current?.wv.setZoomFactor(S.zoom);save();toast(`Zoom ${Math.round(S.zoom*100)}%`);}
+  else if(e.ctrlKey && e.key==='0'){e.preventDefault();S.zoom=1;current?.wv.setZoomFactor(1);save();toast('Zoom 100%');}
+  else if(e.altKey && e.key==='ArrowLeft'){$('#back').click();}
+  else if(e.altKey && e.key==='ArrowRight'){$('#forward').click();}
+  else if(e.altKey && e.key==='Home'){e.preventDefault();goHome();}
+  else if(e.key==='Escape'){$('#command-palette').classList.add('hidden');$('#findbar').classList.remove('open');}
+  else if(e.ctrlKey && e.key===','){e.preventDefault();setPanel('settings');}
+});
+
+applyTheme();
+(async()=>{
+  if(!localStorage.nova){const cfg=await ipc.invoke('install-cfg');Object.assign(S,cfg);save();}
+  let restored = false;
+  if(S.restoreTabs && Array.isArray(S.openTabs) && S.openTabs.length){
+    S.openTabs.slice(0, 16).forEach((info, i)=>{ const t=createTab(info.url,false,i===0); t.pinned=!!info.pinned; t.el.classList.toggle('pinned',t.pinned); $('.tab-title',t.el).style.display=t.pinned?'none':''; });
+    if(tabs[0]) selectTab(tabs[0]); restored=true;
+  }
+  if(!restored && S.showNewTab !== false) createTab();
+  if(!tabs.length) createTab();
+  window.addEventListener('beforeunload',saveSession);
+  window.addEventListener('blur',hideTabMenu);
+})();
+</script>
+</body>
+</html>
