@@ -48,8 +48,14 @@
       "installerHeaderIcon": "assets/icon.ico",
       "language": "1034",
       "runAfterFinish": true,
-      "installerSidebar": "build/installerSidebar.bmp",
-      "uninstallerSidebar": "build/uninstallerSidebar.bmp",
+"installerIcon": "assets/icon.ico",
+"uninstallerIcon": "assets/icon.ico",
+"installerHeaderIcon": "assets/icon.ico",
+"language": "1034",
+"runAfterFinish": true,
+"license": "build/LICENSE.txt",
+"deleteAppDataOnUninstall": false,
+"uninstallDisplayName": "Nova"
       "license": "build/LICENSE.txt",
       "deleteAppDataOnUninstall": false,
       "uninstallDisplayName": "Nova"
