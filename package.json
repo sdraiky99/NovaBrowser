@@ -8,7 +8,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win --publish true
+    "dist": "electron-builder --win --publish never"
   },
   "dependencies": {
     "@ghostery/adblocker-electron": "^2.5.0"
@@ -45,7 +45,7 @@
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": "never",
+      "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Nova Browser",
       "installerIcon": "assets/icon.ico",
