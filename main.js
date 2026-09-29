@@ -10,6 +10,8 @@ async function setAdblock(on) {
     if (!blocker) {
       const { ElectronBlocker } = require('@ghostery/adblocker-electron');
       blocker = await ElectronBlocker.fromPrebuiltAdsAndTrackingLists(fetch);
+      let bt = 0, n = 0;
+      blocker.on('request-blocked', () => { n++; if (!bt) bt = setTimeout(() => { bt = 0; win && win.webContents.send('blocked', n); }, 600); });
     }
     const ses = session.defaultSession;
     on ? blocker.enableBlockingInSession(ses) : blocker.disableBlockingInSession(ses);
@@ -41,11 +43,17 @@ app.whenReady().then(() => {
   splash.loadFile('shell/splash.html');
   setTimeout(createMain, 1900);
 
+  session.defaultSession.on('will-download', (e, item) => {
+    const id = Date.now() + Math.random(), f = path.join(app.getPath('downloads'), item.getFilename());
+    item.setSavePath(f);
+    const send = st => win && win.webContents.send('dl', { id, name: item.getFilename(), path: f, recv: item.getReceivedBytes(), total: item.getTotalBytes(), state: st });
+    send('progressing'); item.on('updated', () => send('progressing')); item.once('done', (_, st) => send(st));
+  });
   app.on('web-contents-created', (_, c) => {
     if (c.getType() !== 'webview') return;
     c.setWindowOpenHandler(({ url }) => { win.webContents.send('open-tab', url); return { action: 'deny' }; });
     c.on('before-input-event', (e, i) => {
-      if (i.control && i.type === 'keyDown' && 'twlfd'.includes(i.key)) {
+      if (i.control && i.type === 'keyDown' && 'twlfdhj'.includes(i.key)) {
         e.preventDefault(); win.webContents.send('key', i.key);
       }
     });
@@ -73,4 +81,5 @@ ipcMain.handle('pick-wp', async (_, sec) => {
   r.filePaths.forEach(f => fs.copyFileSync(f, path.join(dir, path.basename(f))));
   return r.filePaths.length;
 });
+ipcMain.handle('clear', async () => { await session.defaultSession.clearStorageData(); await session.defaultSession.clearCache(); return true; });
 app.on('window-all-closed', () => app.quit());

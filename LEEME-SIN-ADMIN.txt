@@ -1,8 +1,5 @@
-1. Clic derecho en el zip > "Extraer todo".
-2. En GitHub: "+" > New repository > nombre "nova" > Create repository.
-3. Pulsa "uploading an existing file".
-4. Entra en la carpeta extraida "nova", Ctrl+A, arrastra TODO a GitHub. Commit changes.
-5. Si no aparece la carpeta .github, crea el archivo .github/workflows/build.yml
-   (Add file > Create new file) y pega dentro COPIA-build.yml.
-6. Espera 5-8 minutos. En la pagina principal del repo, a la derecha, entra en "Releases".
-   Ahi estan Nova-Portable y Nova-Setup para descargar.
+ACTUALIZAR A 1.1.0 (sin admin ni terminal)
+1. Extrae el zip (clic derecho > Extraer todo) y entra en la carpeta "nova".
+2. En tu repo de GitHub: Add file > Upload files. Ctrl+A dentro de "nova" y arrastra todo.
+   (GitHub sustituye los archivos que ya existen.) Commit changes.
+3. Tu build.yml actual sirve, no hace falta tocarlo. Espera 5-8 min y mira Releases.

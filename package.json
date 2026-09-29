@@ -1,13 +1,13 @@
 {
   "name": "nova-browser",
   "productName": "Nova",
-  "version": "2.0.0",
+  "version": "1.1.0",
   "description": "Nova Browser 2.0",
   "author": "Nova",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win"
+    "dist": "electron-builder --win --publish never"
   },
   "dependencies": {
     "@ghostery/adblocker-electron": "^2.5.0"
@@ -46,7 +46,13 @@
       "installerIcon": "assets/icon.ico",
       "uninstallerIcon": "assets/icon.ico",
       "installerHeaderIcon": "assets/icon.ico",
-      "include": "build/installer.nsh"
+      "language": "1034",
+      "runAfterFinish": true,
+      "installerSidebar": "build/installerSidebar.bmp",
+      "uninstallerSidebar": "build/uninstallerSidebar.bmp",
+      "license": "build/LICENSE.txt",
+      "deleteAppDataOnUninstall": false,
+      "uninstallDisplayName": "Nova"
     },
     "portable": {
       "artifactName": "Nova-Portable-${version}.exe"
