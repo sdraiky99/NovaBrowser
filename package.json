@@ -1,7 +1,7 @@
 {
   "name": "nova-browser",
   "productName": "Nova",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Nova Browser 2.0",
   "author": "Nova",
   "main": "main.js",
@@ -48,14 +48,8 @@
       "installerHeaderIcon": "assets/icon.ico",
       "language": "1034",
       "runAfterFinish": true,
-"installerIcon": "assets/icon.ico",
-"uninstallerIcon": "assets/icon.ico",
-"installerHeaderIcon": "assets/icon.ico",
-"language": "1034",
-"runAfterFinish": true,
-"license": "build/LICENSE.txt",
-"deleteAppDataOnUninstall": false,
-"uninstallDisplayName": "Nova"
+      "installerSidebar": "build/installerSidebar.bmp",
+      "uninstallerSidebar": "build/uninstallerSidebar.bmp",
       "license": "build/LICENSE.txt",
       "deleteAppDataOnUninstall": false,
       "uninstallDisplayName": "Nova"

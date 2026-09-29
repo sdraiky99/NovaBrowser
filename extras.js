@@ -9,7 +9,7 @@ Object.assign(P, {
   game: 'M3 9h18v8a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3zM8 12v4M6 14h4', info: 'M12 8h.01M11 12h1v5h1M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18'
 });
 S.hist = S.hist || []; S.dls = S.dls || []; S.notes = S.notes || ''; S.blocked = S.blocked || 0;
-const VERSION = '1.1.0';
+const VERSION = '1.2.0';
 
 /* ---------- estilos ---------- */
 const st = document.createElement('style');
@@ -106,7 +106,7 @@ function internalTab(u) {
   Object.assign(el, { getURL: () => 'nova://' + name, canGoBack: () => false, canGoForward: () => false, goBack() { }, goForward() { }, reload: () => PG[name](el), loadURL() { }, stopFindInPage() { }, findInPage() { } });
   $('#view').appendChild(el);
   const te = document.createElement('div'); te.className = 'tab';
-  const T = { historial: 'Historial', descargas: 'Descargas', notas: 'Notas', juegos: 'Nova Snake', ajustes: 'Ajustes', acerca: 'Acerca de Nova' }[name];
+  const T = { historial: 'Historial', descargas: 'Descargas', notas: 'Notas', juegos: 'Nova Snake', ajustes: 'Ajustes', acerca: 'Acerca de Nova', novedades: 'Novedades' }[name] || name;
   te.innerHTML = '<img src="../assets/icon.png"><span>' + T + '</span><button class="ib sm">' + ic('x') + '</button>';
   const t = { wv: el, el: te }; tabs.push(t); $('#tabs').appendChild(te);
   te.onmousedown = e => { if (e.button === 1) closeTab(t); };
@@ -204,7 +204,7 @@ const PG = {
   acerca(r) {
     r.innerHTML = `<div style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px"><img src="../assets/icon.png" width="110"><h2>Nova ${VERSION}</h2><span class="mut">Chromium ${process.versions.chrome} · Electron ${process.versions.electron}</span></div>
     <h3>Atajos</h3><div class="grid"><div class="li">Ctrl+T <span>Nueva pestaña</span></div><div class="li">Ctrl+W <span>Cerrar</span></div><div class="li">Ctrl+L <span>Barra de dirección</span></div><div class="li">Ctrl+F <span>Buscar</span></div><div class="li">Ctrl+D <span>Favorito</span></div><div class="li">Ctrl+H <span>Historial</span></div><div class="li">Ctrl+J <span>Descargas</span></div></div>
-    <h3>Novedades 1.1.0</h3><span class="mut">Fondos reales, tema Neón, asistente de bienvenida, historial, descargas, notas, Nova Snake, contador de anuncios, más ajustes.</span>`;
+    `;
   },
   juegos(r) {
     r.innerHTML = '<h2>Nova Snake</h2><canvas width="400" height="400" style="border:2px solid var(--acc);border-radius:var(--r);max-width:100%"></canvas><span class="mut">Flechas o WASD · Puntos: <b id="sp">0</b> · Espacio para reiniciar</span>';
@@ -212,7 +212,7 @@ const PG = {
     const init = () => { s = [{ x: 10, y: 10 }]; d = { x: 1, y: 0 }; f = { x: 5, y: 5 }; pts = 0; dead = false; };
     init();
     const tick = () => {
-      if (!r.isConnected) return clearInterval(iv); if (!r.classList.contains('on') || dead) return;
+      if (!r.isConnected || !c.isConnected) return clearInterval(iv); if (!r.classList.contains('on') || dead) return;
       const h = { x: (s[0].x + d.x + 20) % 20, y: (s[0].y + d.y + 20) % 20 };
       if (s.some(q => q.x === h.x && q.y === h.y)) { dead = true; return; }
       s.unshift(h); if (h.x === f.x && h.y === f.y) { pts++; f = { x: Math.random() * 20 | 0, y: Math.random() * 20 | 0 }; r.querySelector('#sp').textContent = pts; } else s.pop();
@@ -222,7 +222,7 @@ const PG = {
     };
     const iv = setInterval(tick, 110);
     document.addEventListener('keydown', e => {
-      if (!r.isConnected || !r.classList.contains('on')) return;
+      if (!r.isConnected || !c.isConnected || !r.classList.contains('on')) return;
       const m = { ArrowUp: [0, -1], w: [0, -1], ArrowDown: [0, 1], s: [0, 1], ArrowLeft: [-1, 0], a: [-1, 0], ArrowRight: [1, 0], d: [1, 0] }[e.key];
       if (m && (m[0] !== -d.x || m[1] !== -d.y)) { d = { x: m[0], y: m[1] }; e.preventDefault(); }
       if (e.key === ' ' && dead) { init(); r.querySelector('#sp').textContent = 0; }
@@ -250,6 +250,7 @@ function onboard() {
   };
   r();
 }
+window.NOVA = { PG, MENU, internalTab, sw2, themeGrid, toURL, fmt };
 applyTheme();
 if (!S.done) setTimeout(onboard, 700);
 })();

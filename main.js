@@ -53,7 +53,7 @@ app.whenReady().then(() => {
     if (c.getType() !== 'webview') return;
     c.setWindowOpenHandler(({ url }) => { win.webContents.send('open-tab', url); return { action: 'deny' }; });
     c.on('before-input-event', (e, i) => {
-      if (i.control && i.type === 'keyDown' && 'twlfdhj'.includes(i.key)) {
+      if (i.control && i.type === 'keyDown' && 'twlfdhjkT'.includes(i.key)) {
         e.preventDefault(); win.webContents.send('key', i.key);
       }
     });

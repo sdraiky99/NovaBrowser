@@ -166,9 +166,9 @@ const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[
 async function ask(text,shown){if(!text.trim())return;if(!S.key){chat.push({role:'assistant',content:'Añade tu clave API en Ajustes para activar Nova IA.'});return draw()}
   chat.push({role:'user',content:shown||text});const hist=chat.slice(-12).map(m=>({...m}));hist[hist.length-1].content=text;chat.push({role:'assistant',content:'…'});draw();
   try{const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':S.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:'Eres Nova IA, el asistente integrado del navegador Nova. Responde en el idioma del usuario, breve y claro.',messages:hist.filter(m=>m.content!=='…')})});
+    body:JSON.stringify({model:S.model||'claude-sonnet-4-6',max_tokens:1000,system:'Eres Nova IA, el asistente integrado del navegador Nova. Responde en el idioma del usuario, breve y claro. '+(S.persona||''),messages:hist.filter(m=>m.content!=='…')})});
     const d=await r.json();chat[chat.length-1].content=d.content?.map(c=>c.text||'').join('')||d.error?.message||'Error desconocido'}catch(e){chat[chat.length-1].content='Sin conexión: '+e.message}
   if(panel==='ai')draw()}
 
 (async()=>{if(!localStorage.nova){const c=await ipc.invoke('install-cfg');if(c.theme)S.theme=c.theme;if(c.adblock===false)S.adblock=false;save()}applyTheme();newTab()})();
-</script><script src="extras.js"></script></body></html>
+</script><script src="extras.js"></script><script src="extras2.js"></script></body></html>
