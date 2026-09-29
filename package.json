@@ -8,7 +8,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win --publish never"
+    "dist": "electron-builder --win --publish true
   },
   "dependencies": {
     "@ghostery/adblocker-electron": "^2.5.0"
