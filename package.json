@@ -1,10 +1,9 @@
 {
   "name": "nova-browser",
-  "productName": "Nova Browser",
-  "version": "2.1.0",
-  "description": "Nova Browser 2.1 — navegador de escritorio moderno con pestañas, favoritos, historial, descargas, privacidad, herramientas y personalización.",
+  "productName": "Nova",
+  "version": "1.3.0",
+  "description": "Nova Browser 2.0",
   "author": "Nova",
-  "license": "MIT",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -19,7 +18,7 @@
   },
   "build": {
     "appId": "com.nova.browser",
-    "productName": "Nova Browser",
+    "productName": "Nova",
     "artifactName": "Nova-Setup-${version}.exe",
     "directories": {
       "output": "dist"
@@ -28,18 +27,14 @@
       "main.js",
       "shell/**",
       "assets/**",
-      "build/**",
       "package.json"
     ],
-    "asar": true,
-    "compression": "maximum",
     "win": {
       "target": [
         "nsis",
         "portable"
       ],
-      "icon": "assets/icon.ico",
-      "artifactName": "Nova-Setup-${version}.exe"
+      "icon": "assets/icon.ico"
     },
     "nsis": {
       "oneClick": false,
@@ -47,18 +42,17 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Nova Browser",
+      "shortcutName": "Nova",
       "installerIcon": "assets/icon.ico",
       "uninstallerIcon": "assets/icon.ico",
       "installerHeaderIcon": "assets/icon.ico",
+      "language": "1034",
+      "runAfterFinish": true,
       "installerSidebar": "build/installerSidebar.bmp",
       "uninstallerSidebar": "build/uninstallerSidebar.bmp",
-      "installerHeader": "build/installerHeader.bmp",
-      "include": "build/installer.nsh",
-      "language": 1034,
-      "runAfterFinish": true,
+      "license": "build/LICENSE.txt",
       "deleteAppDataOnUninstall": false,
-      "uninstallDisplayName": "Nova Browser"
+      "uninstallDisplayName": "Nova"
     },
     "portable": {
       "artifactName": "Nova-Portable-${version}.exe"

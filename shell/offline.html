@@ -1,0 +1,70 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Sin conexión</title>
+<link rel="stylesheet" href="themes.css"><link rel="icon" href="../assets/icon.png">
+<style>
+body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:20px;overflow:auto}
+svg{width:60px;stroke:var(--acc);fill:none;stroke-width:1.6;stroke-linecap:round;animation:fl 3s ease-in-out infinite}
+h1{margin:0;font-weight:300;font-size:30px}.m{color:var(--mut);max-width:560px;word-break:break-all}
+canvas{width:min(720px,94vw);border:2px solid var(--bd);border-radius:var(--r);background:var(--bar);cursor:pointer;animation:up .6s both}
+.b{padding:9px 20px;background:var(--acc);color:#fff;border:0;border-radius:var(--r);cursor:pointer;transition:transform .15s}.b:hover{transform:translateY(-2px)}
+#err>*{animation:up .5s both}#err>*:nth-child(2){animation-delay:.08s}#err>*:nth-child(3){animation-delay:.16s}
+@keyframes fl{50%{transform:translateY(-6px)}}@keyframes up{from{opacity:0;transform:translateY(14px)}}
+.t-win95 .b{background:#c0c0c0;color:#000;box-shadow:inset -1px -1px #404040,inset 1px 1px #fff}
+</style></head><body>
+<div id="err" style="display:flex;flex-direction:column;align-items:center;gap:10px">
+<svg viewBox="0 0 24 24"><path d="M2 9a15 15 0 0 1 20 0M5 13a10 10 0 0 1 14 0M8.5 16.5a5 5 0 0 1 7 0M12 20h.01M3 3l18 18"/></svg>
+<h1 id="h"></h1><div class="m" id="u"></div><button class="b" id="r">Reintentar</button></div>
+<div class="m" id="tip">Mientras vuelve la conexión, juega: Espacio o ↑ salta · ↓ agacha · clic o toque también salta</div>
+<canvas id="g" width="720" height="200"></canvas>
+<script>
+const p=new URLSearchParams(location.search);document.body.className='t-'+(p.get('t')||'nova');
+if(p.get('a'))document.body.style.setProperty('--acc',p.get('a'));
+const orig=p.get('u')||'',play=p.get('play');
+if(play){document.getElementById('err').style.display='none';document.getElementById('tip').textContent='Nova Dino · Espacio o ↑ salta · ↓ agacha';document.title='Nova Dino'}
+else{document.getElementById('h').textContent=navigator.onLine?'No se pudo abrir la página':'Sin conexión a internet';document.getElementById('u').textContent=orig+(p.get('e')?' — '+p.get('e'):'')}
+document.getElementById('r').onclick=()=>orig&&(location.href=orig);
+addEventListener('online',()=>orig&&(location.href=orig));
+
+/* ---------- Nova Dino ---------- */
+const c=document.getElementById('g'),x=c.getContext('2d'),W=720,G=170;
+let hi=0;try{hi=+localStorage.novaDino||0}catch{}
+let st='idle',sc=0,sp=6,y=0,vy=0,duck=false,obs=[],cl=[{x:200,y:40},{x:520,y:75}],fr=0,dash=0;
+let AC;const beep=(f,d)=>{try{AC=AC||new AudioContext();const o=AC.createOscillator(),g=AC.createGain();o.type='square';o.frequency.value=f;g.gain.value=.03;o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch{}};
+const start=()=>{st='run';sc=0;sp=6;y=0;vy=0;obs=[];};
+const jump=()=>{if(st!=='run'){start();return}if(y===0){vy=-13;beep(660,.08)}};
+addEventListener('keydown',e=>{if(e.key===' '||e.key==='ArrowUp'){e.preventDefault();jump()}if(e.key==='ArrowDown'){e.preventDefault();duck=true}});
+addEventListener('keyup',e=>{if(e.key==='ArrowDown')duck=false});
+c.addEventListener('pointerdown',jump);
+function dino(px,fy,f,d,col,bg){
+  x.fillStyle=col;
+  if(!d){x.fillRect(px,fy-30,20,22);x.fillRect(px+10,fy-46,22,18);x.fillRect(px+22,fy-32,10,6);x.fillRect(px+18,fy-22,7,3);x.fillRect(px-8,fy-30,10,6);
+    x.fillRect(px+3,fy-8,6,y?8:(f?8:5));x.fillRect(px+12,fy-8,6,y?8:(f?5:8));x.fillStyle=bg;x.fillRect(px+24,fy-42,3,3)}
+  else{x.fillRect(px,fy-22,32,14);x.fillRect(px+22,fy-30,18,14);x.fillRect(px-8,fy-22,10,5);x.fillRect(px+4,fy-8,6,f?8:5);x.fillRect(px+18,fy-8,6,f?5:8);x.fillStyle=bg;x.fillRect(px+33,fy-27,3,3)}
+}
+function tick(){
+  const cs=getComputedStyle(document.body),dark=Math.floor(sc/700)%2===1;
+  let fg=cs.getPropertyValue('--fg').trim()||'#eee',bg=cs.getPropertyValue('--bar').trim()||'#111';if(dark&&st==='run'){[fg,bg]=[bg,fg]}
+  if(st==='run'){
+    fr++;sc+=sp/30;sp=Math.min(15,6+sc/400);
+    vy+=(duck&&y<0?2.2:.7);y+=vy;if(y>=0){y=0;vy=0}
+    const last=obs[obs.length-1];
+    if(!last||last.x<W-(260+Math.random()*320)*(sp/8+.5)){
+      if(sc>250&&Math.random()<.3)obs.push({k:'b',x:W+20,w:30,h:16,off:Math.random()<.5?8:34,f:0});
+      else{const n=1+(Math.random()*3|0);obs.push({k:'c',x:W+20,w:14*n,h:30+Math.random()*16|0,off:0,n})}
+    }
+    obs.forEach(o=>{o.x-=sp*(o.k==='b'?1.25:1)});obs=obs.filter(o=>o.x>-60);
+    const dh=duck&&y===0?26:44,dw=duck&&y===0?36:28,dx=52,dy=G+y;
+    if(obs.some(o=>dx+dw-3>o.x+3&&dx+3<o.x+o.w-3&&dy-3>G-o.off-o.h+3&&dy-dh+3<G-o.off-3)){st='dead';beep(160,.3);if(sc>hi){hi=sc|0;try{localStorage.novaDino=hi}catch{}}}
+    if((sc|0)%100===0&&(sc|0)>0&&!tick.b){tick.b=1;beep(880,.1)}if((sc|0)%100!==0)tick.b=0;
+  }
+  x.fillStyle=bg;x.fillRect(0,0,W,200);
+  x.fillStyle=fg;x.globalAlpha=.25;cl.forEach(k=>{k.x-=st==='run'?.6:.15;if(k.x<-60)k.x=W+40;x.fillRect(k.x,k.y,40,8);x.fillRect(k.x+8,k.y-6,22,8)});x.globalAlpha=1;
+  x.fillRect(0,G,W,2);dash=(dash+(st==='run'?sp:0))%40;x.globalAlpha=.4;for(let i=-1;i<19;i++)x.fillRect(i*40-dash+10,G+8,14,2);x.globalAlpha=1;
+  obs.forEach(o=>{x.fillStyle=fg;if(o.k==='c'){for(let i=0;i<o.n;i++){const cx=o.x+i*14;x.fillRect(cx+4,G-o.h,6,o.h);x.fillRect(cx,G-o.h+10,4,10);x.fillRect(cx+10,G-o.h+6,4,10)}}
+    else{const by=G-o.off-o.h,w=(fr>>3)%2;x.fillRect(o.x,by+6,24,6);x.fillRect(o.x+20,by+2,10,6);x.fillRect(o.x+6,w?by-4:by+12,12,4)}});
+  dino(52,G+y,(fr>>3)%2,duck&&y===0,fg,bg);
+  x.fillStyle=fg;x.font='16px Consolas,monospace';x.textAlign='right';x.fillText('HI '+String(hi|0).padStart(5,'0')+'  '+String(sc|0).padStart(5,'0'),W-14,24);x.textAlign='center';
+  if(st==='idle')x.fillText('Pulsa Espacio para empezar',W/2,90);
+  if(st==='dead'){x.font='26px Consolas,monospace';x.fillText('G A M E   O V E R',W/2,84);x.font='14px Consolas,monospace';x.fillText('Espacio o clic para reintentar',W/2,110)}
+}
+setInterval(()=>{if(!document.hidden)tick()},16);
+</script></body></html>
