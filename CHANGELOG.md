@@ -1,3 +1,11 @@
+## Nova 2.2.0 — auditoría y distribución Fedora
+
+- Auditoría técnica de seguridad, IPC, navegación, cuentas, actualización, extensiones y persistencia.
+- CI separado de releases: los releases solo se publican desde tags `v*.*.*`.
+- Añadidos targets Linux RPM + AppImage y workflow de release Linux.
+- Añadido instalador sencillo para Fedora y guía de instalación/desinstalación.
+- Publicación automática de `SHA256SUMS.txt`.
+
 ## Nova 2.2.0
 - Barra superior, vista dividida, menú contextual web reforzado, perfiles funcionales en principal, zoom real, guía de navegador predeterminado y actualizaciones directas.
 

@@ -1,4 +1,4 @@
-# Nova 1.6.4
+# Nova 2.2.0
 Navegador basado en Chromium (Electron). Paginas: nova://historial, descargas, marcadores, notas, juegos, ajustes, privacidad, novedades, acerca, personalizar, tienda, bienvenida.
 Atajos: Ctrl+K comandos, Ctrl+Espacio Nova IA, Ctrl+D marcador. Nova IA: Ajustes > Nova IA (clave cifrada).
 Navegador predeterminado: menu > Navegador predeterminado (solo con Nova-Setup, no con el portable).
@@ -10,7 +10,7 @@ En `nova://migrar` puedes detectar perfiles locales de Google Chrome, Microsoft 
 Nova incorpora validación de IPC, aislamiento de `webview`, restricciones de navegación y ventanas, permisos controlados, recuperación ante procesos renderer bloqueados, copias atómicas del estado y comprobaciones automáticas de seguridad en GitHub.
 
 
-## Nova 1.6.4
+## Nova 2.2.0 · versión actual
 
 Esta actualización añade una barra de marcadores inferior opcional, menú contextual de marcadores y carpetas, bienvenida visual, importación y migración desde Chrome/Edge/Firefox, Centro de Rendimiento/RAM, modo opcional de ahorro de memoria y nuevas extensiones de seguridad, privacidad y rendimiento. La migración trabaja en modo solo lectura y no modifica el navegador de origen.
 
@@ -26,6 +26,11 @@ El proyecto incluye un servicio de referencia en `account-server/`. Para usar cu
 Nova Tab incorpora un centro de acceso para Study, Workspaces, pestañas, notas, PDF, rendimiento, seguridad, perfiles, sincronización, extensiones y media.
 
 
-## Nova 2.2.0
+## Nova 2.2.0 · versión actual
 Nueva barra superior para acceder a las funciones principales, vista dividida, menú contextual web reforzado, perfiles desde la ventana principal, zoom real con porcentaje y restauración, guía de navegador predeterminado y comprobación/actualización directa sobre instalaciones de Windows compatibles.
 
+
+
+## Fedora / Linux
+
+Nova puede distribuirse para Fedora mediante RPM y, de forma más universal, AppImage. El build de Linux se genera con `npm run dist:linux`; en una release de GitHub se publican los artefactos Linux junto a los de Windows. El RPM se instala con `sudo dnf install ./Nova-2.2.0.x86_64.rpm`.

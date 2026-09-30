@@ -1,0 +1,39 @@
+NOVA · FEDORA / LINUX
+======================
+
+Método recomendado (RPM)
+------------------------
+1. Descarga el archivo Nova-<version>-x86_64.rpm de la release de GitHub.
+2. Abre una terminal en la carpeta donde lo has descargado.
+3. Ejecuta:
+
+   sudo dnf install ./Nova-<version>-x86_64.rpm
+
+4. Abre Nova desde el menú de aplicaciones.
+
+Instalación automática desde GitHub
+-----------------------------------
+Ejecuta:
+
+   chmod +x install-fedora.sh
+   ./install-fedora.sh
+
+El script de esta versión descarga el RPM x86_64 de Nova 2.2.0; también acepta un RPM local o una URL con `--file`/`--url`.
+
+Desinstalar
+-----------
+   sudo dnf remove nova-browser
+
+Alternativa AppImage
+--------------------
+Si no quieres instalar un RPM, descarga la AppImage y ejecuta:
+
+   chmod +x Nova-<version>-x86_64.AppImage
+   ./Nova-<version>-x86_64.AppImage
+
+Notas
+-----
+- El RPM es la opción de integración normal para Fedora.
+- La AppImage sirve como alternativa portable para Linux.
+- El instalador no necesita un desinstalado previo para sustituir una instalación RPM de Nova cuando la actualización se publica mediante DNF; el reemplazo depende del gestor de paquetes.
+- La actualización directa integrada de Electron se comporta de forma distinta según el formato de distribución; el workflow publica RPM y AppImage para permitir ambos caminos.

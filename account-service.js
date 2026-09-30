@@ -62,7 +62,7 @@ function createAccountService({ app, safeStorage, fetch }) {
     if (!base) throw new Error('Servidor de cuentas no configurado.');
     const url = new URL(endpoint.replace(/^\//, ''), `${base}/`);
     if (url.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(url.hostname)) throw new Error('La cuenta Nova requiere HTTPS.');
-    const headers = Object.assign({ 'content-type': 'application/json', 'accept': 'application/json', 'x-nova-client': 'Nova/1.6.5' }, options.headers || {});
+    const headers = Object.assign({ 'content-type': 'application/json', 'accept': 'application/json', 'x-nova-client': 'Nova/2.2.0' }, options.headers || {});
     const r = await fetch(url.href, Object.assign({}, options, { headers }));
     let data = {};
     try { data = await r.json(); } catch { }

@@ -1,0 +1,5 @@
+Para desinstalar Nova en Fedora:
+
+    sudo dnf remove nova-browser
+
+Los datos de usuario se conservan salvo que los elimines manualmente desde ~/.config/Nova (o la ruta de datos que use tu instalación).

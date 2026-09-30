@@ -1,14 +1,16 @@
 {
   "name": "nova-browser",
   "productName": "Nova",
-  "version": "2.2.0 HOTFIX",
+  "version": "2.2.0",
   "description": "Navegador web moderno basado en Chromium con Nova Tab, Study, vista dividida, perfiles, zoom, seguridad, rendimiento y actualizaciones directas",
   "author": "Nova",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win --publish never",
-    "check": "node --check main.js && node --check migration.js && node --check account-service.js && node --check account-server/server.js && node --check shell/extensions.js && node --check shell/tabs.js && node --check shell/extras.js && node --check shell/extras2.js && node --check shell/extras3.js && node --check shell/extras4.js && node --check shell/extras5.js && node --check shell/extras6.js && node --check shell/extras7.js && node --check shell/extras8.js && node --check shell/extras9.js && node scripts/check-project.js"
+    "dist": "npm run dist:win",
+    "check": "node --check main.js && node --check migration.js && node --check account-service.js && node --check account-server/server.js && node --check shell/extensions.js && node --check shell/tabs.js && node --check shell/extras.js && node --check shell/extras2.js && node --check shell/extras3.js && node --check shell/extras4.js && node --check shell/extras5.js && node --check shell/extras6.js && node --check shell/extras7.js && node --check shell/extras8.js && node --check shell/extras9.js && node --check shell/extras10.js && node scripts/check-project.js",
+    "dist:win": "electron-builder --win --publish never",
+    "dist:linux": "electron-builder --linux rpm AppImage --publish never"
   },
   "dependencies": {
     "@ghostery/adblocker-electron": "2.18.2",
@@ -72,7 +74,39 @@
         "repo": "NovaBrowser"
       }
     ],
-    "copyright": "Copyright © 2026 Nova"
+    "copyright": "Copyright © 2026 Nova",
+    "linux": {
+      "target": [
+        "rpm",
+        "AppImage"
+      ],
+      "icon": "assets/icon.png",
+      "category": "Network",
+      "synopsis": "Navegador web moderno basado en Chromium",
+      "description": "Nova es un navegador moderno basado en Chromium con Nova Tab, Study, perfiles, seguridad y rendimiento.",
+      "desktop": {
+        "entry": {
+          "Name": "Nova",
+          "Comment": "Navegador web moderno basado en Chromium",
+          "Categories": "Network;WebBrowser;",
+          "Keywords": "browser;web;internet;nova;",
+          "StartupWMClass": "nova-browser",
+          "Terminal": false,
+          "Type": "Application"
+        }
+      },
+      "artifactName": "Nova-${version}-x86_64.${ext}"
+    },
+    "rpm": {
+      "packageCategory": "Applications/Internet",
+      "compression": "xz",
+      "depends": [
+        "gtk3",
+        "nss",
+        "libnotify",
+        "libXScrnSaver"
+      ]
+    }
   },
   "homepage": "https://github.com/sdraiky99/NovaBrowser"
 }

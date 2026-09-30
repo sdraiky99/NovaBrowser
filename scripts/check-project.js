@@ -10,6 +10,9 @@ const pkg = JSON.parse(read('package.json'));
 if (pkg.version !== '2.2.0') fail(`version expected 2.2.0, got ${pkg.version}`);
 for (const f of ['main.js','migration.js','account-service.js','account-config.json','account-server/server.js','shell/index.html','shell/extensions.js','shell/extras6.js','shell/extras7.js','shell/extras8.js','shell/extras9.js','build/installer.nsh','.github/workflows/build.yml','.github/workflows/security.yml']) if (!exists(f)) fail(`missing ${f}`);
 for (const f of ['assets/welcome/welcome-hero.jpg','assets/welcome/welcome-performance.jpg','assets/welcome/welcome-security.jpg']) if (!exists(f)) fail(`missing welcome asset ${f}`);
+if (!pkg.build?.linux?.target?.includes('rpm')) fail('Fedora RPM target missing');
+if (!pkg.build?.linux?.target?.includes('AppImage')) fail('Linux AppImage target missing');
+for (const f of ['fedora/INSTALL-FEDORA.txt','fedora/install-fedora.sh','fedora/UNINSTALL-FEDORA.txt','fedora/build-linux.sh','fedora/nova-browser.desktop','SECURITY-AUDIT-2.2.0.md','.github/workflows/release.yml']) if (!exists(f)) fail(`missing ${f}`);
 
 const ext = read('shell/extensions.js');
 const ids = [...ext.matchAll(/\{\s*id:\s*['"]([^'"]+)['"]/g)].map(m => m[1]);
@@ -77,3 +80,15 @@ if (!index.includes('nova22-top-tools')) fail('top tools host missing');
 if (!index.includes('nova22-split')) fail('split host missing');
 if (!exists('RELEASE_NOTES_2.2.0.md')) fail('2.2.0 release notes missing');
 console.log(`Nova 2.2.0 static check OK · ${ids.length} extensions · top toolbar/split/context menu/profiles/zoom/updater present`);
+const readme = read('README.md');
+if (/^# Nova 1\.6\.4/m.test(readme)) fail('README still starts at 1.6.4');
+const installer = read('build/installer.nsh');
+if (!installer.includes('Nova 2.2.0')) fail('installer branding is not 2.2.0');
+const workflow = read('.github/workflows/build.yml');
+if (workflow.includes('softprops/action-gh-release')) fail('CI build workflow must not publish releases');
+const rel = read('.github/workflows/release.yml');
+if (!rel.includes("tags:") || !rel.includes("'v*.*.*'")) fail('release workflow is not tag-gated');
+if (!pkg.build?.rpm?.depends?.includes('gtk3')) fail('RPM runtime dependency list missing gtk3');
+if (main.includes('contextIsolation: false') && main.includes('nodeIntegration: true')) console.warn('AUDIT WARNING: main renderer still uses Node integration; migrate to preload/contextBridge before production-hardening.');
+if (!exists('package-lock.json') && !exists('npm-shrinkwrap.json') && !exists('yarn.lock') && !exists('pnpm-lock.yaml')) console.warn('AUDIT WARNING: no npm lockfile is committed.');
+

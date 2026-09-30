@@ -1,6 +1,6 @@
 # Nova Accounts
 
-Servicio mínimo para las cuentas `usuario@Nova.com` de Nova 1.6.5.
+Servicio mínimo para las cuentas `usuario@Nova.com` de Nova 2.2.0.
 
 ## Qué almacena
 - Identidad de cuenta y hash `scrypt` de la contraseña.

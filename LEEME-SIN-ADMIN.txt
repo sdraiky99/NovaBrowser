@@ -1,11 +1,32 @@
-ACTUALIZAR A 1.6.4 (sin admin ni terminal)
-1. Extrae el zip (clic derecho > Extraer todo) y entra en la carpeta "nova".
-2. En tu repo de GitHub: Add file > Upload files. Ctrl+A dentro de "nova" y arrastra TODO. Commit changes.
-3. IMPORTANTE: abre .github/workflows/build.yml en GitHub (lapiz), borra todo su contenido, pega el de COPIA-build.yml y haz Commit.
-   (solo hay que hacerlo una vez; asi el release se llama Nova 1.6.4 y sube tambien latest.yml)
-4. Espera 5-8 min y mira Releases: Nova-Setup-1.6.4.exe y Nova-Portable-1.6.4.exe (deben pesar decenas de MB).
+NOVA 2.2.0 · INSTALACIÓN Y PUBLICACIÓN
+======================================
 
-5. Para migrar tus datos de Chrome, Edge o Firefox, abre el menú > Migrar desde Chrome / Edge / Firefox. Se importan marcadores e historial en modo solo lectura; cierra el navegador de origen para una lectura consistente.
-6. El repositorio incluye comprobaciones de seguridad y dependencias en .github/workflows/security.yml.
+WINDOWS
+-------
+1. Sube el contenido del ZIP al repositorio conservando .github/.
+2. El workflow `.github/workflows/build.yml` comprueba y compila Windows y Linux en cada push/PR.
+3. Para publicar una versión crea un tag, por ejemplo:
 
-7. Nova 1.6.4 añade barra inferior de marcadores, migración, novedades visuales y Centro de Rendimiento/RAM.
+   v2.2.0
+
+   El workflow `.github/workflows/release.yml` publica los EXE, RPM, AppImage y SHA256SUMS.txt.
+4. El Setup de Nova usa NSIS y está configurado para actualizar sobre una instalación existente; el updater de Electron descarga la nueva versión cuando el build es una instalación compatible.
+5. El Portable no se registra como navegador predeterminado.
+
+FEDORA / LINUX
+--------------
+- RPM: `sudo dnf install ./Nova-2.2.0-x86_64.rpm`
+- AppImage: `chmod +x Nova-2.2.0-x86_64.AppImage && ./Nova-2.2.0-x86_64.AppImage`
+- También puedes usar `fedora/install-fedora.sh` para buscar e instalar el RPM publicado más reciente.
+
+IMPORTACIÓN
+-----------
+La migración detecta perfiles locales de Chrome, Edge y Firefox e importa marcadores e historial en modo solo lectura. Las contraseñas cifradas del navegador de origen no se extraen.
+
+CUENTAS NOVA
+------------
+La cuenta usa el formato `usuario@Nova.com`. El backend de referencia de `account-server/` debe exponerse detrás de HTTPS si se despliega para uso real.
+
+SEGURIDAD
+---------
+Hay validación de IPC, sandbox y aislamiento de webviews, control de navegación, permisos y copias atómicas. Consulta `SECURITY-AUDIT-2.2.0.md` para los hallazgos pendientes, especialmente la migración futura a preload/contextBridge y la ausencia de lockfile.

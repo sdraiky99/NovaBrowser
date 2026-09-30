@@ -1,43 +1,12 @@
-name: Build Nova
+# Este archivo se conserva como referencia. El workflow real está en .github/workflows/build.yml.
+# NO hace falta copiarlo ni reemplazar el workflow de GitHub.
+name: Build Nova (reference)
 on:
-  push:
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 jobs:
-  build:
-    runs-on: windows-latest
+  note:
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Leer version
-        id: v
-        shell: bash
-        run: echo "version=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
-      - run: npm install
-      - name: Compilar
-        id: build
-        continue-on-error: true
-        run: npm run dist
-      - name: Reintentar sin presentacion animada (solo si fallo el primer intento)
-        if: steps.build.outcome == 'failure'
-        shell: bash
-        run: |
-          echo '!define NOVA_NO_ANIM' | cat - build/installer.nsh > build/installer.tmp
-          mv build/installer.tmp build/installer.nsh
-          npm run dist
-      - name: Comprobar nombres de los EXE
-        shell: bash
-        run: |
-          ls dist
-          test -f "dist/Nova-Setup-${{ steps.v.outputs.version }}.exe"
-          test -f "dist/Nova-Portable-${{ steps.v.outputs.version }}.exe"
-      - uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ steps.v.outputs.version }}
-          name: Nova ${{ steps.v.outputs.version }}
-          files: |
-            dist/*.exe
-            dist/latest.yml
+      - run: echo "Usa .github/workflows/build.yml y release.yml del repositorio."
