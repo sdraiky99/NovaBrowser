@@ -1,7 +1,7 @@
 {
   "name": "nova-browser",
   "productName": "Nova",
-  "version": "1.7.0",
+  "version": "2.0.0",
   "description": "Navegador web moderno basado en Chromium",
   "author": "Nova",
   "main": "main.js",
