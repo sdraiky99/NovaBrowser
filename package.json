@@ -1,7 +1,7 @@
 {
   "name": "nova-browser",
   "productName": "Nova",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "Navegador web moderno basado en Chromium con Nova Tab, Study, vista dividida, perfiles, zoom, seguridad, rendimiento y actualizaciones directas",
   "author": "Nova",
   "main": "main.js",
