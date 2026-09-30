@@ -1,16 +1,30 @@
-const { app, BrowserWindow, ipcMain, session, dialog, Menu, clipboard, safeStorage, shell, webContents } = require('electron');
-const path = require('path'), fs = require('fs');
+const { app, BrowserWindow, ipcMain, session, dialog, Menu, clipboard, safeStorage, shell, webContents, nativeImage } = require('electron');
+const path = require('path'), fs = require('fs'), { execFile } = require('child_process');
+const APP_ID = 'com.nova.browser';
 app.setName('Nova');
-let win, splash, blocker, splashAt = 0, pendingUrl = null;
+app.setAppUserModelId(APP_ID); // imprescindible en Windows: agrupa la ventana con el acceso directo y permite cambiar el icono de la barra de tareas
+// rendimiento: rasterizado por GPU y sin el cálculo de oclusión de Windows (evita tirones al volver a la ventana)
+app.commandLine.appendSwitch('enable-gpu-rasterization');
+app.commandLine.appendSwitch('enable-zero-copy');
+app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion');
+let win, splash, splashAt = 0, pendingUrl = null;
 const EXT = require('./shell/extensions.js');
-const LOGOS = ['classic', 'orbita', 'estrella', 'cometa', 'minimal'], SPLASH_MS = 2400;
-const logoPng = id => path.join(__dirname, id === 'classic' || !LOGOS.includes(id) ? 'assets/icon.png' : `assets/logos/${id}.png`);
+const LOGOS = ['classic', 'orbita', 'estrella', 'cometa', 'minimal'], SPLASH_MS = 1800;
+const logoId = id => (LOGOS.includes(id) ? id : 'classic');
+const logoIco = id => path.join(__dirname, `assets/logos/${logoId(id)}.ico`);      // dentro del paquete (asar)
+const logoImg = id => { const i = nativeImage.createFromPath(process.platform === 'win32' ? logoIco(id) : path.join(__dirname, `assets/logos/${logoId(id)}.png`)); return i.isEmpty() ? nativeImage.createFromPath(path.join(__dirname, 'assets/icon.png')) : i; };
 // preferencias que el proceso principal necesita antes de abrir la interfaz (logo, animación de inicio, extensiones)
-let prefs = { logo: 'classic', splash: true, ext: {} };
+let prefs = { logo: 'classic', splash: true, ext: {}, reg: '' };
 const prefsFile = () => path.join(app.getPath('userData'), 'prefs.json');
 const loadPrefs = () => { try { prefs = Object.assign(prefs, JSON.parse(fs.readFileSync(prefsFile(), 'utf8'))); } catch { } };
 const savePrefs = () => { try { fs.writeFileSync(prefsFile(), JSON.stringify(prefs)); } catch { } };
-const extUrl = a => (a || []).find(x => /^https?:\/\//i.test(x));
+const { pathToFileURL } = require('url');
+const extUrl = a => { // enlace http(s) o archivo .html/.pdf/.svg... recibido desde Windows (navegador predeterminado)
+  for (const x of a || []) {
+    if (/^https?:\/\//i.test(x)) return x;
+    if (/\.(html?|xhtml|pdf|svg|webp|png|jpe?g|gif|txt)$/i.test(x) && !/^-/.test(x)) { try { if (fs.existsSync(x)) return pathToFileURL(path.resolve(x)).href; } catch { } }
+  }
+};
 // una sola instancia: si Nova es el navegador predeterminado, los enlaces llegan a la ventana abierta
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) app.quit();
@@ -23,24 +37,81 @@ const web = () => session.fromPartition('persist:web'); // datos de navegación 
 
 const userFile = (...p) => path.join(app.getPath('userData'), ...p);
 
+let blockerP = null, blockOn = null;
 async function setAdblock(on) {
+  on = !!on; if (blockOn === on) return; blockOn = on; // applyTheme lo llama muchas veces: solo actuamos si cambia
   try {
-    if (!blocker) {
+    if (!blockerP) blockerP = (async () => {
       const { ElectronBlocker } = require('@ghostery/adblocker-electron');
-      blocker = await ElectronBlocker.fromPrebuiltAdsAndTrackingLists(fetch);
+      // las listas se guardan en disco: el arranque no espera a la red y funciona sin conexión
+      const cache = { path: userFile('adblock.bin'), read: fs.promises.readFile, write: fs.promises.writeFile };
+      const b = await ElectronBlocker.fromPrebuiltAdsAndTrackingLists(fetch, cache).catch(() => ElectronBlocker.fromPrebuiltAdsAndTrackingLists(fetch)); // si falla la caché, carga normal
       let bt = 0, n = 0;
-      blocker.on('request-blocked', () => { n++; if (!bt) bt = setTimeout(() => { bt = 0; win && win.webContents.send('blocked', n); }, 600); });
-    }
+      b.on('request-blocked', () => { n++; if (!bt) bt = setTimeout(() => { bt = 0; win && !win.isDestroyed() && win.webContents.send('blocked', n); }, 600); });
+      return b;
+    })();
+    const b = await blockerP; if (blockOn !== on) return;
     const ses = web();
-    on ? blocker.enableBlockingInSession(ses) : blocker.disableBlockingInSession(ses);
-  } catch (e) { console.error('Adblock:', e.message); }
+    on ? b.enableBlockingInSession(ses) : b.disableBlockingInSession(ses);
+  } catch (e) { blockerP = null; blockOn = null; console.error('Adblock:', e.message); }
+}
+
+
+/* ---------- Windows: registro como navegador y logotipo en la barra de tareas ---------- */
+const reg = (...a) => new Promise(r => execFile('reg.exe', a, { windowsHide: true }, (e, out) => r(e ? null : String(out))));
+const regAdd = (key, name, val) => reg('add', 'HKCU\\' + key, name ? '/v' : '/ve', ...(name ? [name] : []), '/t', 'REG_SZ', '/d', val, '/f');
+// Windows 10/11 solo deja elegir como predeterminado a los navegadores registrados con estas claves.
+// El instalador ya las crea; esto las repara/actualiza solo si cambió la ruta o la versión (no hace nada más).
+async function registerBrowser(force) {
+  if (process.platform !== 'win32' || process.env.PORTABLE_EXECUTABLE_FILE || !app.isPackaged) return;
+  const sig = process.execPath + '|' + app.getVersion(); if (!force && prefs.reg === sig) return;
+  const exe = process.execPath, cmd = `"${exe}" "%1"`, ico = `"${exe}",0`, C = 'Software\\Clients\\StartMenuInternet\\Nova';
+  const rows = [
+    ['Software\\Classes\\NovaURL', '', 'Nova URL'], ['Software\\Classes\\NovaURL', 'URL Protocol', ''], ['Software\\Classes\\NovaURL\\DefaultIcon', '', ico], ['Software\\Classes\\NovaURL\\shell\\open\\command', '', cmd],
+    ['Software\\Classes\\NovaHTML', '', 'Nova HTML Document'], ['Software\\Classes\\NovaHTML\\DefaultIcon', '', ico], ['Software\\Classes\\NovaHTML\\shell\\open\\command', '', cmd],
+    [C, '', 'Nova'], [C + '\\DefaultIcon', '', ico], [C + '\\shell\\open\\command', '', `"${exe}"`],
+    [C + '\\Capabilities', 'ApplicationName', 'Nova'], [C + '\\Capabilities', 'ApplicationIcon', ico],
+    [C + '\\Capabilities', 'ApplicationDescription', 'Navegador web moderno basado en Chromium'],
+    [C + '\\Capabilities\\URLAssociations', 'http', 'NovaURL'], [C + '\\Capabilities\\URLAssociations', 'https', 'NovaURL'],
+    [C + '\\Capabilities\\FileAssociations', '.html', 'NovaHTML'], [C + '\\Capabilities\\FileAssociations', '.htm', 'NovaHTML'],
+    ['Software\\RegisteredApplications', 'Nova', C + '\\Capabilities']
+  ];
+  for (const [k, n, v] of rows) await regAdd(k, n, v);
+  prefs.reg = sig; savePrefs();
+}
+// ¿Es Nova el navegador que Windows usa de verdad? (lee la elección del usuario, no solo las claves de Nova)
+async function isWinDefault() {
+  const o = await reg('query', 'HKCU\\Software\\Microsoft\\Windows\\Shell\\Associations\\UrlAssociations\\https\\UserChoice', '/v', 'ProgId');
+  return !!o && /NovaURL/i.test(o);
+}
+// Copia el .ico fuera del paquete (Windows no puede leer dentro de app.asar) y devuelve su ruta
+function iconFile(id) {
+  const dst = userFile('icons', `nova-${logoId(id)}.ico`);
+  try { fs.mkdirSync(path.dirname(dst), { recursive: true }); fs.writeFileSync(dst, fs.readFileSync(logoIco(id))); return dst; } catch { return null; }
+}
+// Cambia el logotipo: ventana, barra de tareas (abierta y anclada), escritorio y menú Inicio
+function applyLogo(id) {
+  try { win && !win.isDestroyed() && win.setIcon(logoImg(id)); } catch { }
+  if (process.platform !== 'win32' || !app.isPackaged) return;
+  const f = iconFile(id); if (!f) return;
+  try { win && !win.isDestroyed() && win.setAppDetails({ appId: APP_ID, appIconPath: f, appIconIndex: 0, relaunchCommand: `"${process.execPath}"`, relaunchDisplayName: 'Nova' }); } catch { }
+  const dirs = [path.join(app.getPath('desktop')), path.join(process.env.APPDATA || '', 'Microsoft/Windows/Start Menu/Programs'), path.join(process.env.APPDATA || '', 'Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar'), path.join(process.env.APPDATA || '', 'Microsoft/Internet Explorer/Quick Launch')];
+  let changed = 0;
+  for (const d of dirs) {
+    let list = []; try { list = fs.readdirSync(d).filter(x => /\.lnk$/i.test(x)); } catch { continue; }
+    for (const n of list) {
+      const lnk = path.join(d, n);
+      try { const o = shell.readShortcutLink(lnk); if (path.resolve(o.target || '').toLowerCase() === path.resolve(process.execPath).toLowerCase() && shell.writeShortcutLink(lnk, 'update', { icon: f, iconIndex: 0 })) changed++; } catch { }
+    }
+  }
+  if (changed) execFile('ie4uinit.exe', ['-show'], { windowsHide: true }, () => { }); // refresca la caché de iconos de Windows
 }
 
 function createMain() {
   win = new BrowserWindow({
     width: 1280, height: 800, minWidth: 720, minHeight: 480,
     frame: false, show: false, title: 'Nova',
-    icon: logoPng(prefs.logo),
+    icon: logoImg(prefs.logo),
     backgroundColor: '#0d0b1a',
     webPreferences: { nodeIntegration: true, contextIsolation: false, webviewTag: true }
   });
@@ -69,12 +140,13 @@ app.whenReady().then(() => {
   if (prefs.splash !== false) { // animación de inicio (se puede quitar en Personalizar)
     splash = new BrowserWindow({
       width: 420, height: 420, frame: false, transparent: true, resizable: false,
-      alwaysOnTop: true, skipTaskbar: true, icon: logoPng(prefs.logo)
+      alwaysOnTop: true, skipTaskbar: true, icon: logoImg(prefs.logo)
     });
-    splash.loadFile('shell/splash.html', { query: { logo: LOGOS.includes(prefs.logo) ? prefs.logo : 'classic' } });
+    splash.loadFile('shell/splash.html', { query: { logo: logoId(prefs.logo) } });
     splashAt = Date.now();
   }
   createMain();
+  setTimeout(() => { registerBrowser(false).catch(() => { }); if (prefs.logo !== 'classic') applyLogo(prefs.logo); }, 4000);
 
   const dlMap = new Map(), dlSend = new Map();
   web().on('will-download', (e, item) => {
@@ -157,7 +229,7 @@ ipcMain.on('app-version', e => (e.returnValue = app.getVersion()));
 ipcMain.on('prefs-get', e => (e.returnValue = prefs));
 ipcMain.on('prefs-set', (_, p) => {
   if (!p || typeof p !== 'object') return;
-  if (LOGOS.includes(p.logo)) { prefs.logo = p.logo; if (win) win.setIcon(logoPng(p.logo)); }
+  if (LOGOS.includes(p.logo)) { prefs.logo = p.logo; applyLogo(p.logo); }
   if (typeof p.splash === 'boolean') prefs.splash = p.splash;
   if (p.ext && typeof p.ext === 'object') { // instalar / activar / quitar extensiones al instante
     const nx = {}; Object.keys(p.ext).forEach(id => { if (EXT.byId(id)) nx[id] = !!p.ext[id]; });
@@ -167,10 +239,15 @@ ipcMain.on('prefs-set', (_, p) => {
   }
   savePrefs();
 });
-ipcMain.handle('default-browser', (_, set) => {
+ipcMain.handle('default-browser', async (_, set) => {
   const portable = !!process.env.PORTABLE_EXECUTABLE_FILE;
-  if (set && !portable) { app.setAsDefaultProtocolClient('http'); app.setAsDefaultProtocolClient('https'); shell.openExternal('ms-settings:defaultapps'); }
-  return { portable, isDefault: !portable && app.isDefaultProtocolClient('https') };
+  if (process.platform !== 'win32') { if (set) { app.setAsDefaultProtocolClient('http'); app.setAsDefaultProtocolClient('https'); } return { portable, isDefault: app.isDefaultProtocolClient('https') }; }
+  if (portable) return { portable, isDefault: false };
+  if (set) {
+    await registerBrowser(true); // asegura que Nova figura en "Aplicaciones predeterminadas"
+    shell.openExternal('ms-settings:defaultapps?registeredAppUser=Nova').catch(() => shell.openExternal('ms-settings:defaultapps'));
+  }
+  return { portable, isDefault: await isWinDefault() };
 });
 ipcMain.on('userdata', e => (e.returnValue = app.getPath('userData')));
 ipcMain.handle('install-cfg', () => {

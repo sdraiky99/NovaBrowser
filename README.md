@@ -1,3 +1,4 @@
-# Nova 1.5.2
-Navegador basado en Chromium (Electron). Paginas: nova://historial, descargas, marcadores, notas, juegos, ajustes, privacidad, novedades, acerca.
+# Nova 1.6.0
+Navegador basado en Chromium (Electron). Paginas: nova://historial, descargas, marcadores, notas, juegos, ajustes, privacidad, novedades, acerca, personalizar, tienda, bienvenida.
 Atajos: Ctrl+K comandos, Ctrl+Espacio Nova IA, Ctrl+D marcador. Nova IA: Ajustes > Nova IA (clave cifrada).
+Navegador predeterminado: menu > Navegador predeterminado (solo con Nova-Setup, no con el portable).

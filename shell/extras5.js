@@ -1,4 +1,4 @@
-/* Nova 1.5.2 - logotipos, animación de inicio, sonidos, colores de la barra, tienda de extensiones, bienvenida */
+/* Nova 1.6.0 - logotipos, animación de inicio, sonidos, colores de la barra, tienda de extensiones, bienvenida */
 (() => {
 const { PG, MENU, sw2 } = NOVA, EXT = require('./extensions.js');
 const PR = ipc.sendSync('prefs-get') || {};           // preferencias que también lee el proceso principal
@@ -81,7 +81,7 @@ function preview(logo) {
 PG.personalizar = r => {
   const ren = () => PG.personalizar(r), q = s => r.querySelector(s), top = S.topc || 'ninguno';
   r.innerHTML = `<h2>Personalizar</h2>
-  <h3>Logotipo</h3><span class="mut">Se usa en la barra, la nueva pestaña, la animación de inicio y el icono de la ventana. El icono del archivo .exe no cambia.</span>
+  <h3>Logotipo</h3><span class="mut">Se aplica a la barra, la nueva pestaña, la animación de inicio, el icono de la ventana y de la barra de tareas, y a los accesos directos (escritorio, Inicio y barra de tareas). Si Windows tarda en refrescar un icono anclado, ciérralo y ábrelo de nuevo. El archivo .exe conserva su icono original.</span>
   <div class="lgs">${Object.entries(LG).map(([k, n]) => `<div class="lg ${S.logo === k ? 'on' : ''}" data-lg="${k}"><img data-keep="1" src="${logoSrc(k)}"><span>${n}</span></div>`).join('')}</div>
   <h3>Animación de inicio</h3><span class="mut">Cada logotipo tiene su propia animación al abrir Nova.</span>
   <div class="row"><span>Mostrar animación al abrir</span>${tgl('spl', PR.splash !== false)}</div>
@@ -132,16 +132,22 @@ PG.bienvenida = async r => {
   <div class="bcard"><h3>Navegador predeterminado</h3>${st0.portable
     ? '<span class="mut">Estás usando la versión portable, que no se puede registrar como navegador. Instala Nova con Nova-Setup para elegirla.</span>'
     : st0.isDefault ? '<span>✓ Nova ya es tu navegador predeterminado.</span>'
-    : '<span class="mut">Abre los enlaces de otras aplicaciones directamente en Nova. Windows te pedirá confirmarlo: elige Nova en la lista.</span><button class="btn on" id="db" style="align-self:flex-start">Hacer Nova mi navegador predeterminado</button>'}</div>
+    : '<span class="mut">Abre los enlaces de otras aplicaciones directamente en Nova. Se abrirá la configuración de Windows en la página de Nova: pulsa «Establecer como predeterminado».</span><button class="btn on" id="db" style="align-self:flex-start">Hacer Nova mi navegador predeterminado</button>'}</div>
   <div class="bcard"><h3>Hazlo tuyo</h3><span class="mut">Cambia el logotipo, los sonidos y el color de la barra.</span><button class="btn" id="gp" style="align-self:flex-start">Personalizar</button></div>
   <div class="bcard"><h3>Extensiones</h3><span class="mut">Añade funciones con la tienda de extensiones de Nova.</span><button class="btn" id="gt" style="align-self:flex-start">Abrir la tienda</button></div>`;
-  const b = r.querySelector('#db'); if (b) b.onclick = async () => { await ipc.invoke('default-browser', true); toast('Elige Nova en los ajustes de Windows'); };
+  const b = r.querySelector('#db'); if (b) b.onclick = async () => {
+    await ipc.invoke('default-browser', true); toast('Pulsa «Establecer como predeterminado» en Windows');
+    let n = 0; const t = setInterval(async () => { // comprueba cada 2 s si ya lo has cambiado (hasta 2 minutos)
+      const st = await ipc.invoke('default-browser', false);
+      if (st.isDefault) { clearInterval(t); toast('✓ Nova es ahora tu navegador predeterminado'); PG.bienvenida(r); } else if (++n > 60) clearInterval(t);
+    }, 2000);
+  };
   r.querySelector('#gp').onclick = () => newTab('nova://personalizar'); r.querySelector('#gt').onclick = () => newTab('nova://tienda');
 };
 NOVA.welcome = () => { S.welcomed = 1; save(); newTab('nova://bienvenida'); };
 
 /* ---------- menú ---------- */
-MENU.splice(5, 0, ['Personalizar', () => newTab('nova://personalizar')], ['Tienda de extensiones', () => newTab('nova://tienda')]);
+MENU.splice(5, 0, ['Personalizar', () => newTab('nova://personalizar')], ['Tienda de extensiones', () => newTab('nova://tienda')], ['Navegador predeterminado', () => newTab('nova://bienvenida')]);
 const mp = document.getElementById('mnp'); if (mp) mp.innerHTML = MENU.map((m, i) => `<button data-i="${i}">${m[0]}</button>`).join('');
 
 applyTheme(); syncLogo();

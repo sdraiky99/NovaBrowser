@@ -1,6 +1,6 @@
-; Nova 1.5.2 - textos del instalador (solo textos; no ejecuta nada extra)
+; Nova 1.6.0 - textos del instalador (solo textos; no ejecuta nada extra)
 !macro customHeader
-  BrandingText "Nova Browser 1.5.2"
+  BrandingText "Nova Browser 1.6.0"
   !define MUI_WELCOMEPAGE_TITLE "Instalar Nova"
   !define MUI_WELCOMEPAGE_TEXT "Un navegador rápido, moderno y privado.$\r$\n$\r$\nEste asistente instalará Nova en tu equipo. Tus datos de usuario se conservan si ya tenías una versión anterior."
   !define MUI_FINISHPAGE_TITLE "Nova se ha instalado"
@@ -21,6 +21,7 @@
   WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nova\DefaultIcon" "" '$INSTDIR\${APP_EXECUTABLE_FILENAME},0'
   WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nova\shell\open\command" "" '"$INSTDIR\${APP_EXECUTABLE_FILENAME}"'
   WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nova\Capabilities" "ApplicationName" "Nova"
+  WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nova\Capabilities" "ApplicationIcon" '$INSTDIR\${APP_EXECUTABLE_FILENAME},0'
   WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nova\Capabilities" "ApplicationDescription" "Navegador web moderno basado en Chromium"
   WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nova\Capabilities\URLAssociations" "http" "NovaURL"
   WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nova\Capabilities\URLAssociations" "https" "NovaURL"

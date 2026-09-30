@@ -1,6 +1,6 @@
-ACTUALIZAR A 1.5.2 (sin admin ni terminal)
+ACTUALIZAR A 1.6.0 (sin admin ni terminal)
 1. Extrae el zip (clic derecho > Extraer todo) y entra en la carpeta "nova".
 2. En tu repo de GitHub: Add file > Upload files. Ctrl+A dentro de "nova" y arrastra TODO. Commit changes.
 3. IMPORTANTE: abre .github/workflows/build.yml en GitHub (lapiz), borra todo su contenido, pega el de COPIA-build.yml y haz Commit.
-   (solo hay que hacerlo una vez; asi el release se llama Nova 1.5.2 y sube tambien latest.yml)
-4. Espera 5-8 min y mira Releases: Nova-Setup-1.5.2.exe y Nova-Portable-1.5.2.exe (deben pesar decenas de MB).
+   (solo hay que hacerlo una vez; asi el release se llama Nova 1.6.0 y sube tambien latest.yml)
+4. Espera 5-8 min y mira Releases: Nova-Setup-1.6.0.exe y Nova-Portable-1.6.0.exe (deben pesar decenas de MB).
