@@ -12,6 +12,8 @@ let win, splash, splashAt = 0, pendingUrl = null;
 const EXT = require('./shell/extensions.js');
 const { createMigrationService } = require('./migration.js');
 const migration = createMigrationService(app);
+const { createAccountService } = require('./account-service.js');
+const accounts = createAccountService({ app, safeStorage, fetch });
 const LOGOS = ['classic', 'orbita', 'estrella', 'cometa', 'minimal'], SPLASH_MS = 1800;
 const logoId = id => (LOGOS.includes(id) ? id : 'classic');
 const logoIco = id => path.join(__dirname, `assets/logos/${logoId(id)}.ico`);      // dentro del paquete (asar)
@@ -172,6 +174,7 @@ function createMain() {
   win.on('page-title-updated', e => e.preventDefault());
   win.webContents.on('will-navigate', e => e.preventDefault());
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  win.webContents.on('before-input-event', (e, input) => { if (input.type === 'keyDown' && input.key === 'F12') { e.preventDefault(); try { win.webContents.toggleDevTools(); } catch { } } });
   win.webContents.on('render-process-gone', () => { setTimeout(() => { try { if (win && !win.isDestroyed()) win.reload(); } catch { } }, 800); });
   win.webContents.on('context-menu', (e, p) => {
     if (!p.isEditable && !p.selectionText) return; const w = win.webContents;
@@ -261,6 +264,8 @@ app.whenReady().then(() => {
     c.on('will-navigate', (e, url) => { if (!allowNavigation(url)) e.preventDefault(); });
     c.on('will-redirect', (e, url) => { if (!allowNavigation(url)) e.preventDefault(); });
     c.setWindowOpenHandler(({ url }) => { if (/^(https?:)/i.test(url)) win.webContents.send('open-tab', url); return { action: 'deny' }; });
+
+    c.on('before-input-event', (e, input) => { if (input.type === 'keyDown' && input.key === 'F12') { e.preventDefault(); try { c.toggleDevTools(); } catch { } } });
 
     c.on('context-menu', (e, p) => {
       const T = [], nav = c.navigationHistory, send = (ch, d) => win.webContents.send(ch, d);
@@ -390,6 +395,13 @@ ipcMain.handle('update-check', async e => {
     return { ok: true, current: app.getVersion(), latest, newer: parse(latest) > parse(app.getVersion()), url: /^https:\/\/github\.com\/sdraiky99\/NovaBrowser\/releases\/tag\/v?[0-9A-Za-z._-]+$/.test(String(d.html_url || '')) ? d.html_url : 'https://github.com/sdraiky99/NovaBrowser/releases' };
   } catch { return { ok: false }; }
 });
+/* ---------- Cuenta Nova: registro, inicio de sesión y sincronización ---------- */
+ipcMain.handle('account-status', e => denyUntrusted(e) ? { loggedIn:false, id:'', username:'' } : accounts.status());
+ipcMain.handle('account-register', async (e, data) => { if (denyUntrusted(e) || !data || typeof data !== 'object') return { ok:false, error:'Solicitud no válida.' }; return accounts.register(data.username, data.password); });
+ipcMain.handle('account-login', async (e, data) => { if (denyUntrusted(e) || !data || typeof data !== 'object') return { ok:false, error:'Solicitud no válida.' }; return accounts.login(data.username, data.password); });
+ipcMain.handle('account-logout', e => denyUntrusted(e) ? { ok:false, error:'Solicitud no válida.' } : accounts.logout());
+ipcMain.handle('account-sync', async (e, data) => { if (denyUntrusted(e) || !data || typeof data !== 'object') return { ok:false, error:'Datos no válidos.' }; return accounts.sync(data); });
+
 ipcMain.handle('migration-scan', e => { if (denyUntrusted(e)) return []; try { return migration.scan(); } catch { return []; } });
 ipcMain.handle('migration-read', async (e, data) => {
   if (denyUntrusted(e) || !data || typeof data !== 'object' || typeof data.id !== 'string' || data.id.length > 64) return { error: 'Solicitud no válida.' };

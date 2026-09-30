@@ -1,4 +1,26 @@
+# Nova 2.0.0
+
+- Nova Study
+- Workspaces
+- Modo lectura
+- Rendimiento/RAM
+- Seguridad y accesibilidad
+- Bienvenida, Novedades e instalador renovados
+- 34 extensiones
+
 # Changelog
+
+## 1.6.5
+
+- Perfiles de Nova con sesiones web persistentes separadas, cambio rápido, creación, edición y eliminación.
+- La sesión web de cada perfil usa una partición persistente distinta; los perfiles no mezclan cookies ni almacenamiento web.
+- F12 abre y cierra las herramientas de desarrollador de la pestaña activa; también queda disponible desde Ajustes/Command Center.
+- Cuenta Nova añadida en Ajustes, con identificador del tipo `usuario@Nova.com`.
+- Inicio de sesión persistente mediante token protegido con `safeStorage` en cada equipo.
+- Sincronización online entre PCs para marcadores, historial y preferencias compatibles.
+- El servidor de cuentas fusiona datos en vez de reemplazarlos para reducir pérdidas al conectar varios equipos.
+- Las contraseñas guardadas del navegador, cookies y la clave de Nova IA quedan fuera de la sincronización.
+- Servicio de cuentas incluido en `account-server/` para desplegar detrás de HTTPS.
 
 ## 1.6.4
 

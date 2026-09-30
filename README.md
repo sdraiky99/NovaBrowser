@@ -13,3 +13,10 @@ Nova incorpora validación de IPC, aislamiento de `webview`, restricciones de na
 ## Nova 1.6.4
 
 Esta actualización añade una barra de marcadores inferior opcional, menú contextual de marcadores y carpetas, bienvenida visual, importación y migración desde Chrome/Edge/Firefox, Centro de Rendimiento/RAM, modo opcional de ahorro de memoria y nuevas extensiones de seguridad, privacidad y rendimiento. La migración trabaja en modo solo lectura y no modifica el navegador de origen.
+
+## Nova 2.0.0
+
+Esta versión conserva las funciones anteriores y añade: perfiles con sesiones separadas, F12/DevTools y Cuenta Nova con sincronización online. El cliente no sincroniza contraseñas guardadas, cookies ni la clave de Nova IA.
+
+### Cuenta Nova
+El proyecto incluye un servicio de referencia en `account-server/`. Para usar cuentas online reales, ese servicio debe desplegarse detrás de HTTPS y `account-config.json` debe apuntar a su API. El identificador mostrado por Nova usa el formato `usuario@Nova.com`.
