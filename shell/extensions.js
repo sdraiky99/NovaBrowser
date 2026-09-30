@@ -63,6 +63,17 @@ const CATALOG = [
     css: 'a[data-nx-http]{outline:1px dashed #d89020!important;outline-offset:2px!important}',
     js: `const f=()=>document.querySelectorAll('a[href^="http:"]').forEach(a=>a.setAttribute('data-nx-http','1'));f();const o=new MutationObserver(()=>{clearTimeout(o.t);o.t=setTimeout(f,500)});o.observe(document.documentElement,{childList:true,subtree:true});H.off=()=>{o.disconnect();document.querySelectorAll('a[data-nx-http]').forEach(a=>a.removeAttribute('data-nx-http'))}` }
 
+  , { id: 'anti-ping', name: 'Bloquear pings de enlaces', cat: 'Privacidad', desc: 'Desactiva el atributo ping de enlaces para reducir solicitudes de seguimiento al navegar.',
+    js: `document.querySelectorAll('a[ping]').forEach(a=>a.removeAttribute('ping'));const o=new MutationObserver(()=>document.querySelectorAll('a[ping]').forEach(a=>a.removeAttribute('ping')));o.observe(document.documentElement,{childList:true,subtree:true});H.off=()=>o.disconnect();` }
+  , { id: 'referer-estricto', name: 'Referencia de navegación estricta', cat: 'Privacidad', desc: 'Pide una política de referencia más limitada para enlaces y recursos de la página.',
+    js: `const m=document.createElement('meta');m.name='referrer';m.content='strict-origin-when-cross-origin';(document.head||document.documentElement).appendChild(m);H.off=()=>m.remove()` }
+  , { id: 'enfoque', name: 'Modo enfoque', cat: 'Lectura', desc: 'Atenúa barras laterales, recomendaciones y elementos secundarios de páginas conocidas sin ocultar el contenido principal.',
+    css: 'aside,[role="complementary"],[class*="sidebar"],[class*="recommend"],[class*="suggested"],[class*="trending"],[class*="related"]{opacity:.18!important;transition:opacity .2s!important}aside:hover,[role="complementary"]:hover,[class*="sidebar"]:hover{opacity:1!important}' }
+  , { id: 'imagenes-ligeras', name: 'Imágenes ligeras', cat: 'Rendimiento', desc: 'Reduce la prioridad visual de imágenes grandes que todavía no están a la vista.',
+    js: `const io=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting){try{e.target.loading='lazy'}catch{}}}),{rootMargin:'250px'});const f=()=>document.querySelectorAll('img').forEach(i=>io.observe(i));f();const o=new MutationObserver(()=>{clearTimeout(o.t);o.t=setTimeout(f,500)});o.observe(document.documentElement,{childList:true,subtree:true});H.off=()=>{io.disconnect();o.disconnect()}` }
+  , { id: 'sin-pantallas-automaticas', name: 'No activar pantalla automáticamente', cat: 'Privacidad', desc: 'Reduce peticiones de despertar pantalla de páginas que intenten mantenerla activa.',
+    js: `const old=navigator.wakeLock?.request;if(!old)return;try{Object.defineProperty(navigator,'wakeLock',{configurable:true,value:{request:()=>Promise.reject(new DOMException('Bloqueado por Nova','NotAllowedError'))}})}catch{}H.off=()=>{}` }
+
 ];
 const byId = id => CATALOG.find(x => x.id === id);
 const q = s => JSON.stringify(s);

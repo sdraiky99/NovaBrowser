@@ -1,3 +1,9 @@
+# Nova 2.1.0
+
+- Nova Tab como hub central de Study, Workspaces, pestañas, notas, PDF, rendimiento, seguridad, perfiles, Sync, extensiones y Media Hub.
+- Study 2.1 con controles de Tutor, Examen, contexto y enfoque.
+- Nova Turbo, gestor de pestañas, memoria local y acciones rápidas.
+
 # Nova 2.0.0
 
 - Nova Study

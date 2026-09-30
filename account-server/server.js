@@ -55,6 +55,12 @@ function mergeSync(oldData, nextData) {
     merged.folders = [...new Set([...(Array.isArray(os.folders)?os.folders:[]), ...(Array.isArray(ns?.folders)?ns.folders:[])])].slice(0,1000);
     merged.quick = mergeBy(os.quick, ns?.quick, 'u').slice(0, 100);
     merged.notesL = mergeBy(os.notesL, ns?.notesL, 'id').slice(-2000);
+    if (os.v200 || ns?.v200) {
+      const ov = (os.v200 && typeof os.v200 === 'object') ? os.v200 : {};
+      const nv = (ns?.v200 && typeof ns.v200 === 'object') ? ns.v200 : {};
+      const workspaces = mergeBy(ov.workspaces, nv.workspaces, 'id').slice(0, 50);
+      merged.v200 = Object.assign({}, ov, nv, { workspaces });
+    }
     out.stores[id] = merged;
   }
   return out;

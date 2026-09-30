@@ -1,15 +1,15 @@
-; Nova 1.6.4 - instalador: textos, presentación animada y registro como navegador.
+; Nova 2.1.0 - instalador: textos, presentación animada y registro como navegador.
 ; Si la compilación falla por la presentación animada, añade la línea siguiente al principio de este archivo:
 ;   !define NOVA_NO_ANIM
 ; (el flujo de GitHub Actions lo hace solo si el primer intento falla).
 
 !macro customHeader
-  BrandingText "Nova Browser 1.6.4"
+  BrandingText "Nova Browser 2.0.0"
   !define MUI_WELCOMEPAGE_TITLE "Bienvenido a Nova"
-  !define MUI_WELCOMEPAGE_TEXT "Un navegador rápido, moderno y privado.$\r$\n$\r$\nEste asistente instalará Nova en tu equipo en menos de un minuto. No necesitas permisos de administrador y tus datos se conservan si ya tenías una versión anterior."
+  !define MUI_WELCOMEPAGE_TEXT "La gran actualización de Nova: Study, espacios de trabajo, rendimiento y seguridad.$\r$\n$\r$\nEste asistente instalará Nova en tu equipo en menos de un minuto. No necesitas permisos de administrador y tus datos se conservan si ya tenías una versión anterior."
   !define MUI_DIRECTORYPAGE_TEXT_TOP "Elige la carpeta donde se instalará Nova. Se instala solo para tu usuario, por lo que no se piden permisos de administrador."
   !define MUI_FINISHPAGE_TITLE "Nova está listo"
-  !define MUI_FINISHPAGE_TEXT "La instalación ha finalizado correctamente.$\r$\n$\r$\nAl abrir Nova por primera vez te guiaremos con una configuración rápida y una guía de uso de menos de un minuto. Para usarlo como navegador predeterminado, abre el menú y elige «Navegador predeterminado»."
+  !define MUI_FINISHPAGE_TEXT "La instalación ha finalizado correctamente.$\r$\n$\r$\nAl abrir Nova por primera vez verás un centro de bienvenida renovado, Nova Study y un recorrido rápido por las nuevas funciones. Para usarlo como navegador predeterminado, abre el menú y elige «Navegador predeterminado»."
   !define MUI_UNCONFIRMPAGE_TEXT_TOP "Nova se quitará de tu equipo. Tu historial, marcadores y ajustes se conservan por si decides volver a instalarlo."
 !macroend
 
@@ -32,7 +32,7 @@
   FunctionEnd
 
   Function NovaWelcomeShow
-    !insertmacro MUI_HEADER_TEXT "Bienvenido a Nova" "Un navegador rápido, moderno y privado."
+    !insertmacro MUI_HEADER_TEXT "Bienvenido a Nova" "La gran actualización de Nova: Study, espacios de trabajo, rendimiento y seguridad."
     InitPluginsDir
     File "/oname=$PLUGINSDIR\nova-slide1.bmp" "${BUILD_RESOURCES_DIR}\slide1.bmp"
     File "/oname=$PLUGINSDIR\nova-slide2.bmp" "${BUILD_RESOURCES_DIR}\slide2.bmp"

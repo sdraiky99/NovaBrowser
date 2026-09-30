@@ -24,10 +24,34 @@ body.t-safari input{border-radius:12px;background:#fff;box-shadow:0 1px 3px rgba
 body.t-safari a.c,body.t-safari .box{background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.06)}
 body.t-safari a.c.acc{background:var(--acc);color:#fff}
 @keyframes up{from{opacity:0;transform:translateY(16px)}}@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+
+#nova21{width:100%;display:flex;flex-direction:column;gap:10px;margin-top:2px}
+#nova21 .n21head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+#nova21 .n21title{font-size:15px;font-weight:700;color:var(--acc)}
+#nova21 .n21grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px}
+#nova21 a.c{min-height:42px;display:grid;place-items:center;text-align:center}
+#nova21 .n21hot{background:linear-gradient(135deg,var(--acc),color-mix(in srgb,var(--acc2) 45%,var(--acc)));border-color:transparent;color:#fff}
+#nova21 .n21more{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
+#nova21 .n21box{padding:10px 12px;background:color-mix(in srgb,var(--bar) 92%,transparent);border:1px solid var(--bd);border-radius:var(--r);min-height:66px}
+#nova21 .n21box b{display:block;margin-bottom:3px}
+body.hasbg #nova21 .n21box{background:#121021b8}
+@media(max-width:600px){#nova21{gap:8px}#nova21 .n21more{grid-template-columns:1fr 1fr}}
 </style></head><body><div id="bg"></div>
 <main><div id="clock"></div><img class="logo" src="../assets/icon.png"><h1>Nova</h1><div class="sub">¿Qué quieres hacer?</div>
 <form id="f"><input id="s" placeholder="Busca o escribe una dirección" autofocus></form>
-<div class="q" id="quick"></div><div class="q" id="tools"></div><div class="box" id="recent" hidden></div></main>
+<div class="q" id="quick"></div><div class="q" id="tools"></div>
+<section id="nova21" aria-label="Centro Nova 2.1">
+  <div class="n21head"><span class="n21title">Nova 2.1 · Centro rápido</span><span class="sub">Todo desde Nova Tab</span></div>
+  <div class="n21grid">
+    <a class="c n21hot" href="#nova/study">🎓 Study</a><a class="c" href="#nova/hub">✦ Centro 2.1</a><a class="c" href="#nova/pestanas">▤ Pestañas</a><a class="c" href="#nova/workspaces">▦ Espacios</a><a class="c" href="#nova/notas">📝 Notas</a><a class="c" href="#nova/pdf">📄 PDFs</a><a class="c" href="#nova/rendimiento">⚡ Turbo / RAM</a><a class="c" href="#nova/seguridad">🛡 Seguridad</a><a class="c" href="#nova/perfiles">👤 Perfiles</a><a class="c" href="#nova/sync">☁ Sync</a><a class="c" href="#nova/extensiones">🧩 Extensiones</a><a class="c" href="#nova/media">🔊 Media</a>
+  </div>
+  <div class="n21more">
+    <div class="n21box"><b>⚡ Acciones rápidas</b><span class="sub">Study, pestañas, notas, seguridad y más.</span><br><a class="c" href="#nova/acciones">Abrir Command Center</a></div>
+    <div class="n21box"><b>🧠 Memoria local</b><span class="sub">Preferencias opcionales guardadas en este perfil.</span><br><a class="c" href="#nova/memoria">Gestionar memoria</a></div>
+    <div class="n21box"><b>🌐 Migración</b><span class="sub">Trae tus marcadores desde Chrome, Edge o Firefox.</span><br><a class="c" href="#nova/migrar">Migrar navegador</a></div>
+    <div class="n21box"><b>⭐ Marcadores</b><span class="sub">Gestiona favoritos y la barra inferior.</span><br><a class="c" href="#nova/marcadores">Abrir marcadores</a></div>
+  </div>
+</section><div class="box" id="recent" hidden></div></main>
 <script>
 const p=new URLSearchParams(location.search),J=(k,d)=>{try{return JSON.parse(p.get(k)||'')}catch{return d}};
 let th=p.get('t')||'nova';if(th==='system')th=matchMedia('(prefers-color-scheme:light)').matches?'light':'nova';

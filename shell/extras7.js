@@ -4,8 +4,8 @@
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
   const toastSafe = m => { try { toast(m); } catch { } };
   const clone = o => { try { return JSON.parse(JSON.stringify(o)); } catch { return {}; } };
-  const profileKeys = ['theme','search','adblock','anim','sec','wp','marks','mods','memSave','bmbar','convs','groups','folders','quick','dash','notes','notesL','hist','dls','restore','session2','perms'];
-  const syncKeys = ['theme','search','anim','sec','marks','folders','quick','dash','hist','notesL'];
+  const profileKeys = ['theme','search','adblock','anim','sec','wp','marks','mods','memSave','bmbar','convs','groups','folders','quick','dash','notes','notesL','hist','dls','restore','session2','perms','v200','v21'];
+  const syncKeys = ['theme','search','anim','sec','marks','folders','quick','dash','hist','notesL','v200'];
   const profileMeta = () => ({ id:'default', name:'Principal', avatar:'N', createdAt:Date.now() });
   const normalProfileId = v => String(v || '').replace(/[^a-z0-9_-]/gi,'').slice(0,32) || 'default';
   const cleanProfileName = v => String(v || '').replace(/[\u0000-\u001f]/g,'').trim().slice(0,40) || 'Perfil';
@@ -105,7 +105,7 @@
   async function createProfile() {
     const r=await N.dlg?.('Crear perfil',[{label:'Nombre',value:'Nuevo perfil'},{label:'Inicial / avatar',value:'N'}],'Crear'); if(!r)return;
     const id=normalProfileId((r[0]||'nuevo').toLowerCase().replace(/\s+/g,'-')+'-'+Date.now().toString(36)); const p={id,name:cleanProfileName(r[0]),avatar:String(r[1]||r[0]||'P').slice(0,2),createdAt:Date.now()};
-    S.profiles.push(p); S.profileStores[id]={theme:S.theme,search:S.search,anim:S.anim,adblock:S.adblock,sec:S.sec,marks:[],folders:[],quick:[],dash:clone(S.dash),mods:{},memSave:S.memSave,bmbar:S.bmbar,hist:[],groups:{},notesL:[]}; save(); refreshProfilePop(); toastSafe(`Perfil creado: ${p.name}`); await switchProfile(id);
+    S.profiles.push(p); S.profileStores[id]={theme:S.theme,search:S.search,anim:S.anim,adblock:S.adblock,sec:S.sec,marks:[],folders:[],quick:[],dash:clone(S.dash),mods:{},memSave:S.memSave,bmbar:S.bmbar,hist:[],groups:{},notesL:[],v200:clone(S.v200||{})}; save(); refreshProfilePop(); toastSafe(`Perfil creado: ${p.name}`); await switchProfile(id);
   }
   async function editProfile(id) {
     const p=S.profiles.find(x=>x.id===id);if(!p)return;
