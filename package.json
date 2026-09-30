@@ -2,7 +2,7 @@
   "name": "nova-browser",
   "productName": "Nova",
   "version": "1.5.2",
-  "description": "Nova Browser 1.5.2",
+  "description": "Navegador web moderno basado en Chromium",
   "author": "Nova",
   "main": "main.js",
   "scripts": {
@@ -50,9 +50,10 @@
       "runAfterFinish": true,
       "installerSidebar": "build/installerSidebar.bmp",
       "uninstallerSidebar": "build/uninstallerSidebar.bmp",
-      "license": "build/LICENSE.txt",
       "deleteAppDataOnUninstall": false,
-      "uninstallDisplayName": "Nova"
+      "uninstallDisplayName": "Nova Browser",
+      "installerHeader": "build/installerHeader.bmp",
+      "include": "build/installer.nsh"
     },
     "portable": {
       "artifactName": "Nova-Portable-${version}.exe"
@@ -63,6 +64,8 @@
         "owner": "sdraiky99",
         "repo": "NovaBrowser"
       }
-    ]
-  }
+    ],
+    "copyright": "Copyright © 2026 Nova"
+  },
+  "homepage": "https://github.com/sdraiky99/NovaBrowser"
 }

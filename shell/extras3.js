@@ -1,6 +1,6 @@
 /* Nova 1.3.0 - Nova IA real, clic derecho, modo sin conexión, animaciones, pestañas pro */
 (() => {
-const { PG } = NOVA, VER = '1.3.0';
+const { PG } = NOVA, VER = NOVA_VER;
 S.chat = S.chat || [];
 const OFF = (u, e, play) => new URL('offline.html', document.baseURI).href + '?t=' + S.theme + '&a=' + encodeURIComponent(S.acc || '') + (play ? '&play=1' : '&u=' + encodeURIComponent(u) + '&e=' + encodeURIComponent(e || ''));
 

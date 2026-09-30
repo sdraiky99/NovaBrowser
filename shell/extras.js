@@ -9,7 +9,7 @@ Object.assign(P, {
   game: 'M3 9h18v8a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3zM8 12v4M6 14h4', info: 'M12 8h.01M11 12h1v5h1M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18'
 });
 S.hist = S.hist || []; S.dls = S.dls || []; S.notes = S.notes || ''; S.blocked = S.blocked || 0;
-const VERSION = '1.3.0';
+const VERSION = NOVA_VER;
 
 /* ---------- estilos ---------- */
 const st = document.createElement('style');

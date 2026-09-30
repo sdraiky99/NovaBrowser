@@ -8,3 +8,4 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font:var(--f
 button,input,select{font:inherit;color:inherit}
 body.t-neon{--bg:#08010f;--bar:#12041f;--fg:#f5e9ff;--mut:#9d7fc0;--acc:#ff2bd6;--acc2:#00f0ff;--bd:#3a1266;--font:"Segoe UI",system-ui,sans-serif;--r:6px}
 body.t-light{--bg:#f7f7fb;--bar:#ffffff;--fg:#1a1a2e;--mut:#6b6b85;--acc:#6d4aff;--acc2:#00a3c4;--bd:#dcdce8;--font:"Segoe UI",system-ui,sans-serif;--r:10px;--fs:13px}
+body.t-safari{--bg:#f5f5f7;--bar:rgba(255,255,255,.72);--fg:#1d1d1f;--mut:#6e6e73;--acc:#0a84ff;--acc2:#5ac8fa;--bd:rgba(0,0,0,.09);--font:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;--r:9px;--fs:13px}

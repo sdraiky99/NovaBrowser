@@ -12,12 +12,22 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Leer version
+        id: v
+        shell: bash
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
       - run: npm install
       - run: npm run dist
+      - name: Comprobar nombres de los EXE
+        shell: bash
+        run: |
+          ls dist
+          test -f "dist/Nova-Setup-${{ steps.v.outputs.version }}.exe"
+          test -f "dist/Nova-Portable-${{ steps.v.outputs.version }}.exe"
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.5.${{ github.run_number }}
-          name: Nova 1.5.0 (build ${{ github.run_number }})
+          tag_name: v${{ steps.v.outputs.version }}
+          name: Nova ${{ steps.v.outputs.version }}
           files: |
             dist/*.exe
             dist/latest.yml

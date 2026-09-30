@@ -1,6 +1,6 @@
 /* Nova 1.2.0 - ajustes como página, juegos, barra lateral movible, paleta Ctrl+K, novedades */
 (() => {
-const { PG, MENU, sw2, themeGrid, toURL, fmt } = NOVA, VER = '1.5.0', os = require('os');
+const { PG, MENU, sw2, themeGrid, toURL, fmt } = NOVA, VER = NOVA_VER, os = require('os');
 Object.assign(P, { spark: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z' });
 S.hs = S.hs || {}; S.hide = S.hide || {}; S.closed = S.closed || [];
 if (!S.done) S.seen = VER;
@@ -87,6 +87,7 @@ document.addEventListener('keydown', e => { if (!e.ctrlKey) return; if (e.key ==
 
 /* ---------- novedades ---------- */
 const LOG = [
+  ['1.5.2', 'Instalador y tema Safari', ['Instalador renovado con la identidad de Nova, iconos y textos en español', 'Nuevo tema Safari: claro, translúcido y con menos interfaz', 'Arranque más rápido: la ventana ya no espera al splash', 'La versión que ves en Acerca de es siempre la real']],
   ['1.5.0', 'La gran actualización', ['Nova IA 2.0: conversaciones guardadas, contexto de la página, clave cifrada en el sistema', 'Grupos de pestañas con color, arrastrar y soltar, pestañas fijadas y silenciar', 'Marcadores con carpetas, barra, importar y exportar', 'Historial con filtros y borrado por día', 'Gestor de descargas con pausa, velocidad y tiempo restante', 'Centro de privacidad con permisos y limpieza selectiva', 'Notas múltiples con búsqueda', 'Tema Claro y Sistema', 'Avisos de nueva versión', 'Seguridad reforzada: datos web aislados y webviews restringidos']],
   ['1.3.0', '', ['Nova IA de verdad: escribe, pide órdenes ("cambia el tema a neón") y funciona incluso sin clave API', 'Clic derecho en la web: copiar, pegar, guardar imágenes, buscar, explicar y traducir con Nova IA', 'Nova Dino: juego sin conexión cuando falla una página (con agacharse, pájaros y modo noche)', 'Menú contextual de pestañas: fijar, duplicar y cerrar otras', 'Continuar donde lo dejaste (opcional)', 'Muchas más animaciones: barra de carga, ondas al pulsar, cierre de pestañas, paneles y avisos', 'Inicio con efecto parallax']],
   ['1.2.0', '', ['Ajustes en su propia página, con secciones e historial', 'Barra lateral movible: izquierda, derecha o dock flotante en el centro', 'Elige qué iconos muestra la barra y su tamaño', 'Centro de juegos: Nova Snake, Nova Runner y Memoria', 'Paleta de comandos (Ctrl+K) con calculadora incluida', 'Sugerencias mientras escribes en la barra de direcciones', 'Reabrir pestaña cerrada (Ctrl+Shift+T)', 'Nova IA: elige modelo y personalidad', 'Exportar e importar tus ajustes', 'Tipografía personalizable']],

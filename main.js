@@ -48,7 +48,7 @@ app.whenReady().then(() => {
     alwaysOnTop: true, skipTaskbar: true, icon: path.join(__dirname, 'assets/icon.png')
   });
   splash.loadFile('shell/splash.html');
-  setTimeout(createMain, 1900);
+  createMain(); // la ventana se crea ya; el splash se cierra en ready-to-show
 
   const dlMap = new Map(), dlSend = new Map();
   web().on('will-download', (e, item) => {
@@ -126,6 +126,7 @@ ipcMain.on('win', (_, a) => {
   if (a === 'close') win.close();
   if (a === 'full') win.setFullScreen(!win.isFullScreen());
 });
+ipcMain.on('app-version', e => (e.returnValue = app.getVersion()));
 ipcMain.on('userdata', e => (e.returnValue = app.getPath('userData')));
 ipcMain.handle('install-cfg', () => {
   try { return JSON.parse(fs.readFileSync(userFile('install.json'), 'utf8')); } catch { return {}; }

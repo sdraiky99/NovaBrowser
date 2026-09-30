@@ -1,8 +1,8 @@
 /* Nova 1.5 - IA 2.0, grupos de pestañas, marcadores, historial, descargas, notas, privacidad, actualizaciones */
 (() => {
-const { PG, SECT, SEC, row, toURL, fmt, refreshPages, reopen } = NOVA, VER = '1.5.0', REPO = 'sdraiky99/NovaBrowser';
+const { PG, SECT, SEC, row, toURL, fmt, refreshPages, reopen } = NOVA, VER = NOVA_VER, REPO = 'sdraiky99/NovaBrowser';
 const { shell } = require('electron'), os = require('os');
-Object.assign(THEMES, { light: 'Claro', system: 'Sistema' });
+Object.assign(THEMES, { light: 'Claro', system: 'Sistema', safari: 'Safari' });
 
 /* ---------- datos por defecto y migraciones ---------- */
 S.convs = S.convs || []; S.groups = S.groups || []; S.folders = S.folders || []; S.quick = S.quick || [];
@@ -272,12 +272,12 @@ PG.privacidad = r => {
 const nrm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 const md = s => esc(s).replace(/```([\s\S]*?)```/g, '<pre class="cb">$1</pre>').replace(/`([^`\n]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
 const sys = () => 'Eres Nova IA, el asistente integrado del navegador Nova. Responde en el idioma del usuario, breve y claro. ' + (S.persona || '');
-const TH = { 'windows 95': 'win95', win95: 'win95', 95: 'win95', codigo: 'code', code: 'code', undertale: 'undertale', aero: 'aero', neon: 'neon', nova: 'nova', claro: 'light', oscuro: 'nova' };
+const TH = { 'windows 95': 'win95', win95: 'win95', 95: 'win95', codigo: 'code', code: 'code', undertale: 'undertale', aero: 'aero', neon: 'neon', nova: 'nova', claro: 'light', oscuro: 'nova', safari: 'safari' };
 const HELP = 'Puedo ejecutar órdenes:\n• "cambia el tema a neón / claro / oscuro"\n• "barra a la derecha / izquierda / dock"\n• "abre historial / descargas / marcadores / privacidad / juegos / ajustes / notas"\n• "busca gatos graciosos" · "abre youtube.com"\n• "2+2*5" · "qué hora es"\n• "activa modo oscuro" / "desactiva modo oscuro"\n• "captura" · "borra historial"\nPara todo lo demás, charla conmigo.';
 function intent(raw) {
   const q = nrm(raw.trim()); let m;
   if (/^(ayuda|comandos|que puedes hacer)/.test(q)) return HELP;
-  if ((m = q.match(/tema.*?(windows 95|win95|95|codigo|code|undertale|aero|neon|nova|claro|oscuro)\b/))) { const k = TH[m[1]]; S.theme = k; save(); applyTheme(); refreshNT(); return 'Tema cambiado a ' + THEMES[k] + '.'; }
+  if ((m = q.match(/tema.*?(windows 95|win95|95|codigo|code|undertale|aero|neon|safari|nova|claro|oscuro)\b/))) { const k = TH[m[1]]; S.theme = k; save(); applyTheme(); refreshNT(); return 'Tema cambiado a ' + THEMES[k] + '.'; }
   if ((m = q.match(/barra.*(izquierda|derecha|dock|centro)/))) { S.sp = { izquierda: 'left', derecha: 'right', dock: 'dock', centro: 'dock' }[m[1]]; save(); applyTheme(); return 'Barra lateral movida.'; }
   if ((m = q.match(/^(?:abre|abrir|ve a|ir a|muestra|muestrame)\s+(?:el |la |los |las )?(historial|descargas|notas|juegos|ajustes|novedades|acerca|marcadores|privacidad)/))) { newTab('nova://' + m[1]); return 'Abriendo ' + m[1] + '.'; }
   if ((m = q.match(/^(?:abre|abrir|ve a|ir a)\s+(\S+\.\S+)/))) { newTab(toURL(m[1])); return 'Abriendo ' + m[1] + '.'; }
