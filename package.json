@@ -1,7 +1,7 @@
 {
   "name": "nova-browser",
   "productName": "Nova",
-  "version": "1.6.2 BETA",
+  "version": "1.6.1",
   "description": "Navegador web moderno basado en Chromium",
   "author": "Nova",
   "main": "main.js",
@@ -10,11 +10,12 @@
     "dist": "electron-builder --win --publish never"
   },
   "dependencies": {
-    "@ghostery/adblocker-electron": "^2.5.0"
+    "@ghostery/adblocker-electron": "2.18.2",
+    "cross-fetch": "4.1.0"
   },
   "devDependencies": {
-    "electron": "^33.0.0",
-    "electron-builder": "^25.1.8"
+    "electron": "44.4.5",
+    "electron-builder": "26.17.0"
   },
   "build": {
     "appId": "com.nova.browser",

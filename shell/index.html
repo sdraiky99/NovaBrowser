@@ -111,7 +111,7 @@ const AI=`<svg viewBox="0 0 32 32"><defs><linearGradient id="ng" x1="0" y1="0" x
 document.querySelectorAll('[data-w]').forEach(b=>{b.innerHTML=ic({min:'min',max:'max',close:'x'}[b.dataset.w]);b.onclick=()=>ipc.send('win',b.dataset.w)});
 
 const ud=ipc.sendSync('userdata'),NOVA_VER=ipc.sendSync('app-version');
-const S=Object.assign({theme:'nova',search:'https://duckduckgo.com/?q=',adblock:true,anim:true,sec:'videojuegos',wp:'',marks:[],key:'',mods:{}},JSON.parse(localStorage.nova||'{}'));
+let STORED={};try{STORED=JSON.parse(localStorage.nova||'{}')||{}}catch{try{localStorage.removeItem('nova')}catch{}};const S=Object.assign({theme:'nova',search:'https://duckduckgo.com/?q=',adblock:true,anim:true,sec:'videojuegos',wp:'',marks:[],key:'',mods:{}},STORED);
 const save=()=>localStorage.nova=JSON.stringify(S);
 const THEMES={nova:'Nova',win95:'Windows 95',code:'Código',undertale:'Undertale',aero:'Aero'};
 const SECS={coches:'Coches',videojuegos:'Videojuegos',codigo:'Código'};
@@ -126,7 +126,7 @@ let tabs=[],cur=null;
 const NT=()=>pathToFileURL(path.join(__dirname,'newtab.html')).href+'?l='+encodeURIComponent(S.logo||'classic')+'&t='+S.theme+'&s='+encodeURIComponent(S.search)+'&n='+encodeURIComponent(S.name||'')+'&a='+encodeURIComponent(S.acc||'')+'&b='+encodeURIComponent(JSON.stringify((S.marks||[]).slice(0,8)))+'&d='+encodeURIComponent(JSON.stringify(S.dash||{}))+'&r='+encodeURIComponent(JSON.stringify((S.hist||[]).slice(0,6).map(x=>({u:x.u,t:x.t}))))+'&x='+encodeURIComponent(JSON.stringify(S.quick||[]))+'&nd='+((S.dls||[]).length)+(S.wp?'&wp='+encodeURIComponent(pathToFileURL(S.wp).href):'');
 const isNT=u=>u&&u.includes('newtab.html');
 function newTab(u){
-  const wv=document.createElement('webview');wv.setAttribute('allowpopups','');wv.setAttribute('partition','persist:web');wv.src=u||NT();$('#view').appendChild(wv);
+  const wv=document.createElement('webview');wv.setAttribute('partition','persist:web');wv.src=u||NT();$('#view').appendChild(wv);
   const el=document.createElement('div');el.className='tab';el.innerHTML='<img src="../assets/icon.png"><span>Nueva pestaña</span><button class="ib sm">'+ic('x')+'</button>';
   const t={wv,el};tabs.push(t);$('#tabs').appendChild(el);
   el.onmousedown=e=>{if(e.button===1)closeTab(t)};el.onclick=e=>{if(e.target.closest('button'))closeTab(t);else sel(t)};
