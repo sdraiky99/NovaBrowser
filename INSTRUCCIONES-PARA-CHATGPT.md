@@ -1,7 +1,7 @@
-# Instrucciones para ChatGPT: completar el setup de Nova 1.3.0
+# Instrucciones para ChatGPT: completar el setup de Nova 1.5.0
 
 ## PROMPT PARA PEGAR (copia desde aquí)
-Actúa como guía paciente de GitHub y Windows. Te paso el proyecto "Nova" (un navegador basado en Chromium/Electron) y tu misión es que yo termine con el instalador `Nova-Setup-1.3.0.exe` y el portable `Nova-Portable-1.3.0.exe` descargables en la pestaña Releases de mi repositorio https://github.com/sdraiky99/NovaBrowser.
+Actúa como guía paciente de GitHub y Windows. Te paso el proyecto "Nova" (un navegador basado en Chromium/Electron) y tu misión es que yo termine con el instalador `Nova-Setup-1.5.0.exe` y el portable `Nova-Portable-1.5.0.exe` descargables en la pestaña Releases de mi repositorio https://github.com/sdraiky99/NovaBrowser.
 REGLAS: (1) NO tengo administrador, ni CMD, ni PowerShell, ni puedo instalar programas: todo debe hacerse desde el navegador web con clics. (2) Háblame en español, con pasos cortos y numerados, UNA acción cada vez. (3) Después de cada bloque pídeme una captura o que te diga qué veo. (4) Si algo falla, pídeme el texto en rojo del log de Actions antes de proponer cambios. (5) No me pidas comandos de terminal. (6) No inventes botones: si no estás seguro de cómo se llama algo en GitHub, dilo.
 Contexto técnico y procedimiento: sigue el documento de abajo.
 
@@ -9,7 +9,7 @@ Contexto técnico y procedimiento: sigue el documento de abajo.
 Nova es una app Electron (Chromium por dentro). El .exe NO se compila en mi PC: lo compila GitHub Actions (Windows) cada vez que se sube código, y lo publica solo en Releases.
 Estructura correcta en la RAÍZ del repositorio (no dentro de una carpeta "nova"):
 - package.json, main.js, README.md, LEEME-SIN-ADMIN.txt, COPIA-build.yml
-- shell/ (index.html, extras.js, extras2.js, extras3.js, newtab.html, offline.html, splash.html, themes.css)
+- shell/ (index.html, extras.js, extras2.js, extras3.js, extras4.js, newtab.html, offline.html, splash.html, themes.css)
 - assets/ (icon.png, icon.ico, wallpapers/)
 - build/ (installerSidebar.bmp, uninstallerSidebar.bmp, LICENSE.txt, installer.nsh.OPCIONAL)
 - .github/workflows/build.yml  <- imprescindible; sin él no hay compilación
@@ -20,7 +20,7 @@ Estructura correcta en la RAÍZ del repositorio (no dentro de una carpeta "nova"
 3. Comprobar en la página principal del repo que se ven package.json, main.js, shell, assets, build. Si veo una carpeta "nova" que lo contiene todo, está mal: hay que resubir el contenido de dentro.
 4. Comprobar que existe .github/workflows/build.yml. Si no: Add file > Create new file > nombre `.github/workflows/build.yml` > pegar el contenido de COPIA-build.yml > Commit.
 5. Pestaña Actions: debe aparecer "Build Nova". Amarillo = compilando (5-8 min), verde = listo, rojo = fallo.
-6. Repo > Releases (barra derecha) > release más reciente "Nova 1.3.0" > descargar Nova-Portable-1.3.0.exe (recomendado, no instala nada) o Nova-Setup-1.3.0.exe (instala solo para mi usuario, sin admin).
+6. Repo > Releases (barra derecha) > release más reciente "Nova 1.5.0" > descargar Nova-Portable-1.5.0.exe (recomendado, no instala nada) o Nova-Setup-1.5.0.exe (instala solo para mi usuario, sin admin).
 
 ## 3. Diagnóstico
 | Síntoma | Causa probable | Solución |
@@ -42,6 +42,11 @@ Estructura correcta en la RAÍZ del repositorio (no dentro de una carpeta "nova"
 - Instalador: package.json > build.nsis. Hay una página personalizada de NSIS SIN PROBAR en build/installer.nsh.OPCIONAL; solo activarla (renombrar a installer.nsh y añadir "include":"build/installer.nsh" en build.nsis) si el resto ya funciona.
 - Nova IA (extras3.js): entiende órdenes locales (intent()), usa Claude si hay clave API de Anthropic (Ajustes > Nova IA) y si no usa el modo gratuito "Nova Free" (servicio externo text.pollinations.ai, NO verificado: si falla, sugerir clave API o quitar esa función).
 - Clic derecho en webs: main.js (evento context-menu de los webview). Modo sin conexión: shell/offline.html (juego Nova Dino) se carga desde extras3.js al fallar la carga (did-fail-load).
-- Orden de carga de scripts en index.html: extras.js, extras2.js, extras3.js (cada uno envuelve funciones del anterior).
+- Orden de carga en index.html: extras.js, extras2.js, extras3.js, extras4.js (cada uno envuelve funciones del anterior; comparten variables globales de index.html).
+- extras4.js (1.5): Nova IA 2.0, grupos de pestañas, marcadores, historial, descargas, notas, privacidad, avisos de actualización. La clave de Anthropic se guarda cifrada en main.js (safeStorage) y las llamadas a la IA se hacen en main.js (ipc 'ai-ask'); el renderer nunca la lee.
+- Los webviews usan la partición 'persist:web' (datos de navegación aislados de la interfaz). Permisos de sitios y descargas se gestionan en main.js sobre esa sesión.
+- Avisos de actualización: extras4.js consulta la última release de GitHub (por el nombre de los .exe: Nova-Setup-X.Y.Z.exe). No es autoactualización silenciosa.
+- Estado real: NO se ha ejecutado nunca `npm install`, `npm run dist` ni la app en Windows por quien escribió el código. Solo se comprobó sintaxis y que existan los archivos referenciados. Si la compilación o la app fallan, corrige con el log.
+- Si falla la compilación por las opciones de NSIS (sidebar/license), quita esas claves de build.nsis en package.json.
 - Los fondos online vienen de Wikimedia Commons en tiempo de ejecución (necesita internet).
 - Limitación conocida: esta versión nunca se ha ejecutado en Windows por quien la escribió; espera pequeños fallos y corrígelos con el log.

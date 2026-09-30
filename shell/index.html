@@ -103,10 +103,10 @@ function applyTheme(){document.body.className='t-'+S.theme+(S.anim?'':' noanim')
 
 /* ---- Tabs ---- */
 let tabs=[],cur=null;
-const NT=()=>pathToFileURL(path.join(__dirname,'newtab.html')).href+'?t='+S.theme+'&s='+encodeURIComponent(S.search)+'&n='+encodeURIComponent(S.name||'')+'&a='+encodeURIComponent(S.acc||'')+'&b='+encodeURIComponent(JSON.stringify((S.marks||[]).slice(0,8)))+(S.wp?'&wp='+encodeURIComponent(pathToFileURL(S.wp).href):'');
+const NT=()=>pathToFileURL(path.join(__dirname,'newtab.html')).href+'?t='+S.theme+'&s='+encodeURIComponent(S.search)+'&n='+encodeURIComponent(S.name||'')+'&a='+encodeURIComponent(S.acc||'')+'&b='+encodeURIComponent(JSON.stringify((S.marks||[]).slice(0,8)))+'&d='+encodeURIComponent(JSON.stringify(S.dash||{}))+'&r='+encodeURIComponent(JSON.stringify((S.hist||[]).slice(0,6).map(x=>({u:x.u,t:x.t}))))+'&x='+encodeURIComponent(JSON.stringify(S.quick||[]))+'&nd='+((S.dls||[]).length)+(S.wp?'&wp='+encodeURIComponent(pathToFileURL(S.wp).href):'');
 const isNT=u=>u&&u.includes('newtab.html');
 function newTab(u){
-  const wv=document.createElement('webview');wv.setAttribute('allowpopups','');wv.src=u||NT();$('#view').appendChild(wv);
+  const wv=document.createElement('webview');wv.setAttribute('allowpopups','');wv.setAttribute('partition','persist:web');wv.src=u||NT();$('#view').appendChild(wv);
   const el=document.createElement('div');el.className='tab';el.innerHTML='<img src="../assets/icon.png"><span>Nueva pestaña</span><button class="ib sm">'+ic('x')+'</button>';
   const t={wv,el};tabs.push(t);$('#tabs').appendChild(el);
   el.onmousedown=e=>{if(e.button===1)closeTab(t)};el.onclick=e=>{if(e.target.closest('button'))closeTab(t);else sel(t)};
@@ -171,4 +171,4 @@ async function ask(text,shown){if(!text.trim())return;if(!S.key){chat.push({role
   if(panel==='ai')draw()}
 
 (async()=>{if(!localStorage.nova){const c=await ipc.invoke('install-cfg');if(c.theme)S.theme=c.theme;if(c.adblock===false)S.adblock=false;save()}applyTheme();newTab()})();
-</script><script src="extras.js"></script><script src="extras2.js"></script><script src="extras3.js"></script></body></html>
+</script><script src="extras.js"></script><script src="extras2.js"></script><script src="extras3.js"></script><script src="extras4.js"></script></body></html>

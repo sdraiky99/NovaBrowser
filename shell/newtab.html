@@ -1,41 +1,44 @@
 <!doctype html><html><head><meta charset="utf-8"><title>Nova</title>
 <link rel="stylesheet" href="themes.css"><link rel="icon" href="../assets/icon.png">
 <style>
-body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;background:var(--bg)}
+body{display:flex;justify-content:center;align-items:center;overflow:auto;background:var(--bg)}
 #bg{position:fixed;inset:-5%;background:center/cover no-repeat;transition:transform .25s ease-out;z-index:-1}
-main>*{animation:up .7s cubic-bezier(.2,.8,.2,1) both}main>*:nth-child(2){animation-delay:.08s}main>*:nth-child(3){animation-delay:.16s}main>*:nth-child(4){animation-delay:.24s}main>*:nth-child(5){animation-delay:.32s}
-@keyframes up{from{opacity:0;transform:translateY(18px)}}
-body::before{content:"";position:fixed;inset:0;background:linear-gradient(#0006,#0009);z-index:0}
-body.t-win95::before,body.t-aero::before{background:none}
-main{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:20px;width:min(640px,90vw)}
-.logo{width:84px;animation:pop .8s cubic-bezier(.2,1.4,.4,1) both}
-h1{margin:0;font-size:64px;font-weight:200;letter-spacing:.06em;color:var(--fg)}
-form{width:100%}
-input{width:100%;padding:14px 18px;background:var(--bar);border:1px solid var(--bd);border-radius:var(--r);color:var(--fg);outline:none;font-size:16px}
-input:focus{border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 35%,transparent)}
+body.hasbg::before{content:"";position:fixed;inset:0;background:linear-gradient(#0005,#000a);z-index:-1}
+main{display:flex;flex-direction:column;align-items:center;gap:18px;width:min(720px,92vw);padding:30px 0}
+main>*{animation:up .6s cubic-bezier(.2,.8,.2,1) both}main>*:nth-child(2){animation-delay:.06s}main>*:nth-child(3){animation-delay:.12s}main>*:nth-child(4){animation-delay:.18s}main>*:nth-child(5){animation-delay:.24s}main>*:nth-child(6){animation-delay:.3s}
+.logo{width:76px}h1{margin:0;font-size:56px;font-weight:200;letter-spacing:.06em}.sub{color:var(--mut);font-size:16px}#clock{opacity:.85}
+form{width:100%}input{width:100%;padding:14px 18px;background:var(--bar);border:1px solid var(--bd);border-radius:var(--r);color:var(--fg);outline:none;font-size:16px}
+input:focus{border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 30%,transparent)}
 .q{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
-.q a{padding:8px 16px;background:var(--bar);border:1px solid var(--bd);border-radius:var(--r);color:var(--fg);text-decoration:none}
-.q a:hover{border-color:var(--acc);color:var(--acc)}
-body.t-win95 h1,body.t-undertale h1,body.t-code h1{font-weight:700;letter-spacing:0}
-body.t-code h1::before{content:"> ";color:var(--acc)}body.t-code h1::after{content:"_";animation:bl 1s steps(1) infinite}
-body.t-win95 input,body.t-win95 .q a{box-shadow:inset 1px 1px #808080,inset -1px -1px #fff;border:0}
-body.t-win95 h1{text-shadow:1px 1px #fff}
-body.t-undertale input,body.t-undertale .q a{border-width:3px}
+a.c{padding:8px 16px;background:var(--bar);border:1px solid var(--bd);border-radius:var(--r);color:var(--fg);text-decoration:none;transition:transform .15s,border-color .15s}a.c:hover{border-color:var(--acc);color:var(--acc);transform:translateY(-2px)}
+a.c.acc{background:var(--acc);border-color:var(--acc);color:#fff}
+.box{width:100%;background:var(--bar);border:1px solid var(--bd);border-radius:var(--r);padding:12px 16px;display:flex;flex-direction:column;gap:6px}.box b{font-size:13px;color:var(--mut);font-weight:600}
+.box a{color:var(--fg);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.box a:hover{color:var(--acc)}
+body.hasbg .sub,body.hasbg #clock{color:#fff}
+body.t-code h1::before{content:"> ";color:var(--acc)}body.t-win95 h1,body.t-undertale h1,body.t-code h1{font-weight:700;letter-spacing:0}
+body.t-win95 input,body.t-win95 a.c,body.t-win95 .box{box-shadow:inset 1px 1px #808080,inset -1px -1px #fff;border:0}
+body.t-undertale input,body.t-undertale a.c,body.t-undertale .box{border-width:3px}
 body.t-aero{background-image:linear-gradient(160deg,#9fd0f5,#e8f4fd 60%,#b6e0a5)}
-body.t-aero input,body.t-aero .q a{backdrop-filter:blur(8px);box-shadow:inset 0 1px #fff}
-#clock{color:var(--fg);font-size:18px;opacity:.85}
-@keyframes pop{from{transform:scale(.3);opacity:0}}@keyframes bl{50%{opacity:0}}
-@media(prefers-reduced-motion:reduce){*{animation:none!important}}
-</style></head><body>
-<main><img class="logo" src="../assets/icon.png"><h1>Nova</h1><div id="clock"></div>
+@keyframes up{from{opacity:0;transform:translateY(16px)}}@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+</style></head><body><div id="bg"></div>
+<main><div id="clock"></div><img class="logo" src="../assets/icon.png"><h1>Nova</h1><div class="sub">¿Qué quieres hacer?</div>
 <form id="f"><input id="s" placeholder="Busca o escribe una dirección" autofocus></form>
-<div class="q"><a href="https://www.youtube.com">YouTube</a><a href="https://github.com">GitHub</a><a href="https://store.steampowered.com">Steam</a><a href="https://www.wikipedia.org">Wikipedia</a></div></main>
+<div class="q" id="quick"></div><div class="q" id="tools"></div><div class="box" id="recent" hidden></div></main>
 <script>
-const p=new URLSearchParams(location.search);document.body.className='t-'+(p.get('t')||'nova');
-if(p.get('wp')){const b=document.createElement('div');b.id='bg';b.style.backgroundImage=`url("${p.get('wp')}")`;document.body.prepend(b);document.addEventListener('mousemove',e=>{b.style.transform=`translate(${(.5-e.clientX/innerWidth)*24}px,${(.5-e.clientY/innerHeight)*16}px)`})}
-const tick=()=>clock.textContent=(p.get('n')?'Hola, '+p.get('n')+' · ':'')+new Date().toLocaleString('es',{weekday:'long',hour:'2-digit',minute:'2-digit',day:'numeric',month:'long'});tick();setInterval(tick,3e4);
-f.onsubmit=e=>{e.preventDefault();const v=s.value.trim();if(!v)return;
-location.href=/^[\w-]+(\.[\w-]+)+(\/.*)?$/.test(v)||/^https?:\/\//.test(v)?(v.startsWith('http')?v:'https://'+v):(p.get('s')||'https://duckduckgo.com/?q=')+encodeURIComponent(v)};
+const p=new URLSearchParams(location.search),J=(k,d)=>{try{return JSON.parse(p.get(k)||'')}catch{return d}};
+let th=p.get('t')||'nova';if(th==='system')th=matchMedia('(prefers-color-scheme:light)').matches?'light':'nova';
+document.body.classList.add('t-'+th);
 if(p.get('a'))document.body.style.setProperty('--acc',p.get('a'));
-try{const b=JSON.parse(p.get('b')||'[]');if(b.length)document.querySelector('.q').innerHTML=b.map(m=>`<a href="${m.u}">${(m.t||m.u).slice(0,22).replace(/</g,'')}</a>`).join('')}catch{}
+const D=Object.assign({clock:true,search:true,quick:true,recent:true,dl:true,ai:true},J('d',{})),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+if(p.get('wp')){document.body.classList.add('hasbg');const b=document.getElementById('bg');b.style.backgroundImage=`url("${p.get('wp')}")`;document.addEventListener('mousemove',e=>{b.style.transform=`translate(${(.5-e.clientX/innerWidth)*24}px,${(.5-e.clientY/innerHeight)*16}px)`})}
+const clock=document.getElementById('clock');
+if(D.clock){const t=()=>clock.textContent=(p.get('n')?'Hola, '+p.get('n')+' · ':'')+new Date().toLocaleString('es',{weekday:'long',hour:'2-digit',minute:'2-digit',day:'numeric',month:'long'});t();setInterval(t,3e4)}else clock.remove();
+if(!D.search)document.getElementById('f').remove();
+const search=p.get('s')||'https://duckduckgo.com/?q=';
+document.getElementById('f').onsubmit=e=>{e.preventDefault();const v=s.value.trim();if(!v)return;location.href=/^https?:\/\//.test(v)?v:/^[\w-]+(\.[\w-]+)+(\/.*)?$/.test(v)?'https://'+v:search+encodeURIComponent(v)};
+const custom=J('x',[]),marks=J('b',[]),links=custom.length?custom:marks.length?marks:[{t:'YouTube',u:'https://www.youtube.com'},{t:'GitHub',u:'https://github.com'},{t:'Wikipedia',u:'https://www.wikipedia.org'}];
+const quick=document.getElementById('quick');if(D.quick)quick.innerHTML=links.slice(0,12).map(m=>`<a class="c" href="${esc(m.u)}">${esc((m.t||m.u).slice(0,22))}</a>`).join('');else quick.remove();
+const tools=document.getElementById('tools');let h='<a class="c" href="#nova/marcadores">Marcadores</a><a class="c" href="#nova/historial">Historial</a>';
+if(D.dl)h+=`<a class="c" href="#nova/descargas">Descargas${+p.get('nd')?' ('+p.get('nd')+')':''}</a>`;if(D.ai)h+='<a class="c acc" href="#nova/ia">Preguntar a Nova IA</a>';tools.innerHTML=h;
+const rec=J('r',[]),rb=document.getElementById('recent');if(D.recent&&rec.length){rb.hidden=false;rb.innerHTML='<b>Recientes</b>'+rec.map(m=>`<a href="${esc(m.u)}">${esc(m.t||m.u)}</a>`).join('')}
 </script></body></html>

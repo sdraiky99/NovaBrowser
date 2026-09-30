@@ -7,3 +7,4 @@ body.t-aero{--bg:#d6e8f7;--bar:rgba(150,198,240,.55);--fg:#0b2238;--mut:#3d5e7a;
 html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font:var(--fs)/1.4 var(--font);overflow:hidden}
 button,input,select{font:inherit;color:inherit}
 body.t-neon{--bg:#08010f;--bar:#12041f;--fg:#f5e9ff;--mut:#9d7fc0;--acc:#ff2bd6;--acc2:#00f0ff;--bd:#3a1266;--font:"Segoe UI",system-ui,sans-serif;--r:6px}
+body.t-light{--bg:#f7f7fb;--bar:#ffffff;--fg:#1a1a2e;--mut:#6b6b85;--acc:#6d4aff;--acc2:#00a3c4;--bd:#dcdce8;--font:"Segoe UI",system-ui,sans-serif;--r:10px;--fs:13px}

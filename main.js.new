@@ -1,0 +1,251 @@
+const { app, BrowserWindow, ipcMain, session, dialog, Menu, clipboard, shell, safeStorage } = require('electron');
+const path = require('path'), fs = require('fs'), { pathToFileURL } = require('url');
+app.setName('Nova');
+
+const REPO = 'sdraiky99/NovaBrowser';
+const SHELL = pathToFileURL(path.join(__dirname, 'shell') + path.sep).href;
+const single = app.requestSingleInstanceLock();
+let splash, blocker, blockedN = 0;
+
+/* ---------- utilidades ---------- */
+const U = (...p) => path.join(app.getPath('userData'), ...p);
+const readJ = (f, d) => { try { return JSON.parse(fs.readFileSync(U(f), 'utf8')); } catch { return d; } };
+const writeJ = (f, v) => { try { fs.writeFileSync(U(f), JSON.stringify(v)); } catch (e) { console.error(e.message); } };
+const shellWins = () => BrowserWindow.getAllWindows().filter(w => !w.isDestroyed() && w.webContents.getURL().startsWith(SHELL));
+const broadcast = (ch, d) => shellWins().forEach(w => w.webContents.send(ch, d));
+const trusted = e => !!e.senderFrame && e.senderFrame.url.startsWith(SHELL);
+const cmp = (a, b) => { const x = a.split('.').map(Number), y = b.split('.').map(Number); for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0); return 0; };
+
+/* ---------- bloqueador de anuncios ---------- */
+async function setAdblock(on) {
+  try {
+    if (!blocker) {
+      const { ElectronBlocker } = require('@ghostery/adblocker-electron');
+      blocker = await ElectronBlocker.fromPrebuiltAdsAndTrackingLists(fetch);
+      let bt = 0;
+      blocker.on('request-blocked', () => { blockedN++; if (!bt) bt = setTimeout(() => { bt = 0; broadcast('blocked', blockedN); }, 600); });
+    }
+    const ses = session.defaultSession;
+    on ? blocker.enableBlockingInSession(ses) : blocker.disableBlockingInSession(ses);
+  } catch (e) { console.error('Adblock:', e.message); }
+}
+
+/* ---------- permisos (cámara, micro, ubicación, notificaciones) ---------- */
+const PL = { camera: 'la cámara', microphone: 'el micrófono', geolocation: 'tu ubicación', notifications: 'enviarte notificaciones' };
+const ALWAYS = ['fullscreen', 'pointerLock', 'clipboard-sanitized-write'];
+function decide(keys, origin) {
+  const pr = readJ('perms.json', { modes: {}, sites: {} }); let allow = 0;
+  for (const k of keys) {
+    const m = (pr.sites[origin] || {})[k] || pr.modes[k] || 'ask';
+    if (m === 'block') return 'block'; if (m === 'allow') allow++;
+  }
+  return allow === keys.length ? 'allow' : 'ask';
+}
+function setupPermissions() {
+  const ses = session.defaultSession;
+  ses.setPermissionRequestHandler(async (wc, perm, cb, d) => {
+    if (ALWAYS.includes(perm)) return cb(true);
+    const keys = perm === 'media' ? (d.mediaTypes || []).map(t => t === 'video' ? 'camera' : 'microphone') : (perm === 'geolocation' || perm === 'notifications') ? [perm] : [];
+    if (!keys.length) return cb(false);
+    let origin; try { origin = new URL(d.requestingUrl).origin; } catch { return cb(false); }
+    const r = decide(keys, origin); if (r !== 'ask') return cb(r === 'allow');
+    const host = BrowserWindow.fromWebContents(wc.hostWebContents || wc);
+    const res = await dialog.showMessageBox(host, { type: 'question', title: 'Permiso', buttons: ['Permitir', 'Bloquear'], defaultId: 1, cancelId: 1, message: `${origin} quiere usar ${keys.map(k => PL[k]).join(' y ')}`, checkboxLabel: 'Recordar mi decisión para este sitio' });
+    const ok = res.response === 0;
+    if (res.checkboxChecked) { const pr = readJ('perms.json', { modes: {}, sites: {} }); pr.sites[origin] = pr.sites[origin] || {}; keys.forEach(k => pr.sites[origin][k] = ok ? 'allow' : 'block'); writeJ('perms.json', pr); }
+    cb(ok);
+  });
+  ses.setPermissionCheckHandler((wc, perm, origin, d) => {
+    if (ALWAYS.includes(perm)) return true;
+    const k = perm === 'media' ? (d.mediaType === 'video' ? 'camera' : 'microphone') : (perm === 'geolocation' || perm === 'notifications') ? perm : null;
+    return k ? decide([k], origin) === 'allow' : false;
+  });
+}
+
+/* ---------- descargas con pausa / reanudar / cancelar ---------- */
+const dls = new Map();
+function uniq(dir, name) { const ext = path.extname(name), base = path.basename(name, ext); let f = path.join(dir, name), i = 1; while (fs.existsSync(f)) f = path.join(dir, `${base} (${i++})${ext}`); return f; }
+function setupDownloads() {
+  session.defaultSession.on('will-download', (e, item) => {
+    const id = String(Date.now()) + Math.random().toString(36).slice(2, 6), dir = app.getPath('downloads'), f = uniq(dir, item.getFilename());
+    item.setSavePath(f); dls.set(id, item);
+    let lastB = 0, lastT = Date.now(), speed = 0;
+    const push = state => broadcast('dl', { id, name: path.basename(f), path: f, recv: item.getReceivedBytes(), total: item.getTotalBytes(), state, paused: item.isPaused(), speed, url: item.getURL() });
+    push('progressing');
+    item.on('updated', (_, st) => {
+      const now = Date.now(); if (now - lastT >= 500) { speed = (item.getReceivedBytes() - lastB) * 1000 / (now - lastT); lastB = item.getReceivedBytes(); lastT = now; }
+      push(st === 'interrupted' ? 'interrupted' : 'progressing');
+    });
+    item.once('done', (_, st) => { speed = 0; dls.delete(id); push(st === 'completed' ? 'completed' : st === 'cancelled' ? 'cancelled' : 'interrupted'); });
+  });
+}
+ipcMain.on('dl-act', (e, id, act) => {
+  if (!trusted(e)) return; const it = dls.get(id); if (!it) return;
+  if (act === 'pause') it.pause(); if (act === 'resume' && it.canResume()) it.resume(); if (act === 'cancel') it.cancel();
+  const st = it.isPaused() ? 'progressing' : 'progressing';
+  broadcast('dl', { id, name: path.basename(it.getSavePath()), path: it.getSavePath(), recv: it.getReceivedBytes(), total: it.getTotalBytes(), state: st, paused: it.isPaused(), speed: 0, url: it.getURL() });
+});
+const inDownloads = p => typeof p === 'string' && path.resolve(p).startsWith(path.resolve(app.getPath('downloads')));
+ipcMain.handle('dl-open', (e, p) => trusted(e) && inDownloads(p) ? shell.openPath(p) : '');
+ipcMain.on('dl-folder', (e, p) => { if (trusted(e) && inDownloads(p)) shell.showItemInFolder(p); else if (trusted(e)) shell.openPath(app.getPath('downloads')); });
+
+/* ---------- Nova IA (la clave vive cifrada en main, nunca en el renderer) ---------- */
+const MODELS = ['claude-sonnet-4-6', 'claude-haiku-4-5-20251001', 'claude-opus-5-5'];
+const getKey = () => { try { const b = fs.readFileSync(U('ai.key')); return safeStorage.isEncryptionAvailable() ? safeStorage.decryptString(b) : ''; } catch { return ''; } };
+ipcMain.handle('ai-haskey', e => trusted(e) && !!getKey());
+ipcMain.handle('ai-setkey', (e, k) => {
+  if (!trusted(e)) return { ok: false };
+  try {
+    if (!k) { fs.rmSync(U('ai.key'), { force: true }); return { ok: true }; }
+    if (!safeStorage.isEncryptionAvailable()) return { ok: false, error: 'El cifrado del sistema no está disponible.' };
+    fs.writeFileSync(U('ai.key'), safeStorage.encryptString(String(k).trim())); return { ok: true };
+  } catch (er) { return { ok: false, error: er.message }; }
+});
+const runs = new Map();
+async function freeChat(msgs, system, signal) {
+  const r = await fetch('https://text.pollinations.ai/openai', { method: 'POST', signal, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ model: 'openai', messages: [{ role: 'system', content: system }, ...msgs] }) });
+  if (!r.ok) throw Object.assign(new Error('El servicio gratuito respondió HTTP ' + r.status), { kind: 'api' });
+  const j = await r.json(); return j.choices?.[0]?.message?.content || '';
+}
+async function claudeStream(key, model, system, msgs, signal, onText) {
+  const r = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', signal, headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' }, body: JSON.stringify({ model, max_tokens: 2000, system, messages: msgs, stream: true }) });
+  if (!r.ok) { const t = await r.text(); let m = t; try { m = JSON.parse(t).error.message; } catch { } throw Object.assign(new Error(m), { kind: 'api' }); }
+  const rd = r.body.getReader(), dec = new TextDecoder(); let buf = '';
+  for (; ;) {
+    const { done, value } = await rd.read(); if (done) break; buf += dec.decode(value, { stream: true });
+    let i; while ((i = buf.indexOf('\n\n')) >= 0) {
+      const ev = buf.slice(0, i); buf = buf.slice(i + 2);
+      const line = ev.split('\n').find(l => l.startsWith('data: ')); if (!line) continue;
+      let j; try { j = JSON.parse(line.slice(6)); } catch { continue; }
+      if (j.type === 'error') throw Object.assign(new Error(j.error?.message || 'Error de la API'), { kind: 'api' });
+      if (j.type === 'content_block_delta' && j.delta?.text) onText(j.delta.text);
+    }
+  }
+}
+ipcMain.handle('ai-stream', (e, { id, msgs, model, system } = {}) => {
+  if (!trusted(e) || typeof id !== 'string' || !Array.isArray(msgs)) return false;
+  const wc = e.sender, ac = new AbortController(); runs.set(id, ac);
+  const out = (ch, d) => { if (!wc.isDestroyed()) wc.send(ch, { id, ...d }); };
+  (async () => {
+    try {
+      const m = msgs.slice(-20).map(x => ({ role: x.role === 'assistant' ? 'assistant' : 'user', content: String(x.content).slice(0, 60000) }));
+      const sys = String(system || '').slice(0, 30000), key = getKey();
+      if (key) await claudeStream(key, MODELS.includes(model) ? model : MODELS[0], sys, m, ac.signal, t => out('ai-chunk', { text: t }));
+      else out('ai-chunk', { text: await freeChat(m, sys, ac.signal) });
+      out('ai-done', {});
+    } catch (er) {
+      if (ac.signal.aborted) return out('ai-done', { stopped: true });
+      const off = er instanceof TypeError || /fetch failed|network|ENOTFOUND|ECONN|ETIMEDOUT/i.test(er.message);
+      out('ai-error', { msg: off ? 'Sin conexión a internet.' : er.message, kind: off ? 'offline' : (er.kind || 'api') });
+    } finally { runs.delete(id); }
+  })();
+  return true;
+});
+ipcMain.on('ai-cancel', (e, id) => { if (trusted(e)) runs.get(id)?.abort(); });
+
+/* ---------- ventanas, seguridad y menús ---------- */
+function guestSetup(c) {
+  const host = () => { try { return BrowserWindow.fromWebContents(c.hostWebContents); } catch { return null; } };
+  const send = (ch, d) => { const h = host(); if (h && !h.isDestroyed()) h.webContents.send(ch, d); };
+  const okUrl = u => /^https?:/i.test(u) || u.startsWith(SHELL) || u === 'about:blank';
+  c.setWindowOpenHandler(({ url }) => { if (/^https?:/i.test(url)) send('open-tab', url); return { action: 'deny' }; });
+  const nav = (e, u) => { if (okUrl(u)) return; e.preventDefault(); if (/^(mailto|tel):/i.test(u)) shell.openExternal(u); };
+  c.on('will-navigate', nav); c.on('will-redirect', nav);
+  c.on('before-input-event', (e, i) => {
+    if (i.type !== 'keyDown' || !i.control || i.alt) return; const k = i.key;
+    if (k.length === 1 && 'twlfdhjkT'.includes(k)) { e.preventDefault(); return send('key', k); }
+    const combo = (i.shift ? 'shift+' : '') + (k === ' ' ? 'space' : k.toLowerCase());
+    if (['space', 'tab', 'shift+tab', 'r', 'shift+r', 'shift+d', 'shift+b'].includes(combo)) { e.preventDefault(); send('combo', combo); }
+  });
+  c.on('context-menu', (e, p) => {
+    const T = [], nav2 = c.navigationHistory, s = (p.selectionText || '').trim();
+    if (p.linkURL) T.push({ label: 'Abrir enlace en pestaña nueva', click: () => /^https?:/i.test(p.linkURL) && send('open-tab', p.linkURL) }, { label: 'Copiar dirección del enlace', click: () => clipboard.writeText(p.linkURL) }, { type: 'separator' });
+    if (p.mediaType === 'image') T.push({ label: 'Copiar imagen', click: () => c.copyImageAt(p.x, p.y) }, { label: 'Copiar dirección de la imagen', click: () => clipboard.writeText(p.srcURL) }, { label: 'Guardar imagen', click: () => c.downloadURL(p.srcURL) }, { label: 'Abrir imagen en pestaña nueva', click: () => /^https?:/i.test(p.srcURL) && send('open-tab', p.srcURL) }, { type: 'separator' });
+    if (p.isEditable) T.push({ label: 'Cortar', enabled: p.editFlags.canCut, click: () => c.cut() }, { label: 'Copiar', enabled: p.editFlags.canCopy, click: () => c.copy() }, { label: 'Pegar', enabled: p.editFlags.canPaste, click: () => c.paste() }, { label: 'Seleccionar todo', click: () => c.selectAll() }, { type: 'separator' });
+    if (s) {
+      if (!p.isEditable) T.push({ label: 'Copiar', click: () => c.copy() });
+      T.push({ label: 'Preguntar a Nova', click: () => send('sel-ask', s) }, { label: 'Buscar "' + s.slice(0, 24) + (s.length > 24 ? '…' : '') + '"', click: () => send('ctx-search', s) },
+        { label: 'Explicar con Nova IA', click: () => send('ask-ai', { m: 'exp', t: s }) }, { label: 'Traducir con Nova IA', click: () => send('ask-ai', { m: 'tr', t: s }) }, { type: 'separator' });
+    } else if (!p.isEditable) T.push({ label: 'Seleccionar todo', click: () => c.selectAll() }, { type: 'separator' });
+    T.push({ label: 'Atrás', enabled: nav2.canGoBack(), click: () => nav2.goBack() }, { label: 'Adelante', enabled: nav2.canGoForward(), click: () => nav2.goForward() }, { label: 'Recargar', click: () => c.reload() }, { type: 'separator' },
+      { label: 'Copiar dirección de la página', click: () => clipboard.writeText(c.getURL()) }, { label: 'Captura de pantalla', click: () => send('key', 'shot') }, { label: 'Inspeccionar elemento', click: () => c.inspectElement(p.x, p.y) });
+    Menu.buildFromTemplate(T).popup({ window: host() || undefined });
+  });
+}
+
+function createMain() {
+  const w = new BrowserWindow({
+    width: 1280, height: 800, minWidth: 720, minHeight: 480, frame: false, show: false, title: 'Nova',
+    icon: path.join(__dirname, 'assets/icon.png'), backgroundColor: '#0d0b1a',
+    webPreferences: { nodeIntegration: true, contextIsolation: false, webviewTag: true }
+  });
+  w.loadFile('shell/index.html');
+  w.once('ready-to-show', () => { if (splash && !splash.isDestroyed()) splash.close(); w.show(); });
+  w.on('page-title-updated', e => e.preventDefault());
+  const wc = w.webContents;
+  wc.setWindowOpenHandler(() => ({ action: 'deny' }));
+  wc.on('will-navigate', (e, u) => { if (!u.startsWith(SHELL)) e.preventDefault(); });
+  wc.on('will-attach-webview', (e, prefs, params) => {
+    delete prefs.preload; prefs.nodeIntegration = false; prefs.nodeIntegrationInSubFrames = false; prefs.contextIsolation = true; prefs.sandbox = true; prefs.webSecurity = true;
+    if (!(/^https?:/i.test(params.src || '') || String(params.src).startsWith(SHELL) || params.src === 'about:blank')) e.preventDefault();
+  });
+  wc.on('context-menu', (e, p) => {
+    if (!p.isEditable && !p.selectionText) return;
+    Menu.buildFromTemplate([{ label: 'Cortar', enabled: p.editFlags.canCut, click: () => wc.cut() }, { label: 'Copiar', enabled: p.editFlags.canCopy, click: () => wc.copy() }, { label: 'Pegar', enabled: p.editFlags.canPaste, click: () => wc.paste() }, { label: 'Seleccionar todo', click: () => wc.selectAll() }]).popup({ window: w });
+  });
+  return w;
+}
+
+if (!single) app.quit();
+else {
+  app.on('second-instance', () => { const w = shellWins()[0]; if (w) { if (w.isMinimized()) w.restore(); w.focus(); } });
+  app.whenReady().then(() => {
+    Menu.setApplicationMenu(null);
+    const ses = session.defaultSession;
+    ses.setUserAgent(ses.getUserAgent().replace(/\s?Electron\/\S+/i, '').replace(/\s?nova-browser\/\S+/i, '').replace(/\s?Nova\/\S+/i, '') + ' Nova/' + app.getVersion());
+    setupPermissions(); setupDownloads();
+    app.on('web-contents-created', (_, c) => { if (c.getType() === 'webview') guestSetup(c); });
+    splash = new BrowserWindow({ width: 420, height: 420, frame: false, transparent: true, resizable: false, alwaysOnTop: true, skipTaskbar: true, icon: path.join(__dirname, 'assets/icon.png') });
+    splash.loadFile('shell/splash.html');
+    setTimeout(createMain, 1900);
+  });
+}
+
+/* ---------- IPC del shell (todos validan el origen) ---------- */
+const fromE = e => BrowserWindow.fromWebContents(e.sender);
+ipcMain.on('win', (e, a) => { if (!trusted(e)) return; const w = fromE(e); if (!w) return; if (a === 'min') w.minimize(); if (a === 'max') w.isMaximized() ? w.unmaximize() : w.maximize(); if (a === 'close') w.close(); });
+ipcMain.on('new-window', e => { if (trusted(e)) createMain(); });
+ipcMain.on('fullscreen', e => { if (!trusted(e)) return; const w = fromE(e); w && w.setFullScreen(!w.isFullScreen()); });
+ipcMain.handle('opacity', (e, v) => { if (trusted(e)) { const w = fromE(e); w && w.setOpacity(Math.min(1, Math.max(.5, Number(v) || 1))); } });
+ipcMain.on('userdata', e => (e.returnValue = trusted(e) ? app.getPath('userData') : ''));
+ipcMain.handle('install-cfg', e => (trusted(e) ? readJ('install.json', {}) : {}));
+ipcMain.handle('adblock', (e, on) => { if (trusted(e)) return setAdblock(!!on); });
+ipcMain.handle('state-save', (e, s) => { if (trusted(e) && typeof s === 'string' && s.length < 8e6) try { fs.writeFileSync(U('state.json'), s); } catch { } });
+ipcMain.handle('state-load', e => { if (!trusted(e)) return ''; try { return fs.readFileSync(U('state.json'), 'utf8'); } catch { return ''; } });
+ipcMain.handle('save-shot', (e, buf) => { if (!trusted(e)) return ''; const f = path.join(app.getPath('pictures'), `Nova-${Date.now()}.png`); fs.writeFileSync(f, Buffer.from(buf)); return f; });
+ipcMain.handle('pick-wp', async (e, sec) => {
+  if (!trusted(e) || !/^[a-z]+$/.test(String(sec))) return 0;
+  const r = await dialog.showOpenDialog(fromE(e), { filters: [{ name: 'Imágenes', extensions: ['jpg', 'jpeg', 'png', 'webp', 'svg'] }], properties: ['openFile', 'multiSelections'] });
+  if (r.canceled) return 0;
+  const dir = U('wallpapers', sec); fs.mkdirSync(dir, { recursive: true });
+  r.filePaths.forEach(f => fs.copyFileSync(f, path.join(dir, path.basename(f)))); return r.filePaths.length;
+});
+ipcMain.handle('clear', async (e, o) => {
+  if (!trusted(e)) return false; o = o || { cookies: true, cache: true };
+  const st = []; if (o.cookies) st.push('cookies'); if (o.storage) st.push('localstorage', 'indexdb', 'websql', 'serviceworkers', 'cachestorage', 'filesystem');
+  if (st.length) await session.defaultSession.clearStorageData({ storages: st });
+  if (o.cache) await session.defaultSession.clearCache(); return true;
+});
+ipcMain.handle('perm-get', e => (trusted(e) ? readJ('perms.json', { modes: {}, sites: {} }) : {}));
+ipcMain.handle('perm-mode', (e, k, m) => { if (!trusted(e) || !PL[k] || !['allow', 'ask', 'block'].includes(m)) return; const p = readJ('perms.json', { modes: {}, sites: {} }); p.modes[k] = m; writeJ('perms.json', p); });
+ipcMain.handle('perm-site-del', (e, o, k) => { if (!trusted(e)) return; const p = readJ('perms.json', { modes: {}, sites: {} }); if (p.sites[o]) { delete p.sites[o][k]; if (!Object.keys(p.sites[o]).length) delete p.sites[o]; writeJ('perms.json', p); } });
+ipcMain.handle('update-check', async e => {
+  if (!trusted(e)) return { ok: false };
+  try {
+    const r = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, { headers: { 'User-Agent': 'Nova', Accept: 'application/vnd.github+json' } });
+    if (!r.ok) return { ok: false }; const j = await r.json(), v = String(j.tag_name || '').replace(/^v/, '');
+    return { ok: /^\d+\.\d+\.\d+$/.test(v), current: app.getVersion(), latest: v, newer: cmp(v, app.getVersion()) > 0, url: j.html_url };
+  } catch { return { ok: false }; }
+});
+ipcMain.handle('open-external', (e, u) => { if (trusted(e) && typeof u === 'string' && u.startsWith(`https://github.com/${REPO}`)) return shell.openExternal(u); });
+app.on('window-all-closed', () => app.quit());

@@ -106,7 +106,7 @@ function internalTab(u) {
   Object.assign(el, { getURL: () => 'nova://' + name, canGoBack: () => false, canGoForward: () => false, goBack() { }, goForward() { }, reload: () => PG[name](el), loadURL() { }, stopFindInPage() { }, findInPage() { } });
   $('#view').appendChild(el);
   const te = document.createElement('div'); te.className = 'tab';
-  const T = { historial: 'Historial', descargas: 'Descargas', notas: 'Notas', juegos: 'Nova Snake', ajustes: 'Ajustes', acerca: 'Acerca de Nova', novedades: 'Novedades' }[name] || name;
+  const T = { historial: 'Historial', descargas: 'Descargas', notas: 'Notas', juegos: 'Nova Snake', ajustes: 'Ajustes', acerca: 'Acerca de Nova', novedades: 'Novedades', marcadores: 'Marcadores', privacidad: 'Privacidad' }[name] || name;
   te.innerHTML = '<img src="../assets/icon.png"><span>' + T + '</span><button class="ib sm">' + ic('x') + '</button>';
   const t = { wv: el, el: te }; tabs.push(t); $('#tabs').appendChild(te);
   te.onmousedown = e => { if (e.button === 1) closeTab(t); };
@@ -129,7 +129,7 @@ function renderSettings(p) {
   <div class="row"><span>Animaciones de la interfaz</span>${sw2('anim', S.anim)}</div>
   <div class="row"><span>Fondo aleatorio en cada pestaña</span>${sw2('rand', S.rand)}</div>
   <div class="row"><span>Sonidos del tema (Undertale, Win95, Código)</span>${sw2('sound', S.sound)}</div>
-  <h3>Nova IA</h3><span class="mut">Clave API de Anthropic</span><input class="fld" id="ak" type="password" placeholder="sk-ant-…" value="${S.key}">
+  <h3>Nova IA</h3><span class="mut">Clave API de Anthropic</span><input class="fld" id="ak" type="password" placeholder="${S.hasKey ? 'Clave guardada de forma segura' : 'sk-ant-…'}">
   <h3>Privacidad</h3><div class="row"><button class="btn" id="ch">Borrar historial</button><button class="btn" id="cc">Borrar cookies y caché</button></div>
   <button class="btn" id="rs">Restablecer todo Nova</button><span class="mut">Nova ${VERSION} · basado en Chromium ${process.versions.chrome}</span>`;
   const q = s => p.querySelector(s), ap = () => { save(); applyTheme(); };
@@ -138,7 +138,7 @@ function renderSettings(p) {
   q('#rr').oninput = e => { S.r = +e.target.value; ap(); }; q('#ff').oninput = e => { S.fs = +e.target.value; ap(); };
   q('#ar').onclick = () => { delete S.acc; delete S.r; delete S.fs; ap(); refreshNT(); renderSettings(p); };
   q('#nm').onchange = e => { S.name = e.target.value.trim(); save(); refreshNT(); }; q('#hm').onchange = e => { S.home = e.target.value.trim(); save(); };
-  q('#ak').onchange = e => { S.key = e.target.value.trim(); save(); };
+  q('#ak').onchange = e => NOVA.setKey(e.target.value.trim());
   q('#ch').onclick = () => { S.hist = []; save(); toast('Historial borrado'); }; q('#cc').onclick = async () => { await ipc.invoke('clear'); toast('Cookies y caché borrados'); };
   q('#rs').onclick = () => { if (confirm('¿Restablecer todo Nova?')) { localStorage.removeItem('nova'); location.reload(); } };
   p.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { S.theme = b.dataset.t; ap(); refreshNT(); renderSettings(p); });
@@ -190,16 +190,6 @@ function wallsPanel() {
 
 /* ---------- páginas internas ---------- */
 const PG = {
-  historial(r) {
-    r.innerHTML = '<h2>Historial</h2><input class="fld" id="hq" placeholder="Buscar en el historial"><div id="hl" style="display:flex;flex-direction:column;gap:6px"></div>';
-    const l = () => { const q = r.querySelector('#hq').value.toLowerCase(); r.querySelector('#hl').innerHTML = S.hist.filter(h => (h.t + h.u).toLowerCase().includes(q)).slice(0, 200).map((h, i) => `<div class="li" data-u="${esc(h.u)}"><span>${esc(h.t)}</span><span class="mut">${new Date(h.d).toLocaleString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span></div>`).join('') || '<span class="mut">Nada por aquí todavía.</span>'; r.querySelectorAll('.li').forEach(e => e.onclick = () => newTab(e.dataset.u)); };
-    r.querySelector('#hq').oninput = l; l();
-  },
-  descargas(r) {
-    r.innerHTML = '<h2>Descargas</h2>' + (S.dls.map((d, i) => `<div class="li" data-i="${i}"><div style="flex:1;min-width:0"><span style="display:block">${esc(d.name)}</span><div class="row"><div class="pb"><i style="width:${d.total ? d.recv / d.total * 100 : 100}%"></i></div><span class="mut">${d.state === 'progressing' ? fmt(d.recv) : d.state === 'completed' ? 'Listo · ' + fmt(d.total) : 'Cancelada'}</span></div></div></div>`).join('') || '<span class="mut">Aún no has descargado nada. Los archivos se guardan en tu carpeta Descargas.</span>');
-    r.querySelectorAll('.li').forEach(e => e.onclick = () => shell.showItemInFolder(S.dls[e.dataset.i].path));
-  },
-  notas(r) { r.innerHTML = '<h2>Notas</h2><span class="mut">Se guardan solas.</span><textarea class="fld" id="nt2" style="flex:1;min-height:300px;resize:none;font:inherit"></textarea>'; const t = r.querySelector('#nt2'); t.value = S.notes; t.oninput = () => { S.notes = t.value; save(); }; },
   ajustes(r) { renderSettings(r); },
   acerca(r) {
     r.innerHTML = `<div style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px"><img src="../assets/icon.png" width="110"><h2>Nova ${VERSION}</h2><span class="mut">Chromium ${process.versions.chrome} · Electron ${process.versions.electron}</span></div>
@@ -250,7 +240,7 @@ function onboard() {
   };
   r();
 }
-window.NOVA = { PG, MENU, internalTab, sw2, themeGrid, toURL, fmt };
+window.NOVA = { PG, MENU, internalTab, sw2, themeGrid, toURL, fmt, refreshPages };
 applyTheme();
 if (!S.done) setTimeout(onboard, 700);
 })();

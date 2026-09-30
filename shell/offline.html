@@ -16,7 +16,7 @@ canvas{width:min(720px,94vw);border:2px solid var(--bd);border-radius:var(--r);b
 <div class="m" id="tip">Mientras vuelve la conexión, juega: Espacio o ↑ salta · ↓ agacha · clic o toque también salta</div>
 <canvas id="g" width="720" height="200"></canvas>
 <script>
-const p=new URLSearchParams(location.search);document.body.className='t-'+(p.get('t')||'nova');
+const p=new URLSearchParams(location.search);let th=p.get('t')||'nova';if(th==='system')th=matchMedia('(prefers-color-scheme:light)').matches?'light':'nova';document.body.className='t-'+th;
 if(p.get('a'))document.body.style.setProperty('--acc',p.get('a'));
 const orig=p.get('u')||'',play=p.get('play');
 if(play){document.getElementById('err').style.display='none';document.getElementById('tip').textContent='Nova Dino · Espacio o ↑ salta · ↓ agacha';document.title='Nova Dino'}

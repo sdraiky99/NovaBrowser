@@ -1,6 +1,6 @@
 /* Nova 1.2.0 - ajustes como página, juegos, barra lateral movible, paleta Ctrl+K, novedades */
 (() => {
-const { PG, MENU, sw2, themeGrid, toURL, fmt } = NOVA, VER = '1.3.0', os = require('os');
+const { PG, MENU, sw2, themeGrid, toURL, fmt } = NOVA, VER = '1.5.0', os = require('os');
 Object.assign(P, { spark: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z' });
 S.hs = S.hs || {}; S.hide = S.hide || {}; S.closed = S.closed || [];
 if (!S.done) S.seen = VER;
@@ -59,9 +59,9 @@ const setSp = v => { S.sp = v; save(); applyTheme(); };
 function palette() {
   if ($('#pal')) return;
   const ov = document.createElement('div'); ov.className = 'ov'; ov.id = 'pal'; ov.style.alignItems = 'start';
-  ov.innerHTML = '<div class="card" style="margin-top:12vh"><input class="fld" id="pq" placeholder="Acción, pestaña, favorito… o una cuenta (2+2*5)"><div id="pl" style="display:flex;flex-direction:column;gap:4px"></div></div>';
+  ov.innerHTML = '<div class="card" style="margin-top:12vh"><input class="fld" id="pq" placeholder="Nova Command Center · busca una acción, pestaña o cuenta (2+2*5)"><div id="pl" style="display:flex;flex-direction:column;gap:4px"></div></div>';
   document.body.appendChild(ov);
-  const acts = [...MENU.map(m => [m[0].replace(/ \(.*\)/, ''), m[1]]), ['Novedades', () => newTab('nova://novedades')], ['Reabrir pestaña cerrada', reopen], ['Captura de pantalla', () => $('#sh').click()], ['Barra lateral: izquierda', () => setSp('left')], ['Barra lateral: derecha', () => setSp('right')], ['Barra lateral: dock central', () => setSp('dock')], ...Object.entries(THEMES).map(([k, n]) => ['Tema: ' + n, () => { S.theme = k; save(); applyTheme(); refreshNT(); }])];
+  const acts = [...MENU.map(m => [m[0].replace(/ \(.*\)/, ''), m[1]]), ['Novedades', () => newTab('nova://novedades')], ['Reabrir pestaña cerrada', reopen], ['Captura de pantalla', () => $('#sh').click()], ...(NOVA.extraActs || []), ['Barra lateral: izquierda', () => setSp('left')], ['Barra lateral: derecha', () => setSp('right')], ['Barra lateral: dock central', () => setSp('dock')], ...Object.entries(THEMES).map(([k, n]) => ['Tema: ' + n, () => { S.theme = k; save(); applyTheme(); refreshNT(); }])];
   const pq = $('#pq'), pl = $('#pl'); let items = [], ix = 0;
   const show = () => { pl.innerHTML = items.map((it, i) => `<div class="li ${i === ix ? 'pi' : ''}" data-i="${i}"><span>${esc(it[0])}</span></div>`).join(''); pl.querySelectorAll('.li').forEach(e => e.onclick = () => run(+e.dataset.i)); };
   const run = i => { ov.remove(); items[i] && items[i][1](); };
@@ -87,7 +87,8 @@ document.addEventListener('keydown', e => { if (!e.ctrlKey) return; if (e.key ==
 
 /* ---------- novedades ---------- */
 const LOG = [
-  ['1.3.0', 'Actualización actual', ['Nova IA de verdad: escribe, pide órdenes ("cambia el tema a neón") y funciona incluso sin clave API', 'Clic derecho en la web: copiar, pegar, guardar imágenes, buscar, explicar y traducir con Nova IA', 'Nova Dino: juego sin conexión cuando falla una página (con agacharse, pájaros y modo noche)', 'Menú contextual de pestañas: fijar, duplicar y cerrar otras', 'Continuar donde lo dejaste (opcional)', 'Muchas más animaciones: barra de carga, ondas al pulsar, cierre de pestañas, paneles y avisos', 'Inicio con efecto parallax']],
+  ['1.5.0', 'La gran actualización', ['Nova IA 2.0: conversaciones guardadas, contexto de la página, clave cifrada en el sistema', 'Grupos de pestañas con color, arrastrar y soltar, pestañas fijadas y silenciar', 'Marcadores con carpetas, barra, importar y exportar', 'Historial con filtros y borrado por día', 'Gestor de descargas con pausa, velocidad y tiempo restante', 'Centro de privacidad con permisos y limpieza selectiva', 'Notas múltiples con búsqueda', 'Tema Claro y Sistema', 'Avisos de nueva versión', 'Seguridad reforzada: datos web aislados y webviews restringidos']],
+  ['1.3.0', '', ['Nova IA de verdad: escribe, pide órdenes ("cambia el tema a neón") y funciona incluso sin clave API', 'Clic derecho en la web: copiar, pegar, guardar imágenes, buscar, explicar y traducir con Nova IA', 'Nova Dino: juego sin conexión cuando falla una página (con agacharse, pájaros y modo noche)', 'Menú contextual de pestañas: fijar, duplicar y cerrar otras', 'Continuar donde lo dejaste (opcional)', 'Muchas más animaciones: barra de carga, ondas al pulsar, cierre de pestañas, paneles y avisos', 'Inicio con efecto parallax']],
   ['1.2.0', '', ['Ajustes en su propia página, con secciones e historial', 'Barra lateral movible: izquierda, derecha o dock flotante en el centro', 'Elige qué iconos muestra la barra y su tamaño', 'Centro de juegos: Nova Snake, Nova Runner y Memoria', 'Paleta de comandos (Ctrl+K) con calculadora incluida', 'Sugerencias mientras escribes en la barra de direcciones', 'Reabrir pestaña cerrada (Ctrl+Shift+T)', 'Nova IA: elige modelo y personalidad', 'Exportar e importar tus ajustes', 'Tipografía personalizable']],
   ['1.1.0', '', ['Fondos reales desde Wikimedia Commons', 'Tema Neón y asistente de bienvenida', 'Historial, descargas, notas y contador de anuncios bloqueados']],
   ['1.0.0', '', ['Primera versión: 4 temas, Nova IA, bloqueador de anuncios, barra lateral y mods']]
@@ -139,8 +140,9 @@ const SEC = {
     c.querySelector('#hq').oninput = l; c.querySelector('#hc').onclick = () => { S.hist = []; save(); l(); }; l();
   },
   ia: c => {
-    c.innerHTML = '<h2>Nova IA</h2><span class="mut">Clave API de Anthropic</span><input class="fld" type="password" data-set="key" placeholder="sk-ant-…" value="' + S.key + '"><span class="mut">Modelo</span><select class="fld" data-set="model"><option value="claude-sonnet-4-6">Claude Sonnet 4.6 (equilibrado)</option><option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (rápido)</option><option value="claude-opus-5-5">Claude Opus 5.5 (potente)</option></select><span class="mut">Personalidad / instrucciones extra</span><textarea class="fld" data-set="persona" rows="4" placeholder="Ej: Respóndeme como un pirata programador.">' + esc(S.persona || '') + '</textarea>';
+    c.innerHTML = '<h2>Nova IA</h2><span class="mut">Clave API de Anthropic</span><div class="row"><input class="fld" type="password" id="akey" placeholder="' + (S.hasKey ? 'Clave guardada de forma segura' : 'sk-ant-…') + '"><button class="btn" id="akb">Guardar</button></div><span class="mut">Modelo</span><select class="fld" data-set="model"><option value="claude-sonnet-4-6">Claude Sonnet 4.6 (equilibrado)</option><option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (rápido)</option><option value="claude-opus-5-5">Claude Opus 5.5 (potente)</option></select><span class="mut">Personalidad / instrucciones extra</span><textarea class="fld" data-set="persona" rows="4" placeholder="Ej: Respóndeme como un pirata programador.">' + esc(S.persona || '') + '</textarea>';
     c.querySelector('[data-set=model]').value = S.model || 'claude-sonnet-4-6';
+    c.querySelector('#akb').onclick = async () => { await NOVA.setKey(c.querySelector('#akey').value.trim()); again(); };
   },
   datos: (c, again) => {
     c.innerHTML = '<h2>Privacidad y datos</h2><div class="row"><button class="btn" id="d1">Borrar historial</button><button class="btn" id="d2">Borrar cookies y caché</button></div><div class="row"><button class="btn" id="d3">Exportar ajustes</button><label class="btn">Importar ajustes<input type="file" id="d4" accept=".json" hidden></label></div><button class="btn" id="d5" style="align-self:flex-start">Restablecer todo Nova</button><span class="mut">Exportar guarda nova-ajustes.json en tu carpeta Descargas.</span>';
@@ -151,6 +153,7 @@ const SEC = {
     c.querySelector('#d5').onclick = () => { if (confirm('¿Restablecer todo Nova?')) { localStorage.removeItem('nova'); location.reload(); } };
   }
 };
+Object.assign(NOVA, { SECT, SEC, bind, row, seg, reopen });
 PG.ajustes = r => {
   r.innerHTML = `<div style="display:flex;gap:28px;flex-wrap:wrap"><nav style="display:flex;flex-direction:column;gap:6px;min-width:180px">${SECT.map(([k, n]) => `<button class="btn ${k === curSec ? 'on' : ''}" data-k="${k}" style="text-align:left">${n}</button>`).join('')}</nav><div id="sc" style="flex:1;min-width:280px;max-width:640px;display:flex;flex-direction:column;gap:12px"></div></div>`;
   r.querySelectorAll('nav .btn').forEach(b => b.onclick = () => { curSec = b.dataset.k; PG.ajustes(r); });

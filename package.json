@@ -1,8 +1,8 @@
 {
   "name": "nova-browser",
   "productName": "Nova",
-  "version": "1.5.1",
-  "description": "Nova Browser 2.0",
+  "version": "1.5.0",
+  "description": "Nova Browser 1.5.0",
   "author": "Nova",
   "main": "main.js",
   "scripts": {
@@ -56,6 +56,13 @@
     },
     "portable": {
       "artifactName": "Nova-Portable-${version}.exe"
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "sdraiky99",
+        "repo": "NovaBrowser"
+      }
+    ]
   }
 }
