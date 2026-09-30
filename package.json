@@ -1,7 +1,7 @@
 {
   "name": "nova-browser",
   "productName": "Nova",
-  "version": "1.3.0",
+  "version": "1.5.1",
   "description": "Nova Browser 2.0",
   "author": "Nova",
   "main": "main.js",
