@@ -134,6 +134,61 @@ PG.tienda = r => {
   r.querySelectorAll('[data-x]').forEach(e => e.onclick = () => { setExt(e.dataset.x, !extState(e.dataset.x)); ren(); });
 };
 
+/* ================= MIGRACIÓN DE NAVEGADORES ================= */
+let migSources = [];
+const migMerge = (src, data) => {
+  const pref = `Importados/${src.browserName}/${src.profileName}`;
+  const marks = data.bookmarks?.items || [], folders = data.bookmarks?.folders || [];
+  const seenMarks = new Set(S.marks.map(x => x.u)); let nm = 0;
+  folders.forEach(f => { const full = `${pref}/${f}`.replace(/\/+/g, '/'); if (!S.folders.includes(full)) S.folders.push(full); });
+  marks.forEach(m => {
+    if (!m || !/^https?:\/\//i.test(String(m.u || '')) || seenMarks.has(m.u)) return;
+    const f = m.f ? `${pref}/${m.f}`.replace(/\/+/g, '/') : pref;
+    S.marks.push({ u: String(m.u), t: String(m.t || m.u).slice(0, 500), f }); seenMarks.add(m.u); nm++;
+    if (!S.folders.includes(f)) S.folders.push(f);
+  });
+  const hm = new Map(S.hist.map(x => [x.u, x])); let nh = 0;
+  for (const h of (data.history || [])) {
+    if (!h || !/^https?:\/\//i.test(String(h.u || ''))) continue;
+    const old = hm.get(h.u);
+    if (!old) { hm.set(h.u, { u: String(h.u), t: String(h.t || h.u).slice(0, 500), d: Number(h.d) || Date.now() }); nh++; }
+    else if ((Number(h.d) || 0) > (Number(old.d) || 0)) { old.t = String(h.t || old.t).slice(0, 500); old.d = Number(h.d) || old.d; }
+  }
+  S.hist = [...hm.values()].sort((a, b) => (b.d || 0) - (a.d || 0)).slice(0, 500);
+  save(); refreshNT();
+  return { nm, nh };
+};
+const migScan = async () => {
+  try { migSources = await ipc.invoke('migration-scan'); return Array.isArray(migSources) ? migSources : []; }
+  catch { migSources = []; return []; }
+};
+const migLabel = s => `${s.browserName} · ${s.profileName}`;
+PG.migrar = async r => {
+  r.innerHTML = `<h2>Migrar desde otro navegador</h2>
+    <span class="mut">Importa marcadores e historial de Chrome, Edge o Firefox. Nova solo lee los datos y no borra ni modifica el navegador de origen. Para obtener una copia consistente, cierra el navegador antes de importar.</span>
+    <div class="row" style="flex-wrap:wrap"><label class="btn on"><input type="checkbox" id="migb" checked> Marcadores</label><label class="btn on"><input type="checkbox" id="migh" checked> Historial</label><button class="btn" id="migr">Volver a buscar perfiles</button></div>
+    <div id="miglist" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div class="bcard" style="margin-top:4px"><h3>Contraseñas</h3><span class="mut">No se copian automáticamente desde los perfiles. Nova no extrae claves cifradas de Chrome, Edge o Firefox; así se evita exponer credenciales durante la migración.</span></div>`;
+  const list = r.querySelector('#miglist'), btnRefresh = r.querySelector('#migr');
+  const render = () => {
+    list.innerHTML = migSources.length ? migSources.map(s => `<div class="li" style="cursor:default;flex-direction:column"><div class="row"><div style="min-width:0"><b>${esc(migLabel(s))}</b><div class="mut">${s.bookmarks ? 'Marcadores disponibles' : 'Sin marcadores detectados'} · ${s.history ? 'Historial disponible' : 'Sin historial detectado'}</div></div><button class="btn on" data-mi="${s.id}">Importar</button></div></div>`).join('') : '<span class="mut">No se han encontrado perfiles locales de Chrome, Edge o Firefox.</span>';
+    list.querySelectorAll('[data-mi]').forEach(b => b.onclick = async () => {
+      b.disabled = true; b.textContent = 'Importando…';
+      const src = migSources.find(x => x.id === b.dataset.mi), o = { id: b.dataset.mi, bookmarks: r.querySelector('#migb').checked, history: r.querySelector('#migh').checked };
+      if (!o.bookmarks && !o.history) { toast('Selecciona qué quieres migrar'); b.disabled = false; b.textContent = 'Importar'; return; }
+      try {
+        const d = await ipc.invoke('migration-read', o);
+        if (d.error) throw new Error(d.error);
+        const n = migMerge(src, d); toast(`${migLabel(src)} · ${n.nm} marcadores · ${n.nh} entradas de historial importadas`);
+        b.disabled = false; b.textContent = 'Importar de nuevo';
+      } catch (e) { toast('No se pudo importar: ' + (e.message || 'error de lectura')); b.disabled = false; b.textContent = 'Reintentar'; }
+    });
+  };
+  const scan = async () => { btnRefresh.disabled = true; btnRefresh.textContent = 'Buscando…'; await migScan(); render(); btnRefresh.disabled = false; btnRefresh.textContent = 'Volver a buscar perfiles'; };
+  btnRefresh.onclick = scan;
+  await scan();
+};
+
 PG.bienvenida = async r => {
   const st0 = await ipc.invoke('default-browser', false);
   r.innerHTML = `<div style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:10px"><img src="${logoSrc(S.logo)}" width="96"><h2 style="font-size:32px">Bienvenido a Nova</h2><span class="mut">Un navegador rápido, moderno y privado.</span></div>
@@ -142,7 +197,7 @@ PG.bienvenida = async r => {
     : st0.isDefault ? '<span>✓ Nova ya es tu navegador predeterminado.</span>'
     : '<span class="mut">Abre los enlaces de otras aplicaciones directamente en Nova. Se abrirá la configuración de Windows en la página de Nova: pulsa «Establecer como predeterminado».</span><button class="btn on" id="db" style="align-self:flex-start">Hacer Nova mi navegador predeterminado</button>'}</div>
   <div class="bcard"><h3>Hazlo tuyo</h3><span class="mut">Cambia el logotipo, los sonidos y el color de la barra.</span><button class="btn" id="gp" style="align-self:flex-start">Abrir Apariencia</button></div>
-  <div class="bcard"><h3>Extensiones</h3><span class="mut">Añade funciones con la tienda de extensiones de Nova.</span><button class="btn" id="gt" style="align-self:flex-start">Abrir la tienda</button></div>`;
+  <div class="bcard"><h3>Extensiones</h3><span class="mut">Añade funciones con la tienda de extensiones de Nova.</span><button class="btn" id="gt" style="align-self:flex-start">Abrir la tienda</button></div><div class="bcard"><h3>Migrar desde otro navegador</h3><span class="mut">Trae marcadores e historial desde Chrome, Edge o Firefox sin tocar el navegador de origen.</span><button class="btn" id="gm" style="align-self:flex-start">Abrir migrador</button></div>`;
   const b = r.querySelector('#db'); if (b) b.onclick = async () => {
     await ipc.invoke('default-browser', true); toast('Pulsa «Establecer como predeterminado» en Windows');
     let n = 0; const t = setInterval(async () => { // comprueba cada 2 s si ya lo has cambiado (hasta 2 minutos)
@@ -150,13 +205,14 @@ PG.bienvenida = async r => {
       if (st.isDefault) { clearInterval(t); toast('✓ Nova es ahora tu navegador predeterminado'); PG.bienvenida(r); } else if (++n > 60) clearInterval(t);
     }, 2000);
   };
-  r.querySelector('#gp').onclick = () => newTab('nova://personalizar'); r.querySelector('#gt').onclick = () => newTab('nova://tienda');
+  r.querySelector('#gp').onclick = () => newTab('nova://personalizar'); r.querySelector('#gt').onclick = () => newTab('nova://tienda'); r.querySelector('#gm').onclick = () => newTab('nova://migrar');
 };
+NOVA.extraActs = (NOVA.extraActs || []).concat([['Migrar desde Chrome / Edge / Firefox', () => newTab('nova://migrar')]]);
 Object.assign(NOVA, { LG, setLogo });
 NOVA.welcome = () => { S.welcomed = 1; save(); newTab('nova://bienvenida'); };
 
 /* ---------- menú ---------- */
-MENU.splice(5, 0, ['Apariencia y logotipo', () => newTab('nova://personalizar')], ['Tienda de extensiones', () => newTab('nova://tienda')], ['Navegador predeterminado', () => newTab('nova://bienvenida')], ['Guía de inicio', () => NOVA.tour()]);
+MENU.splice(5, 0, ['Apariencia y logotipo', () => newTab('nova://personalizar')], ['Tienda de extensiones', () => newTab('nova://tienda')], ['Migrar desde Chrome / Edge / Firefox', () => newTab('nova://migrar')], ['Navegador predeterminado', () => newTab('nova://bienvenida')], ['Guía de inicio', () => NOVA.tour()]);
 const mp = document.getElementById('mnp'); if (mp) mp.innerHTML = MENU.map((m, i) => `<button data-i="${i}">${m[0]}</button>`).join('');
 
 applyTheme(); syncLogo();

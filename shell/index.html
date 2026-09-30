@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><title>Nova</title>
+<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'self' file: data: blob:; object-src 'none'; base-uri 'none'; frame-src 'self' file:; img-src 'self' file: data: blob: https:; style-src 'self' 'unsafe-inline' file:; script-src 'self' 'unsafe-inline' file:; connect-src 'self' https://api.anthropic.com https://text.pollinations.ai https://api.github.com https://github.com;"><title>Nova</title>
 <link rel="stylesheet" href="themes.css"><link rel="icon" href="../assets/icon.png">
 <style>
 #app{display:flex;flex-direction:column;height:100vh}
@@ -175,8 +175,8 @@ function draw(){
   if(panel==='set'){p.innerHTML=`<h3>Ajustes</h3><span class="mut">Tema (cambia toda la interfaz)</span><div class="grid">${Object.entries(THEMES).map(([k,n])=>`<div class="th ${S.theme===k?'on':''}" data-t="${k}" style="background:var(--bg)">${n}</div>`).join('')}</div>
   <span class="mut">Buscador</span><select class="fld" id="se"><option value="https://duckduckgo.com/?q=">DuckDuckGo</option><option value="https://www.google.com/search?q=">Google</option><option value="https://www.bing.com/search?q=">Bing</option><option value="https://search.brave.com/search?q=">Brave</option></select>
   <div class="row"><span>Bloqueador de anuncios</span>${sw('adblock',S.adblock)}</div><div class="row"><span>Animaciones de la interfaz</span>${sw('anim',S.anim)}</div>
-  <span class="mut">Clave API de Nova IA (Anthropic)</span><input class="fld" id="ak" type="password" placeholder="sk-ant-…" value="${S.key}"><span class="mut">Nova 2.0 · basado en Chromium</span>`;
-    $('#se').value=S.search;$('#se').onchange=e=>{S.search=e.target.value;save()};$('#ak').onchange=e=>{S.key=e.target.value.trim();save()};
+  <span class="mut">Clave API de Nova IA (Anthropic)</span><input class="fld" id="ak" type="password" placeholder="sk-ant-…" value=""><span class="mut">Se guarda cifrada en el almacén seguro del sistema.</span><span class="mut">Nova 2.0 · basado en Chromium</span>`;
+    $('#se').value=S.search;$('#se').onchange=e=>{S.search=e.target.value;save()};$('#ak').onchange=async e=>{const v=e.target.value.trim();if(!v)return;await NOVA.setKey(v);e.target.value='';};
     p.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{S.theme=b.dataset.t;save();applyTheme();refreshNT();draw()});
     p.querySelectorAll('.sw').forEach(s=>s.onclick=()=>{S[s.dataset.k]=!S[s.dataset.k];save();applyTheme();draw()})}
 }

@@ -1,11 +1,8 @@
-# Nova Browser 2.1 — novedades
+# Changelog
 
-- Rediseño del inicio con buscador, accesos rápidos y tarjetas de actividad.
-- Persistencia de sesión real entre reinicios.
-- Gestión avanzada de pestañas: fijar, duplicar, silenciar, reordenar y cerrar por grupos.
-- Descargas con pausa y reanudación.
-- Captura de página y guardado HTML.
-- Sugerencias en la barra de direcciones usando favoritos e historial.
-- Nuevos atajos y paleta de comandos ampliada.
-- Instalador NSIS renovado con branding Nova 2.1.
-- Workflow de GitHub Actions simplificado para publicar Setup y Portable.
+## 1.6.1
+
+- Capa adicional de seguridad y recuperación.
+- Comprobaciones automáticas de sintaxis y dependencias para GitHub.
+- Migración añadida desde perfiles locales de Google Chrome, Microsoft Edge y Mozilla Firefox.
+- La migración importa marcadores e historial sin borrar ni modificar los datos del navegador de origen.

@@ -75,6 +75,7 @@ document.addEventListener('click', () => mp.classList.remove('on'));
 const zoom = d => { try { cur.wv.setZoomLevel(cur.wv.getZoomLevel() + d); } catch { } };
 let lastB = 0;
 ipc.on('blocked', (_, n) => { S.blocked += n - lastB; lastB = n; save(); bl.querySelector('b').textContent = S.blocked.toLocaleString('es'); });
+ipc.on('tab-health', (_, d) => { if (d?.type === 'unresponsive') toast('Una pestaña se ha quedado bloqueada; Nova la está recuperando.'); });
 ipc.on('dl', (_, d) => { const i = S.dls.findIndex(x => x.id === d.id); i < 0 ? S.dls.unshift(d) : Object.assign(S.dls[i], d); S.dls = S.dls.slice(0, 100); if (d.state !== 'progressing') { save(); toast('Descarga: ' + d.name); } refreshPages('descargas'); });
 const keyx = k => { if (k === 'h') newTab('nova://historial'); if (k === 'j') newTab('nova://descargas'); };
 ipc.on('key', (_, k) => keyx(k));

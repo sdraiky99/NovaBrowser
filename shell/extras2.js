@@ -148,9 +148,9 @@ const SEC = {
     c.querySelector('#akb').onclick = async () => { await NOVA.setKey(c.querySelector('#akey').value.trim()); again(); };
   },
   datos: (c, again) => {
-    c.innerHTML = '<h2>Privacidad y datos</h2><div class="row"><button class="btn" id="d1">Borrar historial</button><button class="btn" id="d2">Borrar cookies y caché</button></div><div class="row"><button class="btn" id="d3">Exportar ajustes</button><label class="btn">Importar ajustes<input type="file" id="d4" accept=".json" hidden></label></div><button class="btn" id="d5" style="align-self:flex-start">Restablecer todo Nova</button><span class="mut">Exportar guarda nova-ajustes.json en tu carpeta Descargas.</span>';
+    c.innerHTML = '<h2>Privacidad y datos</h2><div class="row"><button class="btn" id="d1">Borrar historial</button><button class="btn" id="d2">Borrar cookies y caché</button></div><div class="row"><button class="btn" id="d3">Exportar ajustes</button><label class="btn">Importar ajustes<input type="file" id="d4" accept=".json" hidden></label><button class="btn on" id="dm">Migrar navegador</button></div><button class="btn" id="d5" style="align-self:flex-start">Restablecer todo Nova</button><span class="mut">Exportar guarda nova-ajustes.json en tu carpeta Descargas.</span>';
     c.querySelector('#d1').onclick = () => { S.hist = []; save(); toast('Historial borrado'); };
-    c.querySelector('#d2').onclick = async () => { await ipc.invoke('clear'); toast('Cookies y caché borrados'); };
+    c.querySelector('#d2').onclick = async () => { await ipc.invoke('clear'); toast('Cookies y caché borrados'); }; c.querySelector('#dm').onclick = () => newTab('nova://migrar');
     c.querySelector('#d3').onclick = () => { const f = path.join(os.homedir(), 'Downloads', 'nova-ajustes.json'); try { fs.writeFileSync(f, JSON.stringify(S, null, 2)); toast('Guardado en ' + f); } catch (e) { toast('Error: ' + e.message); } };
     c.querySelector('#d4').onchange = e => { const fr = new FileReader(); fr.onload = () => { try { Object.assign(S, JSON.parse(fr.result)); ap(); refreshNT(); toast('Ajustes importados'); again(); } catch { toast('Archivo no válido'); } }; fr.readAsText(e.target.files[0]); };
     c.querySelector('#d5').onclick = () => { if (confirm('¿Restablecer todo Nova?')) { localStorage.removeItem('nova'); location.reload(); } };

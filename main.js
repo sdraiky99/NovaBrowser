@@ -10,6 +10,8 @@ app.commandLine.appendSwitch('enable-zero-copy');
 app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion');
 let win, splash, splashAt = 0, pendingUrl = null;
 const EXT = require('./shell/extensions.js');
+const { createMigrationService } = require('./migration.js');
+const migration = createMigrationService(app);
 const LOGOS = ['classic', 'orbita', 'estrella', 'cometa', 'minimal'], SPLASH_MS = 1800;
 const logoId = id => (LOGOS.includes(id) ? id : 'classic');
 const logoIco = id => path.join(__dirname, `assets/logos/${logoId(id)}.ico`);      // dentro del paquete (asar)
@@ -17,8 +19,14 @@ const logoImg = id => { const i = nativeImage.createFromPath(process.platform ==
 // preferencias que el proceso principal necesita antes de abrir la interfaz (logo, animación de inicio, extensiones)
 let prefs = { logo: 'classic', splash: true, ext: {}, reg: '' };
 const prefsFile = () => path.join(app.getPath('userData'), 'prefs.json');
+const atomicWrite = (file, data) => {
+  const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(tmp, data);
+  fs.renameSync(tmp, file);
+};
 const loadPrefs = () => { try { prefs = Object.assign(prefs, JSON.parse(fs.readFileSync(prefsFile(), 'utf8'))); } catch { } };
-const savePrefs = () => { try { fs.writeFileSync(prefsFile(), JSON.stringify(prefs)); } catch { } };
+const savePrefs = () => { try { atomicWrite(prefsFile(), JSON.stringify(prefs)); } catch { } };
 const { pathToFileURL } = require('url');
 const extUrl = a => { // enlace http(s) o archivo .html/.pdf/.svg... recibido desde Windows (navegador predeterminado)
   for (const x of a || []) {
@@ -33,19 +41,24 @@ else app.on('second-instance', (_, argv) => {
   if (!win) return; if (win.isMinimized()) win.restore(); win.show(); win.focus();
   const u = extUrl(argv); if (u) win.webContents.send('open-tab', u);
 });
-const applyExt = (wc, ids) => { if (wc.isDestroyed()) return; (ids || Object.keys(prefs.ext).filter(k => prefs.ext[k])).forEach(id => wc.executeJavaScript(EXT.on(id)).catch(() => { })); };
+const applyExt = (wc, ids) => {
+  if (wc.isDestroyed()) return;
+  const run = id => { const p = wc.executeJavaScript(EXT.on(id)); const t = new Promise((_, reject) => setTimeout(() => reject(new Error('extension-timeout')), 5000)); return Promise.race([p, t]).catch(() => { }); };
+  (ids || Object.keys(prefs.ext).filter(k => prefs.ext[k])).forEach(run);
+};
 const web = () => session.fromPartition('persist:web'); // datos de navegación aislados de la interfaz de Nova
 
 const userFile = (...p) => path.join(app.getPath('userData'), ...p);
 
-let blockerP = null, blockOn = null;
+let blockerP = null, blockOn = null, blockerAt = 0, blockerRefreshBusy = false;
+const AD_CACHE = () => userFile('adblock-2.18.bin');
 async function setAdblock(on) {
   on = !!on; if (blockOn === on) return; blockOn = on;
   try {
     if (!blockerP) blockerP = (async () => {
       const { ElectronBlocker } = require('@ghostery/adblocker-electron');
       // Cache versionada para no reutilizar un motor serializado de otra versión.
-      const cache = { path: userFile('adblock-2.18.bin'), read: fs.promises.readFile, write: fs.promises.writeFile };
+      const cache = { path: AD_CACHE(), read: fs.promises.readFile, write: fs.promises.writeFile };
       const load = () => ElectronBlocker.fromPrebuiltAdsAndTracking(fetch, cache);
       let b;
       try { b = await load(); } catch { b = await ElectronBlocker.fromPrebuiltAdsAndTracking(fetch); }
@@ -54,6 +67,7 @@ async function setAdblock(on) {
         n++;
         if (!bt) bt = setTimeout(() => { bt = 0; if (win && !win.isDestroyed()) win.webContents.send('blocked', n); }, 600);
       });
+      blockerAt = Date.now();
       return b;
     })();
     const b = await blockerP; if (blockOn !== on) return;
@@ -65,6 +79,20 @@ async function setAdblock(on) {
     console.error('Adblock:', e.message);
   }
 }
+
+async function refreshAdblockLists() {
+  if (!blockOn || blockerRefreshBusy) return;
+  blockerRefreshBusy = true;
+  try {
+    const oldP = blockerP;
+    if (oldP) { try { (await oldP).disableBlockingInSession(web()); } catch { } }
+    blockerP = null; blockOn = false;
+    try { fs.rmSync(AD_CACHE(), { force: true }); } catch { }
+    await setAdblock(true);
+  } finally { blockerRefreshBusy = false; }
+}
+const adblockRefreshTimer = setInterval(() => { if (blockerAt && Date.now() - blockerAt > 7 * 24 * 3600e3) refreshAdblockLists().catch(() => { }); }, 30 * 60e3);
+adblockRefreshTimer.unref?.();
 
 
 /* ---------- Windows: registro como navegador y logotipo en la barra de tareas ---------- */
@@ -132,7 +160,7 @@ function createMain() {
     frame: false, show: false, title: 'Nova',
     icon: logoImg(prefs.logo),
     backgroundColor: '#0d0b1a',
-    webPreferences: { nodeIntegration: true, contextIsolation: false, webviewTag: true }
+    webPreferences: { nodeIntegration: true, contextIsolation: false, webviewTag: true, webSecurity: true, allowRunningInsecureContent: false }
   });
   win.loadFile('shell/index.html');
   win.once('ready-to-show', () => {
@@ -141,6 +169,9 @@ function createMain() {
   });
   win.webContents.once('did-finish-load', () => { if (pendingUrl) setTimeout(() => win && win.webContents.send('open-tab', pendingUrl), 900); });
   win.on('page-title-updated', e => e.preventDefault());
+  win.webContents.on('will-navigate', e => e.preventDefault());
+  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  win.webContents.on('render-process-gone', () => { setTimeout(() => { try { if (win && !win.isDestroyed()) win.reload(); } catch { } }, 800); });
   win.webContents.on('context-menu', (e, p) => {
     if (!p.isEditable && !p.selectionText) return; const w = win.webContents;
     Menu.buildFromTemplate([{ label: 'Cortar', enabled: p.editFlags.canCut, click: () => w.cut() }, { label: 'Copiar', enabled: p.editFlags.canCopy, click: () => w.copy() },
@@ -207,12 +238,20 @@ app.whenReady().then(() => {
         wp.sandbox = true;
         wp.webSecurity = true;
         wp.allowRunningInsecureContent = false;
+        wp.allowFileAccessFromFileUrls = false;
+        wp.allowUniversalAccessFromFileUrls = false;
         if (!safeWebUrl(params.src || '')) e.preventDefault();
       });
       c.on('will-navigate', e => e.preventDefault()); c.setWindowOpenHandler(() => ({ action: 'deny' }));
     }
     if (c.getType() !== 'webview') return;
     c.on('dom-ready', () => applyExt(c));
+    c.on('unresponsive', () => { if (win && !win.isDestroyed()) win.webContents.send('tab-health', { type: 'unresponsive' }); });
+    c.on('responsive', () => { if (win && !win.isDestroyed()) win.webContents.send('tab-health', { type: 'responsive' }); });
+    c.on('render-process-gone', (_e, details) => {
+      if (win && !win.isDestroyed()) win.webContents.send('tab-health', { type: 'gone', reason: details && details.reason });
+      setTimeout(() => { try { if (!c.isDestroyed() && c.getURL()) c.reload(); } catch { } }, 800);
+    });
     const allowNavigation = url => {
       if (!safeWebUrl(url)) return false;
       if (/^file:/i.test(url) && !/^file:/i.test(c.getURL() || '')) return false;
@@ -257,6 +296,8 @@ app.whenReady().then(() => {
   });
 });
 
+ipcMain.on('fullscreen', e => { if (denyUntrusted(e) || !win || win.isDestroyed()) return; try { win.setFullScreen(!win.isFullScreen()); } catch { } });
+ipcMain.handle('opacity', (e, v) => { if (denyUntrusted(e) || !win || win.isDestroyed() || typeof v !== 'number' || !Number.isFinite(v)) return false; try { win.setOpacity(Math.max(0.35, Math.min(1, v))); return true; } catch { return false; } });
 ipcMain.on('win', (e, a) => {
   if (denyUntrusted(e)) return;
   if (a === 'min') win.minimize();
@@ -310,8 +351,49 @@ ipcMain.handle('pick-wp', async (e, sec) => {
 });
 const keyFile = () => userFile('nova.key');
 const getKey = () => { try { return safeStorage.isEncryptionAvailable() ? safeStorage.decryptString(fs.readFileSync(keyFile())) : null; } catch { return null; } };
-ipcMain.handle('key-set', (e, k) => { try { if (denyUntrusted(e) || typeof k !== 'string' || k.length > 2048) return false; if (!k) { fs.rmSync(keyFile(), { force: true }); return true; } if (!safeStorage.isEncryptionAvailable()) return false; fs.writeFileSync(keyFile(), safeStorage.encryptString(k)); return true; } catch { return false; } });
+ipcMain.handle('key-set', (e, k) => { try { if (denyUntrusted(e) || typeof k !== 'string' || k.length > 2048) return false; if (!k) { fs.rmSync(keyFile(), { force: true }); return true; } if (!safeStorage.isEncryptionAvailable()) return false; atomicWrite(keyFile(), safeStorage.encryptString(k)); return true; } catch { return false; } });
 ipcMain.handle('key-has', e => denyUntrusted(e) ? false : !!getKey());
+let stateBackupAt = 0;
+ipcMain.handle('state-save', (e, raw) => {
+  if (denyUntrusted(e) || typeof raw !== 'string' || raw.length > 8 * 1024 * 1024) return false;
+  try {
+    const obj = JSON.parse(raw);
+    if (!obj || typeof obj !== 'object') return false;
+    delete obj.key; // nunca guardar claves API en el backup de estado
+    const f = userFile('state-backup.json'), bak = userFile('state-backup.json.bak');
+    const data = JSON.stringify(obj);
+    if (fs.existsSync(f) && Date.now() - stateBackupAt > 60 * 1000) { try { fs.copyFileSync(f, bak); stateBackupAt = Date.now(); } catch { } }
+    atomicWrite(f, data);
+    return true;
+  } catch { return false; }
+});
+ipcMain.handle('state-load', e => {
+  if (denyUntrusted(e)) return null;
+  for (const f of [userFile('state-backup.json'), userFile('state-backup.json.bak')]) {
+    try { const obj = JSON.parse(fs.readFileSync(f, 'utf8')); delete obj.key; return JSON.stringify(obj); } catch { }
+  }
+  return null;
+});
+ipcMain.handle('open-external', async (e, raw) => {
+  if (denyUntrusted(e) || typeof raw !== 'string' || raw.length > 4096) return false;
+  try { const u = new URL(raw); if (u.protocol !== 'https:') return false; await shell.openExternal(u.href); return true; } catch { return false; }
+});
+ipcMain.handle('update-check', async e => {
+  if (denyUntrusted(e)) return { ok: false };
+  try {
+    const r = await fetch('https://api.github.com/repos/sdraiky99/NovaBrowser/releases/latest', { headers: { accept: 'application/vnd.github+json', 'user-agent': 'Nova/' + app.getVersion() }, signal: AbortSignal.timeout(10000) });
+    if (!r.ok) return { ok: false };
+    const d = await r.json(), latest = String(d.tag_name || '').replace(/^v/, '');
+    if (!latest) return { ok: false };
+    const parse = v => v.split(/[^0-9]+/).slice(0, 3).map(x => Number(x) || 0).reduce((a, n, i) => a + n / 1000 ** (i + 1), 0);
+    return { ok: true, current: app.getVersion(), latest, newer: parse(latest) > parse(app.getVersion()), url: /^https:\/\/github\.com\/sdraiky99\/NovaBrowser\/releases\/tag\/v?[0-9A-Za-z._-]+$/.test(String(d.html_url || '')) ? d.html_url : 'https://github.com/sdraiky99/NovaBrowser/releases' };
+  } catch { return { ok: false }; }
+});
+ipcMain.handle('migration-scan', e => { if (denyUntrusted(e)) return []; try { return migration.scan(); } catch { return []; } });
+ipcMain.handle('migration-read', async (e, data) => {
+  if (denyUntrusted(e) || !data || typeof data !== 'object' || typeof data.id !== 'string' || data.id.length > 64) return { error: 'Solicitud no válida.' };
+  try { return await migration.read(data.id, { bookmarks: data.bookmarks !== false, history: data.history !== false }); } catch (err) { return { error: err.message || 'No se pudo leer el perfil.' }; }
+});
 ipcMain.handle('ai-ask', async (e, data) => {
   if (denyUntrusted(e) || !data || typeof data !== 'object') return { error: 'Solicitud no válida.' };
   const { msgs, system, model } = data;

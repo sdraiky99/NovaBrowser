@@ -4,3 +4,6 @@ ACTUALIZAR A 1.6.1 (sin admin ni terminal)
 3. IMPORTANTE: abre .github/workflows/build.yml en GitHub (lapiz), borra todo su contenido, pega el de COPIA-build.yml y haz Commit.
    (solo hay que hacerlo una vez; asi el release se llama Nova 1.6.1 y sube tambien latest.yml)
 4. Espera 5-8 min y mira Releases: Nova-Setup-1.6.1.exe y Nova-Portable-1.6.1.exe (deben pesar decenas de MB).
+
+5. Para migrar tus datos de Chrome, Edge o Firefox, abre el menú > Migrar desde Chrome / Edge / Firefox. Se importan marcadores e historial en modo solo lectura; cierra el navegador de origen para una lectura consistente.
+6. El repositorio incluye comprobaciones de seguridad y dependencias en .github/workflows/security.yml.

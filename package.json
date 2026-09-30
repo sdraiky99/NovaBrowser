@@ -1,17 +1,19 @@
 {
   "name": "nova-browser",
   "productName": "Nova",
-  "version": "1.6.3",
+  "version": "1.6.1",
   "description": "Navegador web moderno basado en Chromium",
   "author": "Nova",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win --publish never"
+    "dist": "electron-builder --win --publish never",
+    "check": "node --check main.js && node --check migration.js && node --check shell/extensions.js && node --check shell/tabs.js && node --check shell/extras.js && node --check shell/extras2.js && node --check shell/extras3.js && node --check shell/extras4.js && node --check shell/extras5.js"
   },
   "dependencies": {
     "@ghostery/adblocker-electron": "2.18.2",
-    "cross-fetch": "4.1.0"
+    "cross-fetch": "4.1.0",
+    "sql.js": "1.14.2"
   },
   "devDependencies": {
     "electron": "44.4.5",
@@ -26,6 +28,7 @@
     },
     "files": [
       "main.js",
+      "migration.js",
       "shell/**",
       "assets/**",
       "package.json"
