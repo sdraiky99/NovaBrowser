@@ -106,7 +106,7 @@ function internalTab(u) {
   Object.assign(el, { getURL: () => 'nova://' + name, canGoBack: () => false, canGoForward: () => false, goBack() { }, goForward() { }, reload: () => PG[name](el), loadURL() { }, stopFindInPage() { }, findInPage() { } });
   $('#view').appendChild(el);
   const te = document.createElement('div'); te.className = 'tab';
-  const T = { historial: 'Historial', descargas: 'Descargas', notas: 'Notas', juegos: 'Nova Snake', ajustes: 'Ajustes', acerca: 'Acerca de Nova', novedades: 'Novedades', marcadores: 'Marcadores', privacidad: 'Privacidad' }[name] || name;
+  const T = { historial: 'Historial', descargas: 'Descargas', notas: 'Notas', juegos: 'Nova Snake', ajustes: 'Ajustes', acerca: 'Acerca de Nova', novedades: 'Novedades', marcadores: 'Marcadores', privacidad: 'Privacidad', personalizar: 'Personalizar', tienda: 'Tienda de extensiones', bienvenida: 'Bienvenida' }[name] || name;
   te.innerHTML = '<img src="../assets/icon.png"><span>' + T + '</span><button class="ib sm">' + ic('x') + '</button>';
   const t = { wv: el, el: te }; tabs.push(t); $('#tabs').appendChild(te);
   te.onmousedown = e => { if (e.button === 1) closeTab(t); };
@@ -235,7 +235,7 @@ function onboard() {
     ov.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { S.theme = b.dataset.t; save(); applyTheme(); r(); });
     ov.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { S.sec = b.dataset.s; save(); r(); });
     ov.querySelectorAll('.sw').forEach(s => s.onclick = () => { S[s.dataset.k] = !S[s.dataset.k]; save(); applyTheme(); r(); });
-    const end = () => { S.done = 1; save(); ov.remove(); refreshNT(); };
+    const end = () => { S.done = 1; save(); ov.remove(); refreshNT(); if (window.NOVA && NOVA.welcome) setTimeout(NOVA.welcome, 300); };
     q('#sk').onclick = end; q('#nx').onclick = () => { if (q('#ob')) { S.name = q('#ob').value.trim(); save(); } n < 2 ? (n++, r()) : end(); };
   };
   r();

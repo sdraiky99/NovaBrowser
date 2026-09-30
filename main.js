@@ -1,7 +1,24 @@
-const { app, BrowserWindow, ipcMain, session, dialog, Menu, clipboard, safeStorage } = require('electron');
+const { app, BrowserWindow, ipcMain, session, dialog, Menu, clipboard, safeStorage, shell, webContents } = require('electron');
 const path = require('path'), fs = require('fs');
 app.setName('Nova');
-let win, splash, blocker;
+let win, splash, blocker, splashAt = 0, pendingUrl = null;
+const EXT = require('./shell/extensions.js');
+const LOGOS = ['classic', 'orbita', 'estrella', 'cometa', 'minimal'], SPLASH_MS = 2400;
+const logoPng = id => path.join(__dirname, id === 'classic' || !LOGOS.includes(id) ? 'assets/icon.png' : `assets/logos/${id}.png`);
+// preferencias que el proceso principal necesita antes de abrir la interfaz (logo, animación de inicio, extensiones)
+let prefs = { logo: 'classic', splash: true, ext: {} };
+const prefsFile = () => path.join(app.getPath('userData'), 'prefs.json');
+const loadPrefs = () => { try { prefs = Object.assign(prefs, JSON.parse(fs.readFileSync(prefsFile(), 'utf8'))); } catch { } };
+const savePrefs = () => { try { fs.writeFileSync(prefsFile(), JSON.stringify(prefs)); } catch { } };
+const extUrl = a => (a || []).find(x => /^https?:\/\//i.test(x));
+// una sola instancia: si Nova es el navegador predeterminado, los enlaces llegan a la ventana abierta
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) app.quit();
+else app.on('second-instance', (_, argv) => {
+  if (!win) return; if (win.isMinimized()) win.restore(); win.show(); win.focus();
+  const u = extUrl(argv); if (u) win.webContents.send('open-tab', u);
+});
+const applyExt = (wc, ids) => { if (wc.isDestroyed()) return; (ids || Object.keys(prefs.ext).filter(k => prefs.ext[k])).forEach(id => wc.executeJavaScript(EXT.on(id)).catch(() => { })); };
 const web = () => session.fromPartition('persist:web'); // datos de navegación aislados de la interfaz de Nova
 
 const userFile = (...p) => path.join(app.getPath('userData'), ...p);
@@ -23,12 +40,16 @@ function createMain() {
   win = new BrowserWindow({
     width: 1280, height: 800, minWidth: 720, minHeight: 480,
     frame: false, show: false, title: 'Nova',
-    icon: path.join(__dirname, 'assets/icon.png'),
+    icon: logoPng(prefs.logo),
     backgroundColor: '#0d0b1a',
     webPreferences: { nodeIntegration: true, contextIsolation: false, webviewTag: true }
   });
   win.loadFile('shell/index.html');
-  win.once('ready-to-show', () => { if (splash) splash.close(); win.show(); });
+  win.once('ready-to-show', () => {
+    const go = () => { if (splash && !splash.isDestroyed()) splash.close(); win.show(); };
+    setTimeout(go, splash ? Math.max(0, splashAt + SPLASH_MS - Date.now()) : 0); // deja ver la animación de inicio
+  });
+  win.webContents.once('did-finish-load', () => { if (pendingUrl) setTimeout(() => win && win.webContents.send('open-tab', pendingUrl), 900); });
   win.on('page-title-updated', e => e.preventDefault());
   win.webContents.on('context-menu', (e, p) => {
     if (!p.isEditable && !p.selectionText) return; const w = win.webContents;
@@ -38,17 +59,22 @@ function createMain() {
 }
 
 app.whenReady().then(() => {
+  if (!gotLock) return;
+  loadPrefs(); pendingUrl = extUrl(process.argv.slice(1));
   Menu.setApplicationMenu(null);
   const ua = web().getUserAgent()
     .replace(/\s?Electron\/\S+/i, '').replace(/\s?nova-browser\/\S+/i, '').replace(/\s?Nova\/\S+/i, '') + ' Nova/2.0';
   web().setUserAgent(ua);
 
-  splash = new BrowserWindow({
-    width: 420, height: 420, frame: false, transparent: true, resizable: false,
-    alwaysOnTop: true, skipTaskbar: true, icon: path.join(__dirname, 'assets/icon.png')
-  });
-  splash.loadFile('shell/splash.html');
-  createMain(); // la ventana se crea ya; el splash se cierra en ready-to-show
+  if (prefs.splash !== false) { // animación de inicio (se puede quitar en Personalizar)
+    splash = new BrowserWindow({
+      width: 420, height: 420, frame: false, transparent: true, resizable: false,
+      alwaysOnTop: true, skipTaskbar: true, icon: logoPng(prefs.logo)
+    });
+    splash.loadFile('shell/splash.html', { query: { logo: LOGOS.includes(prefs.logo) ? prefs.logo : 'classic' } });
+    splashAt = Date.now();
+  }
+  createMain();
 
   const dlMap = new Map(), dlSend = new Map();
   web().on('will-download', (e, item) => {
@@ -83,6 +109,7 @@ app.whenReady().then(() => {
       c.on('will-navigate', e => e.preventDefault()); c.setWindowOpenHandler(() => ({ action: 'deny' }));
     }
     if (c.getType() !== 'webview') return;
+    c.on('dom-ready', () => applyExt(c));
     c.setWindowOpenHandler(({ url }) => { if (/^(https?:|nova:)/.test(url)) win.webContents.send('open-tab', url); return { action: 'deny' }; });
 
     c.on('context-menu', (e, p) => {
@@ -127,6 +154,24 @@ ipcMain.on('win', (_, a) => {
   if (a === 'full') win.setFullScreen(!win.isFullScreen());
 });
 ipcMain.on('app-version', e => (e.returnValue = app.getVersion()));
+ipcMain.on('prefs-get', e => (e.returnValue = prefs));
+ipcMain.on('prefs-set', (_, p) => {
+  if (!p || typeof p !== 'object') return;
+  if (LOGOS.includes(p.logo)) { prefs.logo = p.logo; if (win) win.setIcon(logoPng(p.logo)); }
+  if (typeof p.splash === 'boolean') prefs.splash = p.splash;
+  if (p.ext && typeof p.ext === 'object') { // instalar / activar / quitar extensiones al instante
+    const nx = {}; Object.keys(p.ext).forEach(id => { if (EXT.byId(id)) nx[id] = !!p.ext[id]; });
+    const all = webContents.getAllWebContents().filter(w => w.getType() === 'webview' && !w.isDestroyed());
+    EXT.CATALOG.forEach(({ id }) => { const was = !!prefs.ext[id], now = !!nx[id]; if (was && !now) all.forEach(w => w.executeJavaScript(EXT.off(id)).catch(() => { })); if (!was && now) all.forEach(w => applyExt(w, [id])); });
+    prefs.ext = nx;
+  }
+  savePrefs();
+});
+ipcMain.handle('default-browser', (_, set) => {
+  const portable = !!process.env.PORTABLE_EXECUTABLE_FILE;
+  if (set && !portable) { app.setAsDefaultProtocolClient('http'); app.setAsDefaultProtocolClient('https'); shell.openExternal('ms-settings:defaultapps'); }
+  return { portable, isDefault: !portable && app.isDefaultProtocolClient('https') };
+});
 ipcMain.on('userdata', e => (e.returnValue = app.getPath('userData')));
 ipcMain.handle('install-cfg', () => {
   try { return JSON.parse(fs.readFileSync(userFile('install.json'), 'utf8')); } catch { return {}; }

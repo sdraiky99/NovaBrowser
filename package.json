@@ -1,8 +1,8 @@
 {
   "name": "nova-browser",
   "productName": "Nova",
-  "version": "1.5.3",
-  "description": "Navegador web moderno basado en Chromium, Con temas, tienda de extensiones y mas",
+  "version": "1.5.2",
+  "description": "Navegador web moderno basado en Chromium",
   "author": "Nova",
   "main": "main.js",
   "scripts": {

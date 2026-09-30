@@ -31,7 +31,7 @@ body.t-safari a.c.acc{background:var(--acc);color:#fff}
 <script>
 const p=new URLSearchParams(location.search),J=(k,d)=>{try{return JSON.parse(p.get(k)||'')}catch{return d}};
 let th=p.get('t')||'nova';if(th==='system')th=matchMedia('(prefers-color-scheme:light)').matches?'light':'nova';
-document.body.classList.add('t-'+th);
+document.body.classList.add('t-'+th);{const l=p.get('l');if(l&&/^[a-z]+$/.test(l)&&l!=='classic')document.querySelector('.logo').src='../assets/logos/'+l+'.png'}
 if(p.get('a'))document.body.style.setProperty('--acc',p.get('a'));
 const D=Object.assign({clock:true,search:true,quick:true,recent:true,dl:true,ai:true},J('d',{})),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 if(p.get('wp')){document.body.classList.add('hasbg');const b=document.getElementById('bg');b.style.backgroundImage=`url("${p.get('wp')}")`;document.addEventListener('mousemove',e=>{b.style.transform=`translate(${(.5-e.clientX/innerWidth)*24}px,${(.5-e.clientY/innerHeight)*16}px)`})}
