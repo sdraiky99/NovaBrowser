@@ -18,6 +18,13 @@ st.textContent = `
 .ipage h2{margin:0 0 6px;font-size:26px;font-weight:300}
 .li{display:flex;justify-content:space-between;gap:10px;padding:9px 12px;background:var(--bar);border:1px solid var(--bd);border-radius:var(--r);cursor:pointer}.li:hover{border-color:var(--acc)}
 .li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ob .obcard{width:min(600px,94vw);animation:obin .35s cubic-bezier(.2,1.2,.4,1)}@keyframes obin{from{opacity:0;transform:translateY(14px) scale(.96)}}
+.dots{display:flex;gap:6px;justify-content:center}.dots i{width:22px;height:4px;border-radius:4px;background:var(--bd);transition:background .3s,width .3s}.dots i.on{background:var(--acc);width:34px}
+.obb{display:flex;flex-direction:column;gap:14px;min-height:250px;justify-content:center;animation:tin .3s}.obh{margin:0;text-align:center;font-weight:300;font-size:30px}.obc{text-align:center;font-size:14px;line-height:1.5}
+.obl{align-self:center;animation:oblf 3s ease-in-out infinite}@keyframes oblf{50%{transform:translateY(-6px) scale(1.04)}}
+.okc{align-self:center}.okc circle{stroke-dasharray:151;stroke-dashoffset:151;animation:okd .7s .1s forwards}.okc path{stroke-dasharray:50;stroke-dashoffset:50;animation:okd .5s .7s forwards}@keyframes okd{to{stroke-dashoffset:0}}
+.cmh{position:fixed;inset:0;z-index:40;pointer-events:none}.cm.hole{position:fixed;z-index:41;border-radius:12px;box-shadow:0 0 0 9999px rgba(5,4,15,.72),0 0 0 2px var(--acc),0 0 22px var(--acc);transition:all .35s cubic-bezier(.2,1,.3,1);pointer-events:none}
+.cm.tip{position:fixed;z-index:42;padding:16px 18px;display:flex;flex-direction:column;gap:8px;background:var(--bar);color:var(--fg);border:1px solid var(--acc);border-radius:calc(var(--r) * 1.4);box-shadow:0 16px 60px #000a;animation:pop .25s cubic-bezier(.2,1.3,.4,1)}.cm.tip p{margin:0;font-size:13px;line-height:1.5}.cm.tip b{font-size:16px}
 .ov{position:fixed;inset:0;z-index:20;background:#000b;display:grid;place-items:center;animation:tin .3s}
 .card{width:min(540px,92vw);max-height:90vh;overflow:auto;padding:28px;background:var(--bar);border:1px solid var(--bd);border-radius:calc(var(--r) * 1.6);display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 80px #000a}
 #mnp{position:fixed;top:78px;right:10px;z-index:15;min-width:220px;padding:6px;background:var(--bar);border:1px solid var(--bd);border-radius:var(--r);display:none;flex-direction:column;box-shadow:0 10px 40px #0008}#mnp.on{display:flex}
@@ -220,27 +227,53 @@ const PG = {
   }
 };
 
-/* ---------- asistente de bienvenida ---------- */
+/* ---------- primer uso: configuración + guía paso a paso ---------- */
 function onboard() {
-  const ov = document.createElement('div'); ov.className = 'ov'; document.body.appendChild(ov); let n = 0;
+  const ov = document.createElement('div'); ov.className = 'ov ob'; document.body.appendChild(ov); let n = 0, tour = -1;
+  const LGN = () => (window.NOVA && NOVA.LG) || { classic: 'Clásico' }, lsrc = id => id === 'classic' ? '../assets/icon.png' : '../assets/logos/' + id + '.png';
   const steps = [
-    () => `<img src="../assets/icon.png" width="80" style="align-self:center"><h2 style="margin:0;text-align:center;font-weight:300">Bienvenido a Nova</h2><span class="mut" style="text-align:center">Vamos a dejarlo a tu gusto en 3 pasos.</span><input class="fld" id="ob" placeholder="¿Cómo te llamas?" value="${esc(S.name || '')}">`,
-    () => `<h3>Elige tu tema</h3><div class="grid">${themeGrid()}</div><span class="mut">Cambia toda la interfaz. Puedes cambiarlo cuando quieras.</span>`,
-    () => `<h3>Últimos detalles</h3><span class="mut">Buscador</span><select class="fld" id="se2"><option value="https://duckduckgo.com/?q=">DuckDuckGo</option><option value="https://www.google.com/search?q=">Google</option><option value="https://www.bing.com/search?q=">Bing</option></select><div class="row"><span>Bloquear anuncios</span>${sw2('adblock', S.adblock)}</div><div class="row"><span>Animaciones</span>${sw2('anim', S.anim)}</div><span class="mut">Fondo favorito</span><div class="chips">${Object.entries(SECS).map(([k, v]) => `<button class="btn ${S.sec === k ? 'on' : ''}" data-s="${k}">${v}</button>`).join('')}</div>`
+    () => `<img class="obl" src="${lsrc(S.logo || 'classic')}" width="88"><h2 class="obh">Bienvenido a Nova</h2><span class="mut obc">Un navegador rápido, privado y fácil de usar. En menos de un minuto lo dejamos listo para ti.</span><input class="fld" id="ob" placeholder="¿Cómo quieres que te llamemos? (opcional)" value="${esc(S.name || '')}">`,
+    () => `<h3>Elige tu tema</h3><span class="mut">Cambia el aspecto de toda la interfaz. Podrás modificarlo más tarde en Ajustes › Apariencia.</span><div class="grid">${themeGrid()}</div>`,
+    () => `<h3>Elige tu logotipo</h3><span class="mut">Se muestra en la barra, en la animación de inicio y en la barra de tareas de Windows.</span><div class="lgs">${Object.entries(LGN()).map(([k, v]) => `<div class="lg ${(S.logo || 'classic') === k ? 'on' : ''}" data-lg="${k}"><img data-keep="1" src="${lsrc(k)}"><span>${v}</span></div>`).join('')}</div>`,
+    () => `<h3>Privacidad y búsqueda</h3><span class="mut">Buscador predeterminado</span><select class="fld" id="se2"><option value="https://duckduckgo.com/?q=">DuckDuckGo</option><option value="https://www.google.com/search?q=">Google</option><option value="https://www.bing.com/search?q=">Bing</option><option value="https://search.brave.com/search?q=">Brave</option></select><div class="row"><span>Bloquear anuncios y rastreadores</span>${sw2('adblock', S.adblock)}</div><div class="row"><span>Animaciones de la interfaz</span>${sw2('anim', S.anim)}</div><div class="row"><span>Usar Nova como navegador predeterminado</span><button class="btn" id="obd">Configurar</button></div>`,
+    () => `<div class="okc"><svg viewBox="0 0 52 52" width="72"><circle cx="26" cy="26" r="24" fill="none" stroke="var(--acc)" stroke-width="3"/><path d="M15 27l8 8 15-17" fill="none" stroke="var(--acc2)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h2 class="obh">Todo listo${S.name ? ', ' + esc(S.name) : ''}</h2><span class="mut obc">Ahora te enseñamos lo básico en 5 pasos rápidos, señalando cada parte de Nova. Dura menos de un minuto.</span>`
   ];
+  const TOUR = [
+    ['#nt', 'Pestañas', 'Pulsa + o Ctrl+T para abrir una pestaña nueva. Ctrl+W la cierra y Ctrl+Mayús+T recupera la última que cerraste.'],
+    ['#addr', 'Barra de direcciones', 'Escribe una web o simplemente lo que buscas. Nova decide si es una dirección o una búsqueda.'],
+    ['#st', 'Marcadores', 'Guarda tus webs favoritas con la estrella o con Ctrl+D. Las encuentras en Marcadores.'],
+    ['#side', 'Barra lateral', 'Accesos rápidos a Nova IA (Ctrl+Espacio), fondos, favoritos, juegos y ajustes rápidos.'],
+    ['#mn', 'Menú y Ctrl+K', 'Desde aquí abres Ajustes, la Tienda de extensiones y la Guía. Ctrl+K abre la paleta de comandos para hacer cualquier cosa escribiendo.']
+  ];
+  const end = () => {
+    S.done = 1; S.welcomed = 1; S.tour = 1; save(); ov.remove(); document.querySelectorAll('.cm,.cmh').forEach(e => e.remove()); refreshNT();
+  };
+  const coach = () => { // marca sobre la interfaz real
+    const [sel, t, d] = TOUR[tour], el = document.querySelector(sel); ov.className = 'cmh'; ov.style.pointerEvents = 'none'; ov.innerHTML = '';
+    document.querySelectorAll('.cm').forEach(e => e.remove());
+    const b = el ? el.getBoundingClientRect() : { left: innerWidth / 2 - 30, top: 80, width: 60, height: 30, right: innerWidth / 2 + 30, bottom: 110 };
+    const hole = document.createElement('div'); hole.className = 'cm hole'; Object.assign(hole.style, { left: b.left - 6 + 'px', top: b.top - 6 + 'px', width: b.width + 12 + 'px', height: b.height + 12 + 'px' });
+    const tip = document.createElement('div'); tip.className = 'cm tip';
+    tip.innerHTML = `<span class="mut">Paso ${tour + 1} de ${TOUR.length}</span><b>${t}</b><p>${d}</p><div class="row"><button class="btn" id="cs">Omitir guía</button><button class="btn on" id="cn">${tour < TOUR.length - 1 ? 'Siguiente' : 'Empezar a navegar'}</button></div>`;
+    document.body.append(hole, tip);
+    const tw = 320, left = Math.max(12, Math.min(innerWidth - tw - 12, b.left)), below = b.bottom + 16 + 170 < innerHeight;
+    Object.assign(tip.style, { width: tw + 'px', left: left + 'px', top: (below ? b.bottom + 16 : Math.max(12, b.top - 190)) + 'px' });
+    tip.querySelector('#cs').onclick = end; tip.querySelector('#cn').onclick = () => { if (tour < TOUR.length - 1) { tour++; coach(); } else end(); };
+  };
   const r = () => {
-    ov.innerHTML = `<div class="card">${steps[n]()}<div class="row"><button class="btn" id="sk">Saltar</button><button class="btn on" id="nx">${n < 2 ? 'Siguiente' : '¡Empezar!'}</button></div></div>`;
+    ov.innerHTML = `<div class="card obcard"><div class="dots">${steps.map((_, i) => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</div><div class="obb">${steps[n]()}</div><div class="row"><button class="btn" id="sk">${n === 0 ? 'Omitir todo' : 'Atrás'}</button><button class="btn on" id="nx">${n === 0 ? 'Comenzar' : n < steps.length - 1 ? 'Siguiente' : 'Ver la guía'}</button></div></div>`;
     const q = s => ov.querySelector(s);
     if (q('#se2')) { q('#se2').value = S.search; q('#se2').onchange = e => { S.search = e.target.value; save(); }; }
+    if (q('#obd')) q('#obd').onclick = () => ipc.invoke('default-browser', true).then(() => toast('Pulsa «Establecer como predeterminado» en Windows'));
     ov.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { S.theme = b.dataset.t; save(); applyTheme(); r(); });
-    ov.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { S.sec = b.dataset.s; save(); r(); });
+    ov.querySelectorAll('[data-lg]').forEach(b => b.onclick = () => { if (window.NOVA && NOVA.setLogo) NOVA.setLogo(b.dataset.lg); r(); });
     ov.querySelectorAll('.sw').forEach(s => s.onclick = () => { S[s.dataset.k] = !S[s.dataset.k]; save(); applyTheme(); r(); });
-    const end = () => { S.done = 1; save(); ov.remove(); refreshNT(); if (window.NOVA && NOVA.welcome) setTimeout(NOVA.welcome, 300); };
-    q('#sk').onclick = end; q('#nx').onclick = () => { if (q('#ob')) { S.name = q('#ob').value.trim(); save(); } n < 2 ? (n++, r()) : end(); };
+    q('#sk').onclick = () => { if (n === 0) { S.done = 1; S.welcomed = 1; save(); ov.remove(); refreshNT(); } else { n--; r(); } };
+    q('#nx').onclick = () => { if (q('#ob')) { S.name = q('#ob').value.trim(); save(); } if (n < steps.length - 1) { n++; r(); } else { tour = 0; coach(); } };
   };
   r();
 }
-window.NOVA = { PG, MENU, internalTab, sw2, themeGrid, toURL, fmt, refreshPages };
+window.NOVA = { PG, MENU, internalTab, sw2, themeGrid, toURL, fmt, refreshPages, tour: () => onboard() };
 applyTheme();
 if (!S.done) setTimeout(onboard, 700);
 })();

@@ -1,6 +1,6 @@
-/* Nova 1.6.0 - logotipos, animación de inicio, sonidos, colores de la barra, tienda de extensiones, bienvenida */
+/* Nova 1.6.1 - logotipos, animación de inicio, sonidos, colores de la barra, tienda de extensiones, bienvenida */
 (() => {
-const { PG, MENU, sw2 } = NOVA, EXT = require('./extensions.js');
+const { PG, MENU, sw2, SEC } = NOVA, EXT = require('./extensions.js');
 const PR = ipc.sendSync('prefs-get') || {};           // preferencias que también lee el proceso principal
 const setPR = p => { Object.assign(PR, p); ipc.send('prefs-set', p); };
 if (PR.logo && !S.logo) S.logo = PR.logo;
@@ -78,33 +78,41 @@ function preview(logo) {
   const ov = document.createElement('div'); ov.className = 'ov'; ov.innerHTML = `<iframe class="prev" src="splash.html?logo=${logo}"></iframe>`;
   document.body.appendChild(ov); const end = () => ov.remove(); ov.onclick = end; setTimeout(end, 3600);
 }
-PG.personalizar = r => {
-  const ren = () => PG.personalizar(r), q = s => r.querySelector(s), top = S.topc || 'ninguno';
-  r.innerHTML = `<h2>Personalizar</h2>
-  <h3>Logotipo</h3><span class="mut">Se aplica a la barra, la nueva pestaña, la animación de inicio, el icono de la ventana y de la barra de tareas, y a los accesos directos (escritorio, Inicio y barra de tareas). Si Windows tarda en refrescar un icono anclado, ciérralo y ábrelo de nuevo. El archivo .exe conserva su icono original.</span>
+const appearanceBlock = (host, again) => {
+  const q = s => host.querySelector(s), top = S.topc || 'ninguno';
+  host.insertAdjacentHTML('beforeend', `<div class="apx" style="display:flex;flex-direction:column;gap:12px">
+  <h3>Logotipo</h3><span class="mut">Se aplica a la barra, la nueva pestaña, la animación de inicio, la ventana y la barra de tareas de Windows, además de los accesos directos. Si un icono anclado tarda en actualizarse, ciérralo y ábrelo de nuevo.</span>
   <div class="lgs">${Object.entries(LG).map(([k, n]) => `<div class="lg ${S.logo === k ? 'on' : ''}" data-lg="${k}"><img data-keep="1" src="${logoSrc(k)}"><span>${n}</span></div>`).join('')}</div>
-  <h3>Animación de inicio</h3><span class="mut">Cada logotipo tiene su propia animación al abrir Nova.</span>
-  <div class="row"><span>Mostrar animación al abrir</span>${tgl('spl', PR.splash !== false)}</div>
+  <h3>Animación de inicio</h3>
+  <div class="row"><span>Mostrar animación al abrir Nova</span>${tgl('spl', PR.splash !== false)}</div>
   <div class="row"><span>Ver la animación de este logotipo</span><button class="btn" id="pv">Reproducir</button></div>
-  <h3>Sonidos</h3><span class="mut">Se generan en el momento, sin descargar nada.</span>
-  <div class="chips">${Object.entries(PK).map(([k, n]) => chip(S.snd.pack === k, `data-pk="${k}"`, n)).join('')}</div>
-  <div class="row"><span>Volumen</span><input type="range" id="vol" min="5" max="100" value="${S.snd.v}"></div>
-  <div class="row"><span>Sonido al iniciar</span>${tgl('sst', S.snd.start !== false)}</div>
   <h3>Color de la barra superior</h3><span class="mut">Un tono suave sobre el tema que uses.</span>
   <div class="pal">${Object.entries(PAL).map(([k, [n, a, b]]) => `<div class="pw ${top === k ? 'on' : ''}" data-tc="${k}" title="${n}" style="${a ? `background:linear-gradient(90deg,${a},${b})` : 'background:var(--bar)'}">${a ? '' : '—'}</div>`).join('')}
     <input type="color" id="tcc" value="${S.topcc || '#c4b5fd'}" title="Color propio"></div>
-  <div class="row"><span>Intensidad</span><input type="range" id="ti" min="10" max="60" value="${S.topi || 34}"></div>`;
-  r.querySelectorAll('[data-lg]').forEach(e => e.onclick = () => { setLogo(e.dataset.lg); ren(); });
-  q('#spl').onclick = () => { setPR({ splash: PR.splash === false }); ren(); };
+  <div class="row"><span>Intensidad</span><input type="range" id="ti" min="10" max="60" value="${S.topi || 34}"></div>
+  <h3>Sonidos</h3><span class="mut">Se generan en el momento, sin descargar nada.</span>
+  <div class="chips">${Object.entries(PK).map(([k, n]) => chip(S.snd.pack === k, `data-pk="${k}"`, n)).join('')}</div>
+  <div class="row"><span>Volumen</span><input type="range" id="vol" min="5" max="100" value="${S.snd.v}"></div>
+  <div class="row"><span>Sonido al iniciar</span>${tgl('sst', S.snd.start !== false)}</div></div>`);
+  host.querySelectorAll('.apx [data-lg]').forEach(e => e.onclick = () => { setLogo(e.dataset.lg); again(); });
+  q('#spl').onclick = () => { setPR({ splash: PR.splash === false }); again(); };
   q('#pv').onclick = () => preview(S.logo);
-  r.querySelectorAll('[data-pk]').forEach(e => e.onclick = () => { S.snd.pack = e.dataset.pk; save(); snd('new', true); ren(); });
+  host.querySelectorAll('.apx [data-pk]').forEach(e => e.onclick = () => { S.snd.pack = e.dataset.pk; save(); snd('new', true); again(); });
   q('#vol').onchange = e => { S.snd.v = +e.target.value; save(); snd('dl', true); };
-  q('#sst').onclick = () => { S.snd.start = S.snd.start === false; save(); ren(); };
-  r.querySelectorAll('[data-tc]').forEach(e => e.onclick = () => { S.topc = e.dataset.tc; save(); applyTop(); ren(); });
+  q('#sst').onclick = () => { S.snd.start = S.snd.start === false; save(); again(); };
+  host.querySelectorAll('.apx [data-tc]').forEach(e => e.onclick = () => { S.topc = e.dataset.tc; save(); applyTop(); again(); });
   q('#tcc').oninput = e => { S.topc = 'custom'; S.topcc = e.target.value; save(); applyTop(); };
-  q('#tcc').onchange = ren;
+  q('#tcc').onchange = again;
   q('#ti').oninput = e => { S.topi = +e.target.value; save(); applyTop(); };
 };
+// Ajustes › Apariencia incluye ahora logotipos, animación de inicio, color de barra y sonidos
+const pAj = PG.ajustes;
+PG.ajustes = r => {
+  pAj(r); const k = r.querySelector('nav .btn.on')?.dataset.k, c = r.querySelector('#sc');
+  if (k === 'apariencia' && c) appearanceBlock(c, () => PG.ajustes(r));
+};
+// "Personalizar" se conserva como acceso directo a Ajustes › Apariencia
+PG.personalizar = r => { PG.ajustes(r); const b = r.querySelector('nav .btn[data-k="apariencia"]'); if (b && !b.classList.contains('on')) b.click(); };
 
 const extState = id => (PR.ext || {})[id];               // undefined = no instalada, true/false = instalada activa/pausada
 const setExt = (id, v) => { const e = Object.assign({}, PR.ext || {}); v === null ? delete e[id] : e[id] = v; PR.ext = e; ipc.send('prefs-set', { ext: e }); };
@@ -133,7 +141,7 @@ PG.bienvenida = async r => {
     ? '<span class="mut">Estás usando la versión portable, que no se puede registrar como navegador. Instala Nova con Nova-Setup para elegirla.</span>'
     : st0.isDefault ? '<span>✓ Nova ya es tu navegador predeterminado.</span>'
     : '<span class="mut">Abre los enlaces de otras aplicaciones directamente en Nova. Se abrirá la configuración de Windows en la página de Nova: pulsa «Establecer como predeterminado».</span><button class="btn on" id="db" style="align-self:flex-start">Hacer Nova mi navegador predeterminado</button>'}</div>
-  <div class="bcard"><h3>Hazlo tuyo</h3><span class="mut">Cambia el logotipo, los sonidos y el color de la barra.</span><button class="btn" id="gp" style="align-self:flex-start">Personalizar</button></div>
+  <div class="bcard"><h3>Hazlo tuyo</h3><span class="mut">Cambia el logotipo, los sonidos y el color de la barra.</span><button class="btn" id="gp" style="align-self:flex-start">Abrir Apariencia</button></div>
   <div class="bcard"><h3>Extensiones</h3><span class="mut">Añade funciones con la tienda de extensiones de Nova.</span><button class="btn" id="gt" style="align-self:flex-start">Abrir la tienda</button></div>`;
   const b = r.querySelector('#db'); if (b) b.onclick = async () => {
     await ipc.invoke('default-browser', true); toast('Pulsa «Establecer como predeterminado» en Windows');
@@ -144,10 +152,11 @@ PG.bienvenida = async r => {
   };
   r.querySelector('#gp').onclick = () => newTab('nova://personalizar'); r.querySelector('#gt').onclick = () => newTab('nova://tienda');
 };
+Object.assign(NOVA, { LG, setLogo });
 NOVA.welcome = () => { S.welcomed = 1; save(); newTab('nova://bienvenida'); };
 
 /* ---------- menú ---------- */
-MENU.splice(5, 0, ['Personalizar', () => newTab('nova://personalizar')], ['Tienda de extensiones', () => newTab('nova://tienda')], ['Navegador predeterminado', () => newTab('nova://bienvenida')]);
+MENU.splice(5, 0, ['Apariencia y logotipo', () => newTab('nova://personalizar')], ['Tienda de extensiones', () => newTab('nova://tienda')], ['Navegador predeterminado', () => newTab('nova://bienvenida')], ['Guía de inicio', () => NOVA.tour()]);
 const mp = document.getElementById('mnp'); if (mp) mp.innerHTML = MENU.map((m, i) => `<button data-i="${i}">${m[0]}</button>`).join('');
 
 applyTheme(); syncLogo();

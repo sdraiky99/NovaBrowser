@@ -15,9 +15,19 @@ jobs:
       - name: Leer version
         id: v
         shell: bash
-        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
       - run: npm install
-      - run: npm run dist
+      - name: Compilar
+        id: build
+        continue-on-error: true
+        run: npm run dist
+      - name: Reintentar sin presentacion animada (solo si fallo el primer intento)
+        if: steps.build.outcome == 'failure'
+        shell: bash
+        run: |
+          echo '!define NOVA_NO_ANIM' | cat - build/installer.nsh > build/installer.tmp
+          mv build/installer.tmp build/installer.nsh
+          npm run dist
       - name: Comprobar nombres de los EXE
         shell: bash
         run: |
