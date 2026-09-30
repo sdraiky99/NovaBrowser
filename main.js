@@ -1,6 +1,15 @@
 const { app, BrowserWindow, ipcMain, session, dialog, Menu, clipboard, safeStorage, shell, webContents, nativeImage } = require('electron');
 const path = require('path'), fs = require('fs'), { execFile } = require('child_process');
 const fetch = require('cross-fetch');
+let autoUpdater = null;
+try {
+  if (app.isPackaged && !process.env.PORTABLE_EXECUTABLE_FILE) {
+    ({ autoUpdater } = require('electron-updater'));
+    autoUpdater.autoDownload = false;
+    autoUpdater.autoInstallOnAppQuit = false;
+    autoUpdater.allowDowngrade = false;
+  }
+} catch (e) { console.warn('Nova updater unavailable:', e.message); }
 const APP_ID = 'com.nova.browser';
 app.setName('Nova');
 app.setAppUserModelId(APP_ID); // imprescindible en Windows: agrupa la ventana con el acceso directo y permite cambiar el icono de la barra de tareas
@@ -188,7 +197,7 @@ app.whenReady().then(() => {
   loadPrefs(); pendingUrl = extUrl(process.argv.slice(1));
   Menu.setApplicationMenu(null);
   const ua = web().getUserAgent()
-    .replace(/\s?Electron\/\S+/i, '').replace(/\s?nova-browser\/\S+/i, '').replace(/\s?Nova\/\S+/i, '') + ' Nova/2.0';
+    .replace(/\s?Electron\/\S+/i, '').replace(/\s?nova-browser\/\S+/i, '').replace(/\s?Nova\/\S+/i, '') + ' Nova/' + app.getVersion();
   web().setUserAgent(ua);
 
   if (prefs.splash !== false) { // animación de inicio (se puede quitar en Personalizar)
@@ -200,6 +209,7 @@ app.whenReady().then(() => {
     splashAt = Date.now();
   }
   createMain();
+  initAutoUpdater();
   setTimeout(() => { registerBrowser(false).catch(() => { }); if (prefs.logo !== 'classic') applyLogo(prefs.logo); }, 4000);
 
   const dlMap = new Map(), dlSend = new Map();
@@ -249,7 +259,7 @@ app.whenReady().then(() => {
       c.on('will-navigate', e => e.preventDefault()); c.setWindowOpenHandler(() => ({ action: 'deny' }));
     }
     if (c.getType() !== 'webview') return;
-    c.on('dom-ready', () => applyExt(c));
+    c.on('dom-ready', () => { try { c.setZoomMode?.('isolated'); } catch { } applyExt(c); });
     c.on('unresponsive', () => { if (win && !win.isDestroyed()) win.webContents.send('tab-health', { type: 'unresponsive' }); });
     c.on('responsive', () => { if (win && !win.isDestroyed()) win.webContents.send('tab-health', { type: 'responsive' }); });
     c.on('render-process-gone', (_e, details) => {
@@ -266,6 +276,21 @@ app.whenReady().then(() => {
     c.setWindowOpenHandler(({ url }) => { if (/^(https?:)/i.test(url)) win.webContents.send('open-tab', url); return { action: 'deny' }; });
 
     c.on('before-input-event', (e, input) => { if (input.type === 'keyDown' && input.key === 'F12') { e.preventDefault(); try { c.toggleDevTools(); } catch { } } });
+
+    c.on('before-input-event', (e, input) => {
+      if (input.type !== 'keyDown' || !input.control || input.alt) return;
+      const key = String(input.key || ''), code = String(input.code || '');
+      const plus = key === '+' || code === 'Equal' && input.shift;
+      const minus = key === '-' || key === '_' || code === 'Minus';
+      if (!(plus || minus || key === '0')) return;
+      e.preventDefault();
+      try {
+        const current = Number(c.getZoomFactor?.() || 1);
+        const next = key === '0' ? 1 : Math.max(0.25, Math.min(5, +(current + (plus ? 0.1 : -0.1)).toFixed(2)));
+        c.setZoomFactor(next);
+        win && !win.isDestroyed() && win.webContents.send('zoom-changed', { webContentsId: c.id, factor: next });
+      } catch { }
+    });
 
     c.on('context-menu', (e, p) => {
       const T = [], nav = c.navigationHistory, send = (ch, d) => win.webContents.send(ch, d);
@@ -384,16 +409,44 @@ ipcMain.handle('open-external', async (e, raw) => {
   if (denyUntrusted(e) || typeof raw !== 'string' || raw.length > 4096) return false;
   try { const u = new URL(raw); if (u.protocol !== 'https:') return false; await shell.openExternal(u.href); return true; } catch { return false; }
 });
+let updateState = { status:'idle', current:app.getVersion(), available:false, version:'', downloaded:false, progress:0, error:'' };
+const updateInfo = info => ({ version:String(info?.version || ''), releaseDate:info?.releaseDate || '', releaseName:String(info?.releaseName || '') });
+const updateReleaseUrl = 'https://github.com/sdraiky99/NovaBrowser/releases';
+function initAutoUpdater(){
+  if(!autoUpdater) return;
+  autoUpdater.on('checking-for-update',()=>{ updateState={...updateState,status:'checking',current:app.getVersion(),error:''}; win&&!win.isDestroyed()&&win.webContents.send('update-state',updateState); });
+  autoUpdater.on('update-available',info=>{ const i=updateInfo(info); updateState={...updateState,status:'available',current:app.getVersion(),available:true,version:i.version,downloaded:false,progress:0,info:i,error:''}; win&&!win.isDestroyed()&&win.webContents.send('update-state',updateState); });
+  autoUpdater.on('update-not-available',info=>{ const i=updateInfo(info); updateState={...updateState,status:'latest',current:app.getVersion(),available:false,version:i.version||app.getVersion(),downloaded:false,progress:100,info:i,error:''}; win&&!win.isDestroyed()&&win.webContents.send('update-state',updateState); });
+  autoUpdater.on('download-progress',p=>{ updateState={...updateState,status:'downloading',available:true,version:updateState.version,downloaded:false,progress:Math.max(0,Math.min(100,Number(p?.percent)||0)),error:''}; win&&!win.isDestroyed()&&win.webContents.send('update-state',updateState); });
+  autoUpdater.on('update-downloaded',info=>{ const i=updateInfo(info); updateState={...updateState,status:'downloaded',current:app.getVersion(),available:true,version:i.version||updateState.version,downloaded:true,progress:100,info:i,error:''}; win&&!win.isDestroyed()&&win.webContents.send('update-state',updateState); });
+  autoUpdater.on('error',err=>{ updateState={...updateState,status:'error',error:String(err?.message||err)}; win&&!win.isDestroyed()&&win.webContents.send('update-state',updateState); });
+  setTimeout(()=>autoUpdater.checkForUpdates().catch(()=>{}),6500);
+}
 ipcMain.handle('update-check', async e => {
-  if (denyUntrusted(e)) return { ok: false };
+  if (denyUntrusted(e)) return {ok:false};
   try {
-    const r = await fetch('https://api.github.com/repos/sdraiky99/NovaBrowser/releases/latest', { headers: { accept: 'application/vnd.github+json', 'user-agent': 'Nova/' + app.getVersion() }, signal: AbortSignal.timeout(10000) });
-    if (!r.ok) return { ok: false };
-    const d = await r.json(), latest = String(d.tag_name || '').replace(/^v/, '');
-    if (!latest) return { ok: false };
-    const parse = v => v.split(/[^0-9]+/).slice(0, 3).map(x => Number(x) || 0).reduce((a, n, i) => a + n / 1000 ** (i + 1), 0);
-    return { ok: true, current: app.getVersion(), latest, newer: parse(latest) > parse(app.getVersion()), url: /^https:\/\/github\.com\/sdraiky99\/NovaBrowser\/releases\/tag\/v?[0-9A-Za-z._-]+$/.test(String(d.html_url || '')) ? d.html_url : 'https://github.com/sdraiky99/NovaBrowser/releases' };
-  } catch { return { ok: false }; }
+    if(autoUpdater){
+      await autoUpdater.checkForUpdates();
+      return {ok:true,source:'electron-updater',directAvailable:true,current:app.getVersion(),state:{...updateState},url:updateReleaseUrl};
+    }
+  } catch {}
+  try {
+    const r=await fetch('https://api.github.com/repos/sdraiky99/NovaBrowser/releases/latest',{headers:{accept:'application/vnd.github+json','user-agent':'Nova/'+app.getVersion()},signal:AbortSignal.timeout(10000)});
+    if(!r.ok) return {ok:false};
+    const d=await r.json(), latest=String(d.tag_name||'').replace(/^v/,''); if(!latest)return {ok:false};
+    const parse=v=>v.split(/[^0-9]+/).slice(0,3).map(x=>Number(x)||0).reduce((a,n,i)=>a+n/1000**(i+1),0);
+    const url=String(d.html_url||''); const safe=/^https:\/\/github\.com\/sdraiky99\/NovaBrowser\/releases\/tag\/v?[0-9A-Za-z._-]+$/.test(url)?url:updateReleaseUrl;
+    return {ok:true,source:'github-api',directAvailable:false,current:app.getVersion(),latest,newer:parse(latest)>parse(app.getVersion()),url:safe};
+  } catch { return {ok:false}; }
+});
+ipcMain.handle('update-state',e=>denyUntrusted(e)?{status:'error',error:'Solicitud no válida.'}:{...updateState});
+ipcMain.handle('update-download',async e=>{
+  if(denyUntrusted(e)||!autoUpdater)return {ok:false,error:'Actualización directa no disponible en esta instalación.'};
+  try{await autoUpdater.downloadUpdate();return {ok:true};}catch(err){updateState={...updateState,status:'error',error:String(err?.message||err)};return {ok:false,error:updateState.error};}
+});
+ipcMain.handle('update-install',async e=>{
+  if(denyUntrusted(e)||!autoUpdater||!updateState.downloaded)return {ok:false,error:'No hay una actualización descargada.'};
+  try{autoUpdater.quitAndInstall(false,true);return {ok:true};}catch(err){return {ok:false,error:String(err?.message||err)};}
 });
 /* ---------- Cuenta Nova: registro, inicio de sesión y sincronización ---------- */
 ipcMain.handle('account-status', e => denyUntrusted(e) ? { loggedIn:false, id:'', username:'' } : accounts.status());

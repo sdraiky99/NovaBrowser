@@ -2,7 +2,7 @@
   "name": "nova-browser",
   "productName": "Nova",
   "version": "2.2.0",
-  "description": "Navegador web moderno basado en Chromium con Study, espacios de trabajo, seguridad y rendimiento",
+  "description": "Navegador web moderno basado en Chromium con Nova Tab, Study, vista dividida, perfiles, zoom, seguridad, rendimiento y actualizaciones directas",
   "author": "Nova",
   "main": "main.js",
   "scripts": {
@@ -13,7 +13,8 @@
   "dependencies": {
     "@ghostery/adblocker-electron": "2.18.2",
     "cross-fetch": "4.1.0",
-    "sql.js": "1.14.2"
+    "sql.js": "1.14.2",
+    "electron-updater": "6.8.10"
   },
   "devDependencies": {
     "electron": "44.4.5",

@@ -1,3 +1,6 @@
+## Nova 2.2.0
+- Barra superior, vista dividida, menú contextual web reforzado, perfiles funcionales en principal, zoom real, guía de navegador predeterminado y actualizaciones directas.
+
 # Nova 2.1.0
 
 - Nova Tab como hub central de Study, Workspaces, pestañas, notas, PDF, rendimiento, seguridad, perfiles, Sync, extensiones y Media Hub.

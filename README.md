@@ -24,3 +24,8 @@ El proyecto incluye un servicio de referencia en `account-server/`. Para usar cu
 
 ## Nova 2.1
 Nova Tab incorpora un centro de acceso para Study, Workspaces, pestañas, notas, PDF, rendimiento, seguridad, perfiles, sincronización, extensiones y media.
+
+
+## Nova 2.2.0
+Nueva barra superior para acceder a las funciones principales, vista dividida, menú contextual web reforzado, perfiles desde la ventana principal, zoom real con porcentaje y restauración, guía de navegador predeterminado y comprobación/actualización directa sobre instalaciones de Windows compatibles.
+

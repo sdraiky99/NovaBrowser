@@ -39,7 +39,7 @@ const CATALOG = [
     css: 'ytd-watch-flexy #comments,ytd-watch-flexy #related,ytd-watch-next-secondary-results-renderer,#secondary.ytd-watch-flexy{display:none!important}' },
   { id: 'desbloquear', name: 'Permitir copiar y clic derecho', cat: 'Utilidades', desc: 'Desbloquea webs que impiden seleccionar texto, copiar o usar el menú contextual.',
     css: '*{-webkit-user-select:text!important;user-select:text!important}',
-    js: `const ev=['contextmenu','copy','cut','selectstart','dragstart'],h=e=>e.stopImmediatePropagation();ev.forEach(n=>document.addEventListener(n,h,true));H.off=()=>ev.forEach(n=>document.removeEventListener(n,h,true));` },
+    js: `const ev=['contextmenu','copy','cut','selectstart','dragstart'],h=e=>e.stopPropagation();ev.forEach(n=>document.addEventListener(n,h,true));H.off=()=>ev.forEach(n=>document.removeEventListener(n,h,true));` },
   { id: 'progreso', name: 'Barra de progreso de lectura', cat: 'Lectura', desc: 'Una línea fina arriba muestra cuánto has avanzado en la página.',
     js: `const b=document.createElement('div');b.id='nx-progreso';b.style.cssText='position:fixed;left:0;top:0;height:3px;width:0;z-index:2147483647;background:linear-gradient(90deg,#22d3ee,#8b5cf6);pointer-events:none;transition:width .1s';const f=()=>{const m=document.documentElement.scrollHeight-innerHeight;b.style.width=(m>0?Math.min(100,scrollY/m*100):0)+'%'};addEventListener('scroll',f,{passive:true});f();document.documentElement.appendChild(b);H.off=()=>{removeEventListener('scroll',f);b.remove()};` },
   { id: 'regla', name: 'Regla de lectura', cat: 'Lectura', desc: 'Resalta una franja que sigue al ratón para no perder la línea mientras lees.',

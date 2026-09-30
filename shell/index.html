@@ -92,13 +92,28 @@ body.noanim *{animation:none!important;transition:none!important}
 /* ---------- Microanimaciones (100-250 ms) ---------- */
 .ib,.btn,.tab,.fld,#addr{transition:background-color .12s,color .12s,border-color .12s,box-shadow .12s}
 .ib:active,.btn:active{transform:scale(.96)}
+
+#nova22-top-tools{display:flex;align-items:center;gap:2px;height:38px;-webkit-app-region:no-drag;position:relative;z-index:120}
+#nova22-top-tools>.nova22-topbtn{height:30px;padding:0 9px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--fg);cursor:pointer;font-size:12px;white-space:nowrap}
+#nova22-top-tools>.nova22-topbtn:hover,#nova22-top-tools>.nova22-topbtn.on{background:color-mix(in srgb,var(--acc) 14%,transparent);border-color:var(--acc);color:var(--acc)}
+#nova22-top-pop{position:fixed;top:40px;right:72px;z-index:240;display:none;min-width:300px;max-width:430px;padding:10px;background:var(--bar);border:1px solid var(--bd);border-radius:14px;box-shadow:0 25px 80px #000c}
+#nova22-top-pop.on{display:grid;gap:6px}
+#nova22-top-pop .nova22-menuitem{display:flex;align-items:center;gap:9px;width:100%;padding:9px 10px;border:0;border-radius:9px;background:transparent;color:var(--fg);cursor:pointer;text-align:left}
+#nova22-top-pop .nova22-menuitem:hover{background:color-mix(in srgb,var(--acc) 13%,transparent);color:var(--acc)}
+#nova22-zoom-pop{position:fixed;top:40px;right:120px;z-index:241;display:none;min-width:170px;padding:10px;background:var(--bar);border:1px solid var(--bd);border-radius:12px;box-shadow:0 22px 70px #000c}
+#nova22-zoom-pop.on{display:block}.nova22-zoomrow{display:flex;align-items:center;justify-content:space-between;gap:7px}.nova22-zoomrow button{min-width:38px}.nova22-zoompct{min-width:62px;text-align:center;font-weight:700}
+#nova22-webctx{position:fixed;z-index:1000;display:none;min-width:230px;max-width:330px;padding:6px;background:var(--bar);border:1px solid var(--bd);border-radius:12px;box-shadow:0 25px 90px #000c}
+#nova22-webctx.on{display:grid;gap:2px}.nova22-ctxitem{border:0;background:transparent;color:var(--fg);text-align:left;padding:8px 10px;border-radius:8px;cursor:pointer}.nova22-ctxitem:hover{background:color-mix(in srgb,var(--acc) 13%,transparent);color:var(--acc)}.nova22-ctxsep{height:1px;background:var(--bd);border:0;margin:4px 0}
+#nova22-split{position:absolute;inset:0;z-index:30;background:var(--bg);display:none}.nova22-split-pane{position:absolute;top:38px;bottom:0;overflow:hidden;background:#fff}.nova22-split-left{left:0;width:50%;border-right:1px solid var(--bd)}.nova22-split-right{right:0;width:50%}.nova22-split-pane webview{position:absolute!important;inset:0!important;display:flex!important;width:100%!important;height:100%!important}.nova22-split-head{position:absolute;left:0;right:0;top:0;height:38px;background:var(--bar);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:6px;padding:0 7px;z-index:40}.nova22-split-head input{flex:1;height:26px}.nova22-split-close{margin-left:auto}
+#nova22-first{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:800;width:min(590px,92vw);padding:18px;background:var(--bar);border:1px solid var(--acc);border-radius:18px;box-shadow:0 30px 100px #000c;display:none}.nova22-first.on{display:block}.nova22-first-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.nova22-first-card{padding:13px;border:1px solid var(--bd);background:color-mix(in srgb,var(--bg) 80%,transparent);border-radius:12px}.nova22-first-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
+@media(max-width:900px){#nova22-top-tools>.nova22-topbtn{padding:0 6px;font-size:11px}.nova22-split-left,.nova22-split-right{width:100%;position:absolute;left:0;right:0;height:50%}.nova22-split-left{top:38px;bottom:auto;border-right:0;border-bottom:1px solid var(--bd)}.nova22-split-right{top:calc(50% + 19px);bottom:0}.nova22-split-pane{top:38px}}
 </style></head><body class="t-nova"><div id="app">
 <div id="top"><div id="brand"><img src="../assets/icon.png">Nova</div><div id="tabs"></div>
-<button class="ib" id="nt" title="Nueva pestaña (Ctrl+T)"></button>
+<div id="nova22-top-tools"></div><button class="ib" id="nt" title="Nueva pestaña (Ctrl+T)"></button>
 <div id="wc"><button class="ib" data-w="min"></button><button class="ib" data-w="max"></button><button class="ib" data-w="close"></button></div></div>
 <div id="bar"><button class="ib" id="bk"></button><button class="ib" id="fw"></button><button class="ib" id="rl"></button>
 <input id="addr" placeholder="Busca o escribe una dirección"><button class="ib" id="st" title="Favorito"></button><button class="ib" id="sh" title="Captura"></button></div>
-<div id="mid"><div id="side"></div><div id="view"><div id="find"><input class="fld" id="fi" placeholder="Buscar en la página"><button class="btn" id="fx">✕</button></div></div><div id="panel"><div id="pin"></div></div></div></div>
+<div id="mid"><div id="side"></div><div id="view"><div id="nova22-split"></div><div id="find"><input class="fld" id="fi" placeholder="Buscar en la página"><button class="btn" id="fx">✕</button></div></div><div id="panel"><div id="pin"></div></div></div></div>
 <script>
 const {ipcRenderer:ipc}=require('electron'),fs=require('fs'),path=require('path'),{pathToFileURL}=require('url');
 const $=s=>document.querySelector(s);
@@ -192,4 +207,4 @@ async function ask(text,shown){if(!text.trim())return;if(!S.key){chat.push({role
   if(panel==='ai')draw()}
 
 (async()=>{if(!localStorage.nova){const c=await ipc.invoke('install-cfg');if(c.theme)S.theme=c.theme;if(c.adblock===false)S.adblock=false;save()}applyTheme();newTab()})();
-</script><script src="extras.js"></script><script src="extras2.js"></script><script src="extras3.js"></script><script src="extras4.js"></script><script src="extras5.js"></script><script src="extras6.js"></script><script src="extras7.js"></script><script src="extras8.js"></script><script src="extras9.js"></script></body></html>
+</script><script src="extras.js"></script><script src="extras2.js"></script><script src="extras3.js"></script><script src="extras4.js"></script><script src="extras5.js"></script><script src="extras6.js"></script><script src="extras7.js"></script><script src="extras8.js"></script><script src="extras9.js"></script><script src="extras10.js"></script></body></html>
