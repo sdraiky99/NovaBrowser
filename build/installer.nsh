@@ -1,10 +1,10 @@
-; Nova 1.6.1 - instalador: textos, presentación animada y registro como navegador.
+; Nova 1.6.4 - instalador: textos, presentación animada y registro como navegador.
 ; Si la compilación falla por la presentación animada, añade la línea siguiente al principio de este archivo:
 ;   !define NOVA_NO_ANIM
 ; (el flujo de GitHub Actions lo hace solo si el primer intento falla).
 
 !macro customHeader
-  BrandingText "Nova Browser 1.6.1"
+  BrandingText "Nova Browser 1.6.4"
   !define MUI_WELCOMEPAGE_TITLE "Bienvenido a Nova"
   !define MUI_WELCOMEPAGE_TEXT "Un navegador rápido, moderno y privado.$\r$\n$\r$\nEste asistente instalará Nova en tu equipo en menos de un minuto. No necesitas permisos de administrador y tus datos se conservan si ya tenías una versión anterior."
   !define MUI_DIRECTORYPAGE_TEXT_TOP "Elige la carpeta donde se instalará Nova. Se instala solo para tu usuario, por lo que no se piden permisos de administrador."

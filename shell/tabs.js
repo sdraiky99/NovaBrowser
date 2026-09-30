@@ -156,12 +156,12 @@ N.toggleAI = () => { panel = panel === 'ai' ? null : 'ai'; draw(); };
 const combo = c => {
   if (c === 'space') return N.toggleAI(); if (c === 'tab') return cycle(1); if (c === 'shift+tab') return cycle(-1);
   if (c === 'r') return reload(false); if (c === 'shift+r') return reload(true);
-  if (c === 'shift+d') return N.saveAll && N.saveAll(); if (c === 'shift+b') { S.bbar = !S.bbar; save(); N.bbar && N.bbar(); }
+  if (c === 'shift+d') return N.saveAll && N.saveAll(); if (c === 'shift+b') return N.bbar ? N.bbar() : (S.bmbar = !S.bmbar, save());
 };
 ipc.on('combo', (_, c) => combo(c));
 document.addEventListener('keydown', e => {
   if (!e.ctrlKey || e.altKey) return; const c = (e.shiftKey ? 'shift+' : '') + (e.key === ' ' ? 'space' : e.key.toLowerCase());
-  if (['space', 'tab', 'shift+tab', 'r', 'shift+r', 'shift+d', 'shift+b'].includes(c)) { e.preventDefault(); combo(c); }
+  if (['space', 'tab', 'shift+tab', 'r', 'shift+r', 'shift+d'].includes(c)) { e.preventDefault(); combo(c); }
 });
 
 /* ---------- acciones del Command Center ---------- */

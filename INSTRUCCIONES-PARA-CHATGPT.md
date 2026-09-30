@@ -1,7 +1,7 @@
-# Instrucciones para ChatGPT: completar el setup de Nova 1.6.1
+# Instrucciones para ChatGPT: completar el setup de Nova 1.6.4
 
 ## PROMPT PARA PEGAR (copia desde aquí)
-Actúa como guía paciente de GitHub y Windows. Te paso el proyecto "Nova" (un navegador basado en Chromium/Electron) y tu misión es que yo termine con el instalador `Nova-Setup-1.6.1.exe` y el portable `Nova-Portable-1.6.1.exe` descargables en la pestaña Releases de mi repositorio https://github.com/sdraiky99/NovaBrowser.
+Actúa como guía paciente de GitHub y Windows. Te paso el proyecto "Nova" (un navegador basado en Chromium/Electron) y tu misión es que yo termine con el instalador `Nova-Setup-1.6.4.exe` y el portable `Nova-Portable-1.6.4.exe` descargables en la pestaña Releases de mi repositorio https://github.com/sdraiky99/NovaBrowser.
 REGLAS: (1) NO tengo administrador, ni CMD, ni PowerShell, ni puedo instalar programas: todo debe hacerse desde el navegador web con clics. (2) Háblame en español, con pasos cortos y numerados, UNA acción cada vez. (3) Después de cada bloque pídeme una captura o que te diga qué veo. (4) Si algo falla, pídeme el texto en rojo del log de Actions antes de proponer cambios. (5) No me pidas comandos de terminal. (6) No inventes botones: si no estás seguro de cómo se llama algo en GitHub, dilo.
 Contexto técnico y procedimiento: sigue el documento de abajo.
 
@@ -20,7 +20,7 @@ Estructura correcta en la RAÍZ del repositorio (no dentro de una carpeta "nova"
 3. Comprobar en la página principal del repo que se ven package.json, main.js, shell, assets, build. Si veo una carpeta "nova" que lo contiene todo, está mal: hay que resubir el contenido de dentro.
 4. Comprobar que existe .github/workflows/build.yml. Si no: Add file > Create new file > nombre `.github/workflows/build.yml` > pegar el contenido de COPIA-build.yml > Commit.
 5. Pestaña Actions: debe aparecer "Build Nova". Amarillo = compilando (5-8 min), verde = listo, rojo = fallo.
-6. Repo > Releases (barra derecha) > release más reciente "Nova 1.6.1" > descargar Nova-Portable-1.6.1.exe (recomendado, no instala nada) o Nova-Setup-1.6.1.exe (instala solo para mi usuario, sin admin).
+6. Repo > Releases (barra derecha) > release más reciente "Nova 1.6.4" > descargar Nova-Portable-1.6.4.exe (recomendado, no instala nada) o Nova-Setup-1.6.4.exe (instala solo para mi usuario, sin admin).
 
 ## 3. Diagnóstico
 | Síntoma | Causa probable | Solución |
@@ -54,5 +54,5 @@ Estructura correcta en la RAÍZ del repositorio (no dentro de una carpeta "nova"
 - Los fondos online vienen de Wikimedia Commons en tiempo de ejecución (necesita internet).
 - Limitación conocida: esta versión nunca se ha ejecutado en Windows por quien la escribió; espera pequeños fallos y corrígelos con el log.
 
-- Instalador 1.6.1: build/installer.nsh incluye una pagina de bienvenida animada (nsDialogs + temporizador que cambia build/slide1..5.bmp). Nunca se ha compilado por quien la escribio. build.yml reintenta solo sin animacion (define NOVA_NO_ANIM) si el primer intento falla; para desactivarla a mano, anade `!define NOVA_NO_ANIM` como primera linea de build/installer.nsh. Las imagenes BMP deben ser de 24 bits.
+- Instalador 1.6.4: build/installer.nsh incluye una pagina de bienvenida animada (nsDialogs + temporizador que cambia build/slide1..5.bmp). Nunca se ha compilado por quien la escribio. build.yml reintenta solo sin animacion (define NOVA_NO_ANIM) si el primer intento falla; para desactivarla a mano, anade `!define NOVA_NO_ANIM` como primera linea de build/installer.nsh. Las imagenes BMP deben ser de 24 bits.
 - Primer uso: onboard() en shell/extras.js (5 pasos + guia con marcas sobre #nt, #addr, #st, #side, #mn). Ajustes > Apariencia: appearanceBlock() en shell/extras5.js.

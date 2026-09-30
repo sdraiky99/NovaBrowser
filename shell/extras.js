@@ -114,7 +114,7 @@ function internalTab(u) {
   Object.assign(el, { getURL: () => 'nova://' + name, canGoBack: () => false, canGoForward: () => false, goBack() { }, goForward() { }, reload: () => PG[name](el), loadURL() { }, stopFindInPage() { }, findInPage() { } });
   $('#view').appendChild(el);
   const te = document.createElement('div'); te.className = 'tab';
-  const T = { historial: 'Historial', descargas: 'Descargas', notas: 'Notas', juegos: 'Nova Snake', ajustes: 'Ajustes', acerca: 'Acerca de Nova', novedades: 'Novedades', marcadores: 'Marcadores', privacidad: 'Privacidad', personalizar: 'Personalizar', tienda: 'Tienda de extensiones', bienvenida: 'Bienvenida' }[name] || name;
+  const T = { historial: 'Historial', descargas: 'Descargas', notas: 'Notas', juegos: 'Nova Snake', ajustes: 'Ajustes', acerca: 'Acerca de Nova', novedades: 'Novedades', marcadores: 'Marcadores', privacidad: 'Privacidad', personalizar: 'Personalizar', tienda: 'Tienda de extensiones', bienvenida: 'Bienvenida', migrar: 'Migrar navegador', rendimiento: 'Rendimiento y RAM', seguridad: 'Seguridad' }[name] || name;
   te.innerHTML = '<img src="../assets/icon.png"><span>' + T + '</span><button class="ib sm">' + ic('x') + '</button>';
   const t = { wv: el, el: te }; tabs.push(t); $('#tabs').appendChild(te);
   te.onmousedown = e => { if (e.button === 1) closeTab(t); };

@@ -21,7 +21,7 @@ const st = document.createElement('style');
 st.textContent = `
 .tg{-webkit-app-region:no-drag;display:flex;align-items:center;gap:5px;height:24px;padding:0 9px;margin:0 2px 3px;border-radius:99px;background:color-mix(in srgb,var(--gc) 28%,transparent);border:1px solid var(--gc);font-size:12px;cursor:pointer;white-space:nowrap;align-self:flex-end}.tg i{width:8px;height:8px;border-radius:50%;background:var(--gc)}
 .tab.mut span::before{content:'🔇 '}.tab[draggable=true]{-webkit-user-drag:element}
-#bmb{display:none;gap:4px;padding:3px 8px;background:var(--bg);border-bottom:1px solid var(--bd);overflow:hidden}#bmb.on{display:flex}#bmb .btn{padding:2px 10px;font-size:12px;white-space:nowrap}
+#bmb{display:none;position:fixed;left:0;right:0;bottom:0;z-index:35;gap:4px;padding:5px 8px;background:var(--bar);border-top:1px solid var(--bd);box-shadow:0 -8px 30px #0005;overflow:auto;align-items:center;min-height:28px}#bmb.on{display:flex}#bmb .btn{padding:4px 10px;font-size:12px;white-space:nowrap}#bmb .bmc{margin-left:auto;flex:none}
 .upd{position:fixed;right:16px;bottom:16px;z-index:40;width:290px;padding:16px;background:var(--bar);border:1px solid var(--acc);border-radius:calc(var(--r) * 1.4);box-shadow:0 12px 50px #000a;display:flex;flex-direction:column;gap:10px;animation:tin .35s}
 .sx{width:36px;height:20px;border-radius:20px;background:var(--bd);position:relative;cursor:pointer;flex:none}.sx::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.15s}.sx.on{background:var(--acc)}.sx.on::after{left:18px}
 .ban{padding:8px 10px;border-radius:var(--r);border:1px solid var(--bd);font-size:12px;display:flex;justify-content:space-between;gap:8px;align-items:center}.ban.err{border-color:#ff5c5c;color:#ff8a8a}
@@ -147,15 +147,15 @@ function bookmarkAll() {
     tabs.forEach(t => { try { const u = t.wv.getURL(); if (u && !isNT(u) && !u.startsWith('nova:') && !S.marks.some(m => m.u === u)) S.marks.push({ u, t: t.el.querySelector('span').textContent, f: v.f }); } catch { } }); save(); bmBar(); toast('Pestañas guardadas');
   });
 }
-const bmb = document.createElement('div'); bmb.id = 'bmb'; $('#bar').after(bmb);
+const bmb = document.createElement('div'); bmb.id = 'bmb'; $('#mid').after(bmb);
 function bmBar() {
   bmb.classList.toggle('on', !!S.bmbar); if (!S.bmbar) return;
   const top = S.marks.filter(m => !m.f), fol = folderList().filter(f => f && !f.includes('/'));
-  bmb.innerHTML = fol.map(f => `<button class="btn" data-f="${esc(f)}">▸ ${esc(f)}</button>`).join('') + top.map(m => `<button class="btn" data-u="${esc(m.u)}">${esc((m.t || m.u).slice(0, 26))}</button>`).join('') || '<span class="mut">Guarda páginas con Ctrl+D</span>';
+  bmb.innerHTML = (fol.map(f => `<button class="btn" data-f="${esc(f)}">▸ ${esc(f)}</button>`).join('') + top.map(m => `<button class="btn" data-u="${esc(m.u)}">${esc((m.t || m.u).slice(0, 26))}</button>`).join('')) || '<span class="mut">Guarda páginas con Ctrl+D</span>'; bmb.insertAdjacentHTML('beforeend','<button class="btn bmc" id="bmbclose" title="Ocultar barra de marcadores">Ocultar</button>'); q('#bmbclose').onclick=toggleBar;
   $$('[data-u]', bmb).forEach(b => b.onclick = () => cur.wv.tagName === 'WEBVIEW' ? cur.wv.loadURL(b.dataset.u) : newTab(b.dataset.u));
   $$('[data-f]', bmb).forEach(b => b.onclick = e => { e.stopPropagation(); const r = b.getBoundingClientRect(); menu(S.marks.filter(m => m.f === b.dataset.f).map(m => [esc((m.t || m.u).slice(0, 40)), () => newTab(m.u)]).concat(S.marks.some(m => m.f === b.dataset.f) ? [] : [['(vacía)', () => { }]]), r.left, r.bottom + 4); });
 }
-const toggleBar = () => { S.bmbar = !S.bmbar; save(); bmBar(); };
+const toggleBar = () => { S.bmbar = !S.bmbar; save(); bmBar(); }; N.bbar = toggleBar;
 function parseHTML(txt) {
   const d = new DOMParser().parseFromString(txt, 'text/html'), out = [], fol = [];
   const walk = (dl, p) => [...dl.children].forEach(ch => {
@@ -355,7 +355,7 @@ const bd4 = draw; draw = function () { bd4(); if (panel === 'ai') aiPanel(); };
 
 /* ================= ATAJOS, PALETA, AJUSTES ================= */
 const toggleAI = () => { panel = panel === 'ai' ? null : 'ai'; draw(); };
-const K = { r: () => cur.wv.reload(), R: () => { try { cur.wv.reloadIgnoringCache(); } catch { cur.wv.reload(); } }, D: bookmarkAll, B: toggleBar, ' ': toggleAI, tab: () => step(1), 'shift-tab': () => step(-1), shot: () => $('#sh').click() };
+const K = { r: () => cur.wv.reload(), R: () => { try { cur.wv.reloadIgnoringCache(); } catch { cur.wv.reload(); } }, D: bookmarkAll, B: () => N.bbar(), ' ': toggleAI, tab: () => step(1), 'shift-tab': () => step(-1), shot: () => $('#sh').click() };
 ipc.on('key', (_, k) => K[k] && K[k]());
 document.addEventListener('keydown', e => { if (!e.ctrlKey) return; const k = e.key === 'Tab' ? (e.shiftKey ? 'shift-tab' : 'tab') : e.key; if (K[k] && k !== 'shot') { e.preventDefault(); K[k](); } });
 NOVA.extraActs = [['Cerrar pestaña', () => closeTab(cur)], ['Reabrir pestaña cerrada', reopen], ['Marcadores', () => newTab('nova://marcadores')], ['Guardar esta página', saveMark], ['Guardar todas las pestañas', bookmarkAll], ['Mostrar/ocultar barra de marcadores', toggleBar],

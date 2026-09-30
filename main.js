@@ -59,9 +59,10 @@ async function setAdblock(on) {
       const { ElectronBlocker } = require('@ghostery/adblocker-electron');
       // Cache versionada para no reutilizar un motor serializado de otra versión.
       const cache = { path: AD_CACHE(), read: fs.promises.readFile, write: fs.promises.writeFile };
-      const load = () => ElectronBlocker.fromPrebuiltAdsAndTracking(fetch, cache);
+      const fetcher = require('cross-fetch');
+      const load = () => ElectronBlocker.fromPrebuiltAdsAndTracking(fetcher, cache);
       let b;
-      try { b = await load(); } catch { b = await ElectronBlocker.fromPrebuiltAdsAndTracking(fetch); }
+      try { b = await load(); } catch { b = await ElectronBlocker.fromPrebuiltAdsAndTracking(fetcher); }
       let bt = 0, n = 0;
       b.on('request-blocked', () => {
         n++;
@@ -393,6 +394,67 @@ ipcMain.handle('migration-scan', e => { if (denyUntrusted(e)) return []; try { r
 ipcMain.handle('migration-read', async (e, data) => {
   if (denyUntrusted(e) || !data || typeof data !== 'object' || typeof data.id !== 'string' || data.id.length > 64) return { error: 'Solicitud no válida.' };
   try { return await migration.read(data.id, { bookmarks: data.bookmarks !== false, history: data.history !== false }); } catch (err) { return { error: err.message || 'No se pudo leer el perfil.' }; }
+});
+ipcMain.handle('performance-info', async e => {
+  if (denyUntrusted(e)) return { ok: false };
+  try {
+    const sys = process.getSystemMemoryInfo ? process.getSystemMemoryInfo() : {};
+    const mainMem = process.memoryUsage();
+    const appMetrics = typeof app.getAppMetrics === 'function' ? app.getAppMetrics() : [];
+    const byPid = new Map(appMetrics.map(m => [m.pid, m]));
+    const all = webContents.getAllWebContents().filter(w => w.getType() === 'webview' && !w.isDestroyed()).slice(0, 40);
+    const tabs = await Promise.all(all.map(async w => {
+      try {
+        const m = await w.getProcessMemoryInfo();
+        const pid = typeof w.getOSProcessId === 'function' ? w.getOSProcessId() : null;
+        const metric = pid ? byPid.get(pid) : null;
+        return {
+          id: w.id,
+          pid,
+          url: String(w.getURL() || '').slice(0, 500),
+          title: String(w.getTitle() || '').slice(0, 160),
+          workingSetKB: Number(m.workingSetSize || m.residentSet || 0),
+          privateKB: Number(m.private || 0),
+          cpuPercent: Number(metric?.cpu?.percentCPUUsage || 0),
+          throttling: typeof w.getBackgroundThrottling === 'function' ? w.getBackgroundThrottling() : true
+        };
+      } catch { return null; }
+    }));
+    const totalKB = Number(sys.total || 0), freeKB = Number(sys.free || 0);
+    const mainMetric = byPid.get(process.pid);
+    return {
+      ok: true,
+      generatedAt: Date.now(),
+      main: {
+        pid: process.pid,
+        rssKB: Math.round(mainMem.rss / 1024),
+        heapUsedKB: Math.round(mainMem.heapUsed / 1024),
+        externalKB: Math.round(mainMem.external / 1024),
+        cpuPercent: Number(mainMetric?.cpu?.percentCPUUsage || 0)
+      },
+      system: { totalKB, freeKB, availableKB: Number(sys.available || 0) },
+      tabs: tabs.filter(Boolean)
+    };
+  } catch { return { ok: false }; }
+});
+ipcMain.handle('performance-mode', (e, enabled) => {
+  if (denyUntrusted(e) || typeof enabled !== 'boolean') return false;
+  for (const w of webContents.getAllWebContents()) {
+    if (w.getType() !== 'webview' || w.isDestroyed()) continue;
+    // Mantén el throttling normal de Electron siempre activado.
+    try { w.setBackgroundThrottling(true); } catch { }
+    try { w.setImageAnimationPolicy(enabled ? 'animateOnce' : 'animate'); } catch { }
+  }
+  prefs.performance = Object.assign(prefs.performance || {}, { memorySaver: enabled }); savePrefs();
+  return true;
+});
+ipcMain.handle('performance-cache', async e => {
+  if (denyUntrusted(e)) return false;
+  try { await web().clearCache(); return true; } catch { return false; }
+});
+ipcMain.handle('security-state', e => {
+  if (denyUntrusted(e)) return {};
+  return { popupBlocked: true, insecureContentBlocked: true, webSecurity: true, webviewSandbox: true, webviewNodeIntegration: false, fileAccessFromFileUrls: false, universalAccessFromFileUrls: false, singleInstance: !!gotLock, adblock: blockOn !== false, csp: true };
 });
 ipcMain.handle('ai-ask', async (e, data) => {
   if (denyUntrusted(e) || !data || typeof data !== 'object') return { error: 'Solicitud no válida.' };

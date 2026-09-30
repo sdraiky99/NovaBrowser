@@ -111,7 +111,7 @@ const AI=`<svg viewBox="0 0 32 32"><defs><linearGradient id="ng" x1="0" y1="0" x
 document.querySelectorAll('[data-w]').forEach(b=>{b.innerHTML=ic({min:'min',max:'max',close:'x'}[b.dataset.w]);b.onclick=()=>ipc.send('win',b.dataset.w)});
 
 const ud=ipc.sendSync('userdata'),NOVA_VER=ipc.sendSync('app-version');
-let STORED={};try{STORED=JSON.parse(localStorage.nova||'{}')||{}}catch{try{localStorage.removeItem('nova')}catch{}};const S=Object.assign({theme:'nova',search:'https://duckduckgo.com/?q=',adblock:true,anim:true,sec:'videojuegos',wp:'',marks:[],key:'',mods:{}},STORED);
+let STORED={};try{STORED=JSON.parse(localStorage.nova||'{}')||{}}catch{try{localStorage.removeItem('nova')}catch{}};const S=Object.assign({theme:'nova',search:'https://duckduckgo.com/?q=',adblock:true,anim:true,sec:'videojuegos',wp:'',marks:[],key:'',mods:{},memSave:false,bmbar:false},STORED);
 const save=()=>localStorage.nova=JSON.stringify(S);
 const THEMES={nova:'Nova',win95:'Windows 95',code:'Código',undertale:'Undertale',aero:'Aero'};
 const SECS={coches:'Coches',videojuegos:'Videojuegos',codigo:'Código'};
@@ -191,4 +191,4 @@ async function ask(text,shown){if(!text.trim())return;if(!S.key){chat.push({role
   if(panel==='ai')draw()}
 
 (async()=>{if(!localStorage.nova){const c=await ipc.invoke('install-cfg');if(c.theme)S.theme=c.theme;if(c.adblock===false)S.adblock=false;save()}applyTheme();newTab()})();
-</script><script src="extras.js"></script><script src="extras2.js"></script><script src="extras3.js"></script><script src="extras4.js"></script><script src="extras5.js"></script></body></html>
+</script><script src="extras.js"></script><script src="extras2.js"></script><script src="extras3.js"></script><script src="extras4.js"></script><script src="extras5.js"></script><script src="extras6.js"></script></body></html>
