@@ -1,0 +1,22 @@
+Nova 2.5.2 — Clean Surface
+
+Comprobaciones realizadas en este paquete:
+- node --check main.js
+- node --check preload.js
+- node --check migration.js
+- node --check account-service.js
+- node --check account-server/server.js
+- node --check shell/shell.js
+- node --check shell/extensions.js
+- node --check shell/features.js
+- node scripts/check-project.js
+
+Resultado: Nova 2.5.2 clean-surface checks OK.
+
+Nota de build:
+En el entorno de trabajo no estaban instaladas las dependencias de npm y no había una caché de paquetes utilizable, así que no se ejecutó Electron ni electron-builder y no se ha generado un .exe desde aquí.
+Para continuar en una máquina de build:
+  npm install
+  npm run check
+  npm start
+  npm run dist:win

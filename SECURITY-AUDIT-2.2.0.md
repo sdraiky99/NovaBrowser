@@ -46,3 +46,18 @@ El entorno de revisión es Debian x86_64 y no dispone de toolchain Windows ni de
 - Assets de bienvenida presentes.
 - Configuración Windows NSIS existente.
 - Configuración Linux RPM/AppImage añadida.
+
+
+## Revisión Nova 2.5.2
+- El hallazgo alto de renderer con Node Integration queda corregido: `nodeIntegration:false`, `contextIsolation:true` y `preload.js` con `contextBridge`.
+- El bridge usa listas blancas para `invoke`, `send` y eventos.
+- Operaciones locales heredadas del renderer se limitan mediante IPC validado a rutas de datos conocidas.
+- La IA continúa ejecutándose desde el proceso principal; el renderer ya no necesita una clave API directamente para llamar al proveedor.
+- Sigue pendiente adoptar un lockfile generado y verificado desde npm en el entorno de release.
+
+## Addendum 2.5.2 — shell clean-up
+
+- `shell/index.html` ya no contiene el runtime JavaScript inline; el código de shell vive en `shell/shell.js`.
+- La API renderer/proceso principal sigue limitada por `preload.js` y `contextBridge`.
+- Se añadieron a la whitelist los canales de apertura de rutas controladas.
+- No se ha activado sandbox de la ventana principal porque el preload actual usa módulos Node para compatibilidad; es una fase posterior de endurecimiento.

@@ -1,61 +1,53 @@
+# Nova 2.5.2 — Clean Surface
 
-## Nova 2.5.0 · Air + Safari + Power
-- Safari Mode con superficie cristalina y navegación compacta.
-- Nova Islands, Glance y Command Center ampliado.
-- Focus, Reader+, Colecciones y Web Capture.
-- Nova Writer + Nova Docs con exportación DOCX.
-- Nova Study 3, Privacy Center, Performance Center y Download Hub.
-- Web Apps para guardar accesos rápidos a webs.
-- Setup, onboarding y Novedades rehechos con recursos locales.
-- `nova://mejoras` para sugerir y votar ideas dentro de Nova.
+Nova es un navegador basado en Chromium con una superficie tranquila y herramientas avanzadas que aparecen bajo demanda.
 
-# Nova 2.5.0
-Navegador basado en Chromium (Electron). Paginas: nova://historial, descargas, marcadores, notas, juegos, ajustes, privacidad, novedades, acerca, personalizar, tienda, bienvenida.
-Atajos: Ctrl+K comandos, Ctrl+Espacio Nova IA, Ctrl+D marcador. Nova IA: Ajustes > Nova IA (clave cifrada).
-Navegador predeterminado: menu > Navegador predeterminado (solo con Nova-Setup, no con el portable).
+## Qué cambia en 2.5.2
 
-## Migración de navegador
-En `nova://migrar` puedes detectar perfiles locales de Google Chrome, Microsoft Edge y Mozilla Firefox e importar marcadores e historial. La importación es de solo lectura y no elimina ni modifica el navegador de origen. Las contraseñas cifradas de los perfiles no se extraen.
+- Air + Safari como experiencias principales.
+- Tabs + Spaces + Islands con una jerarquía común.
+- Glance para previsualizar enlaces sin llenar la barra de pestañas.
+- Command Center (`Ctrl/Cmd + K`) para buscar y ejecutar acciones.
+- Focus, Reader+, Study, Writer y Docs.
+- Exportación DOCX real desde Nova Writer.
+- Privacy Center, Performance Center y Download Hub.
+- `nova://mejoras` para proponer feedback y revisar los votos locales.
+- Setup y onboarding simplificados.
+- Renderer protegido mediante `preload.js` + `contextBridge`; el arranque ya no carga capas `extras*.js`.
 
-## Seguridad y estabilidad
-Nova incorpora validación de IPC, aislamiento de `webview`, restricciones de navegación y ventanas, permisos controlados, recuperación ante procesos renderer bloqueados, copias atómicas del estado y comprobaciones automáticas de seguridad en GitHub.
+## Arquitectura
 
+El renderer activo está organizado alrededor de:
 
-## Nova 2.5.0 · versión actual
-- Nova Air: interfaz limpia con cristal suave, pestañas redondeadas y modo claro/oscuro adaptativo.
-- Nueva pestaña minimalista, accesos profundos mediante Command Center y sidebar más silenciosa.
-- El botón `+` permanece junto a la última pestaña y se mueve al reordenarlas.
-- Los enlaces pueden abrirse en pestaña nueva con Ctrl/Cmd + clic, clic central o mediante el ajuste de clic normal.
-- Se conservan los temas y funciones retro/avanzadas anteriores, incluida la personalización Cyberpunk y Aero.
-- Novedades 2.5.0 en nova://novedades.
+- `main.js`: proceso principal y políticas de seguridad.
+- `preload.js`: API controlada para IPC, portapapeles, rutas y shell.
+- `shell/index.html`: shell visual y navegación base.
+- `shell/shell.js`: shell base, pestañas, grupos, enlaces y atajos.
+- `shell/extensions.js`: extensiones de contenido.
+- `shell/features.js`: bundle consolidado de funcionalidades.
+- `shell/themes.css`: temas y tokens visuales.
 
-## Nova 2.3.0
-- Super Cat opcional: se quita y se vuelve a activar desde Ajustes › Super Cat (o con el botón 🚫 de su panel).
-- Tema Windows 7 Aero con cristal real (Windows 11 22H2+) y tema Nova 44 (estilo Chrome 44).
+Las capas históricas ya no forman parte del árbol de ejecución.
 
+## Páginas útiles
 
-Esta actualización añade una barra de marcadores inferior opcional, menú contextual de marcadores y carpetas, bienvenida visual, importación y migración desde Chrome/Edge/Firefox, Centro de Rendimiento/RAM, modo opcional de ahorro de memoria y nuevas extensiones de seguridad, privacidad y rendimiento. La migración trabaja en modo solo lectura y no modifica el navegador de origen.
+- `nova://bienvenida` — onboarding.
+- `nova://tutorial` — tutorial interactivo.
+- `nova://safari` — Safari Mode.
+- `nova://islands` — organización por Islands.
+- `nova://writer` — editor y exportación DOCX.
+- `nova://docs` — documentos.
+- `nova://study3` — espacio de estudio.
+- `nova://mejoras` — feedback de la comunidad.
+- `nova://novedades` — novedades de la versión.
 
-## Nova 2.1.0
+## Desarrollo
 
-Esta versión conserva las funciones anteriores y añade: perfiles con sesiones separadas, F12/DevTools y Cuenta Nova con sincronización online. El cliente no sincroniza contraseñas guardadas, cookies ni la clave de Nova IA.
+```bash
+npm install
+npm run check
+npm start
+```
 
-### Cuenta Nova
-El proyecto incluye un servicio de referencia en `account-server/`. Para usar cuentas online reales, ese servicio debe desplegarse detrás de HTTPS y `account-config.json` debe apuntar a su API. El identificador mostrado por Nova usa el formato `usuario@Nova.com`.
-
-
-## Nova 2.1
-Nova Tab incorpora un centro de acceso para Study, Workspaces, pestañas, notas, PDF, rendimiento, seguridad, perfiles, sincronización, extensiones y media.
-
-
-## Nova 2.3.0 · versión actual
-Nueva barra superior para acceder a las funciones principales, vista dividida, menú contextual web reforzado, perfiles desde la ventana principal, zoom real con porcentaje y restauración, guía de navegador predeterminado y comprobación/actualización directa sobre instalaciones de Windows compatibles.
-
-
-
-## Fedora / Linux
-
-Nova puede distribuirse para Fedora mediante RPM y, de forma más universal, AppImage. El build de Linux se genera con `npm run dist:linux`; en una release de GitHub se publican los artefactos Linux junto a los de Windows. El RPM se instala con `sudo dnf install ./Nova-2.2.0.x86_64.rpm`.
-## Super Cat
-
-Nova incluye ahora un asistente flotante llamado **Super Cat**. Usa el dibujo de `assets/super-cat.png`, tiene animaciones de estado, respuestas habladas mediante la voz del sistema y dictado por micrófono cuando Chromium lo permite. Para las conversaciones con ChatGPT, la clave de OpenAI se guarda cifrada mediante `safeStorage` y las peticiones se envían desde el proceso principal de Electron a la Responses API.
+Para una build de Windows: `npm run dist:win`.
+Para Linux: `npm run dist:linux`.

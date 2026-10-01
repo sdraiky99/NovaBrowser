@@ -1,3 +1,32 @@
+## 2.5.2 — Clean Surface
+
+- Limpieza definitiva del shell: `shell.js` + `features.js`.
+- Preload/contextBridge endurecido y canales IPC revisados.
+- Safari/Air, Islands, nuevas pestañas desde enlaces y tutorial unificados.
+- Assets de novedades versionados en `assets/release/2.5.2/`.
+
+# Changelog
+
+## 2.5.1 - 2026-10-01
+- Limpieza definitiva del renderer: un único `shell/features.js` en runtime.
+- Nuevo `preload.js` con `contextBridge`, IPC con lista blanca y acceso local reducido.
+- Air/Safari refinados con sidebar compacta y acceso profundo desde Command Center.
+- Onboarding y setup simplificados; el instalador deja el recorrido de producto en Nova.
+- Tutorial integrado en `nova://tutorial`.
+- Descargas/capturas con acciones locales seguras y soporte de portapapeles mediante IPC.
+- Novedades y feedback revisados para dejar claro qué información es local.
+- Correcciones de versión y de comprobaciones estáticas heredadas.
+
+
+## 2.5.0 - 2026-10-01
+- Safari Mode, Nova Islands y Glance.
+- Command Center ampliado, Focus y Reader+.
+- Collections, Web Capture y Web Apps.
+- Nova Writer/Docs con exportación DOCX.
+- Study 3, Privacy Center, Performance Center y Download Hub.
+- Nuevo onboarding, setup y Novedades con imágenes locales.
+- Nuevo sitio `nova://mejoras`.
+
 ## 2.4.5
 - Nova Air: interfaz limpia, translucidez suave y comportamiento adaptativo claro/oscuro.
 - Pestañas: botón + integrado junto a la última pestaña y reordenable con el resto.
