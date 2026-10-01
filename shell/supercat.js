@@ -5,6 +5,9 @@
 (() => {
   if (window.__superCatLoaded) return;
   window.__superCatLoaded = true;
+  const ENABLE_KEY = 'nova.supercat.enabled';
+  const isOn = () => { try { return localStorage.getItem(ENABLE_KEY) !== '0'; } catch { return true; } };
+  const boot = () => {
   const q = (s, r = document) => r.querySelector(s);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const KEY = 'nova.supercat';
@@ -154,6 +157,46 @@
   render(); checkKey();
   if(!messages.length) { sayBubble('¡Hola! Soy Super Cat 😺', false); setMood('curious','hola'); }
   if(open) openPanel();
-  setInterval(()=>{ if(!busy && !open && Math.random()<0.13){setMood('idle','tranquilo');sayBubble(['¿Qué hacemos? 😺','Estoy aquí 👀','Miau.','¿Necesitas ayuda?'][Math.floor(Math.random()*4)],false);} }, 9000);
-  document.addEventListener('visibilitychange',()=>{ if(document.hidden && !busy)setMood('sleepy','adormilado'); else if(!busy)setMood('idle','tranquilo'); });
+  const idleTimer = setInterval(()=>{ if(!busy && !open && Math.random()<0.13){setMood('idle','tranquilo');sayBubble(['¿Qué hacemos? 😺','Estoy aquí 👀','Miau.','¿Necesitas ayuda?'][Math.floor(Math.random()*4)],false);} }, 9000);
+  const onVis = ()=>{ if(document.hidden && !busy)setMood('sleepy','adormilado'); else if(!busy)setMood('idle','tranquilo'); };
+  document.addEventListener('visibilitychange', onVis);
+
+  // botón para quitar a Super Cat sin salir de su panel
+  const hideBtn = document.createElement('button'); hideBtn.className = 'sc-icon'; hideBtn.id = 'supercat-hide'; hideBtn.title = 'Quitar Super Cat (se puede volver a activar en Ajustes › Super Cat)'; hideBtn.textContent = '🚫';
+  q('#supercat-close', root).before(hideBtn);
+  hideBtn.onclick = () => { if (confirm('¿Quitar a Super Cat?\nPodrás volver a activarlo en Ajustes › Super Cat.')) api.disable(); };
+
+  return () => { // desmontar: sin restos en pantalla ni tareas en segundo plano
+    clearInterval(idleTimer); document.removeEventListener('visibilitychange', onVis); clearTimeout(sayBubble.t);
+    try { if (mic) mic.stop(); } catch {} try { speechSynthesis.cancel(); } catch {}
+    root.remove(); style.remove();
+  };
+  };
+
+  let destroy = null;
+  const toastSafe = m => { try { toast(m); } catch {} };
+  const api = window.NovaSuperCat = {
+    isEnabled: () => isOn(),
+    enable() { try { localStorage.removeItem(ENABLE_KEY); } catch {} if (!destroy) destroy = boot(); toastSafe('Super Cat activado'); },
+    disable() { try { localStorage.setItem(ENABLE_KEY, '0'); } catch {} if (destroy) { destroy(); destroy = null; } toastSafe('Super Cat quitado. Vuelve a activarlo en Ajustes › Super Cat'); },
+    forgetKey: () => ipc.invoke('supercat-key-set', ''),
+    clearChat() { try { const d = JSON.parse(localStorage.getItem('nova.supercat') || '{}'); d.messages = []; localStorage.setItem('nova.supercat', JSON.stringify(d)); } catch {} }
+  };
+  if (isOn()) destroy = boot();
+
+  // Ajustes › Super Cat
+  const N = window.NOVA;
+  if (N && N.SECT && N.SEC) {
+    N.SECT.push(['supercat', 'Super Cat']);
+    N.SEC.supercat = (c, again) => {
+      const on = api.isEnabled();
+      c.innerHTML = `<h2>Super Cat</h2><span class="mut">El gato asistente de Nova. Si no lo quieres, puedes quitarlo por completo: desaparece de la pantalla y deja de ejecutarse en segundo plano.</span>
+      <div class="row"><span>Mostrar a Super Cat</span><button class="btn ${on ? 'on' : ''}" id="sc-tg">${on ? 'Activado' : 'Desactivado'}</button></div>
+      <span class="mut">Conversación y clave de ChatGPT</span>
+      <div class="row"><button class="btn" id="sc-cc">Borrar conversación</button><button class="btn" id="sc-fk">Olvidar clave de ChatGPT</button></div>`;
+      c.querySelector('#sc-tg').onclick = () => { api.isEnabled() ? api.disable() : api.enable(); again(); };
+      c.querySelector('#sc-cc').onclick = () => { api.clearChat(); toastSafe('Conversación borrada'); if (destroy) { destroy(); destroy = boot(); } };
+      c.querySelector('#sc-fk').onclick = async () => { await api.forgetKey(); toastSafe('Clave de ChatGPT eliminada'); };
+    };
+  }
 })();

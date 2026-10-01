@@ -18,7 +18,7 @@ Ejecuta:
    chmod +x install-fedora.sh
    ./install-fedora.sh
 
-El script de esta versión descarga el RPM x86_64 de Nova 2.2.0; también acepta un RPM local o una URL con `--file`/`--url`.
+El script de esta versión descarga el RPM x86_64 de Nova 2.3.0; también acepta un RPM local o una URL con `--file`/`--url`.
 
 Desinstalar
 -----------

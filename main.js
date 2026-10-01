@@ -329,6 +329,18 @@ app.whenReady().then(() => {
 
 ipcMain.on('fullscreen', e => { if (denyUntrusted(e) || !win || win.isDestroyed()) return; try { win.setFullScreen(!win.isFullScreen()); } catch { } });
 ipcMain.handle('opacity', (e, v) => { if (denyUntrusted(e) || !win || win.isDestroyed() || typeof v !== 'number' || !Number.isFinite(v)) return false; try { win.setOpacity(Math.max(0.35, Math.min(1, v))); return true; } catch { return false; } });
+// Cristal real (Aero): el sistema difumina lo que hay detrás de la ventana. Solo Windows 11 22H2+ (build 22621); en otros sistemas se devuelve ok:false y la interfaz usa un fondo de respaldo.
+ipcMain.handle('window-material', (e, mode) => {
+  if (denyUntrusted(e) || !win || win.isDestroyed()) return { ok: false };
+  mode = mode === 'acrylic' ? 'acrylic' : 'none';
+  try {
+    const build = parseInt(String(require('os').release()).split('.')[2], 10) || 0;
+    if (process.platform !== 'win32' || build < 22621 || typeof win.setBackgroundMaterial !== 'function') return { ok: false, reason: 'unsupported' };
+    win.setBackgroundMaterial(mode);
+    win.setBackgroundColor(mode === 'acrylic' ? '#00000000' : '#0d0b1a');
+    return { ok: mode === 'acrylic', mode };
+  } catch (err) { return { ok: false, reason: String(err && err.message || err) }; }
+});
 ipcMain.on('win', (e, a) => {
   if (denyUntrusted(e)) return;
   if (a === 'min') win.minimize();

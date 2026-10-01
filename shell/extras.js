@@ -35,7 +35,6 @@ st.textContent = `
 .t-neon #top,.t-neon #bar{box-shadow:0 0 18px #ff2bd644}.t-neon .tab.on{box-shadow:0 0 12px var(--acc);border-color:var(--acc)}.t-neon #addr:focus{box-shadow:0 0 14px var(--acc)}
 .t-neon #brand,.t-neon h3,.t-neon h2{text-shadow:0 0 10px var(--acc)}.t-neon .ai svg{filter:drop-shadow(0 0 8px #ff2bd6)}
 .t-win95 .ipage h2,.t-undertale .ipage h2,.t-code .ipage h2{font-weight:700}.t-win95 .card,.t-win95 .li{border-radius:0;box-shadow:inset -1px -1px #404040,inset 1px 1px #fff;border:0}
-.t-aero .card{background:linear-gradient(#ffffffd0,#bcdcf5d0);backdrop-filter:blur(14px)}
 .t-undertale .card{border:4px solid #fff}
 `;
 document.head.appendChild(st);

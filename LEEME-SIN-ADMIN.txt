@@ -7,7 +7,7 @@ WINDOWS
 2. El workflow `.github/workflows/build.yml` comprueba y compila Windows y Linux en cada push/PR.
 3. Para publicar una versión crea un tag, por ejemplo:
 
-   v2.2.0
+   v2.3.0
 
    El workflow `.github/workflows/release.yml` publica los EXE, RPM, AppImage y SHA256SUMS.txt.
 4. El Setup de Nova usa NSIS y está configurado para actualizar sobre una instalación existente; el updater de Electron descarga la nueva versión cuando el build es una instalación compatible.
@@ -15,8 +15,8 @@ WINDOWS
 
 FEDORA / LINUX
 --------------
-- RPM: `sudo dnf install ./Nova-2.2.0-x86_64.rpm`
-- AppImage: `chmod +x Nova-2.2.0-x86_64.AppImage && ./Nova-2.2.0-x86_64.AppImage`
+- RPM: `sudo dnf install ./Nova-2.3.0-x86_64.rpm`
+- AppImage: `chmod +x Nova-2.3.0-x86_64.AppImage && ./Nova-2.3.0-x86_64.AppImage`
 - También puedes usar `fedora/install-fedora.sh` para buscar e instalar el RPM publicado más reciente.
 
 IMPORTACIÓN

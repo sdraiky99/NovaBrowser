@@ -1,3 +1,8 @@
+## 2.3.0
+- Super Cat se puede quitar y volver a activar (Ajustes › Super Cat).
+- Windows 7 Aero rehecho con cristal real (Windows 11 22H2+) y reflejos.
+- Nuevo tema Nova 44 (estilo Chrome 44, 2015).
+
 ## Nova 2.2.0 + Super Cat
 
 - Añadido Super Cat como asistente flotante con animaciones de ánimo.
