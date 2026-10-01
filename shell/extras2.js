@@ -82,6 +82,7 @@ function palette() {
   ov.onmousedown = e => { if (e.target === ov) ov.remove(); };
   build(); pq.focus();
 }
+NOVA.palette = palette;
 ipc.on('key', (_, k) => { if (k === 'k') palette(); if (k === 'T') reopen(); });
 document.addEventListener('keydown', e => { if (!e.ctrlKey) return; if (e.key === 'k') { e.preventDefault(); palette(); } if (e.key === 'T') { e.preventDefault(); reopen(); } });
 

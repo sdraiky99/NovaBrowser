@@ -1,22 +1,12 @@
-## 2.5.2 — Clean Surface
+# Nova 2.5.4 — Hotfix
 
-- Limpieza definitiva del shell: `shell.js` + `features.js`.
-- Preload/contextBridge endurecido y canales IPC revisados.
-- Safari/Air, Islands, nuevas pestañas desde enlaces y tutorial unificados.
-- Assets de novedades versionados en `assets/release/2.5.2/`.
+- Repara Nova IA desde el panel y Command Center: acciones de abrir, nueva conversación, selección y resumen vuelven a ejecutar su lógica.
+- Añade un puente seguro `nova-ai` en el proceso principal para no depender de la clave API en el renderer.
+- Hace robustos los enlaces internos de Nova Tab y añade aliases para evitar caídas silenciosas a «Acerca de Nova».
+- Expone el Command Center (`NOVA.palette`) y el acceso rápido a Nueva nota.
+- Unifica etiquetas del instalador y versión 2.5.4.
 
 # Changelog
-
-## 2.5.1 - 2026-10-01
-- Limpieza definitiva del renderer: un único `shell/features.js` en runtime.
-- Nuevo `preload.js` con `contextBridge`, IPC con lista blanca y acceso local reducido.
-- Air/Safari refinados con sidebar compacta y acceso profundo desde Command Center.
-- Onboarding y setup simplificados; el instalador deja el recorrido de producto en Nova.
-- Tutorial integrado en `nova://tutorial`.
-- Descargas/capturas con acciones locales seguras y soporte de portapapeles mediante IPC.
-- Novedades y feedback revisados para dejar claro qué información es local.
-- Correcciones de versión y de comprobaciones estáticas heredadas.
-
 
 ## 2.5.0 - 2026-10-01
 - Safari Mode, Nova Islands y Glance.

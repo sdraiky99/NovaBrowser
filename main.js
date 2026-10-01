@@ -437,7 +437,7 @@ ipcMain.handle('save-docx', async (e, payload) => {
     const styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style><w:style w:type="paragraph" w:styleId="h1"><w:name w:val="Heading 1"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:before="240" w:after="120"/></w:pPr><w:rPr><w:b/><w:sz w:val="32"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="h2"><w:name w:val="Heading 2"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:before="180" w:after="90"/></w:pPr><w:rPr><w:b/><w:sz w:val="26"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="h3"><w:name w:val="Heading 3"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:before="140" w:after="70"/></w:pPr><w:rPr><w:b/><w:sz w:val="22"/></w:rPr></w:style></w:styles>';
     const now = new Date().toISOString();
     const core = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>${title.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</dc:title><dc:creator>Nova</dc:creator><dcterms:created xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="dcterms:W3CDTF">${now}</dcterms:created></cp:coreProperties>`;
-    const appXml2 = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Nova</Application><AppVersion>2.5.0</AppVersion></Properties>';
+    const appXml2 = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Nova</Application><AppVersion>2.5.4</AppVersion></Properties>';
     const zip = zipDocx([['[Content_Types].xml', appXml],['_rels/.rels', rels],['word/document.xml', xml],['word/styles.xml', styles],['word/_rels/document.xml.rels', docRels],['docProps/core.xml', core],['docProps/app.xml', appXml2]]);
     fs.writeFileSync(f, zip); return f;
   } catch { return null; }
@@ -488,6 +488,35 @@ ipcMain.handle('supercat-chat', async (e, data) => {
 const getKey = () => { try { return safeStorage.isEncryptionAvailable() ? safeStorage.decryptString(fs.readFileSync(keyFile())) : null; } catch { return null; } };
 ipcMain.handle('key-set', (e, k) => { try { if (denyUntrusted(e) || typeof k !== 'string' || k.length > 2048) return false; if (!k) { fs.rmSync(keyFile(), { force: true }); return true; } if (!safeStorage.isEncryptionAvailable()) return false; atomicWrite(keyFile(), safeStorage.encryptString(k)); return true; } catch { return false; } });
 ipcMain.handle('key-has', e => denyUntrusted(e) ? false : !!getKey());
+ipcMain.handle('nova-ai', async (e, data) => {
+  if (denyUntrusted(e) || !data || typeof data !== 'object') return { ok:false, error:'Solicitud no válida.' };
+  const { messages, system, model } = data;
+  if (!Array.isArray(messages) || messages.length < 1 || messages.length > 20 || typeof system !== 'string' || system.length > 12000) return { ok:false, error:'Solicitud no válida.' };
+  if (messages.some(m => !m || typeof m !== 'object' || !['user','assistant'].includes(m.role) || typeof m.content !== 'string' || m.content.length > 12000)) return { ok:false, error:'Solicitud no válida.' };
+  const key = getKey();
+  if (!key) return { ok:false, error:'NOVA_KEY_MISSING' };
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'content-type':'application/json',
+        'x-api-key':key,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:typeof model==='string' && model.trim() ? model.trim() : 'claude-sonnet-4-6',
+        max_tokens:1200,
+        system,
+        messages
+      }),
+      signal:AbortSignal.timeout(60000)
+    });
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok) return { ok:false, error:String(d?.error?.message || ('HTTP '+r.status)) };
+    return { ok:true, text:String((d.content||[]).map(c=>c?.text||'').join('')), model:d.model||model||'claude-sonnet-4-6' };
+  } catch (err) { return { ok:false, error:String(err?.message||err||'Error desconocido') }; }
+});
 let stateBackupAt = 0;
 ipcMain.handle('state-save', (e, raw) => {
   if (denyUntrusted(e) || typeof raw !== 'string' || raw.length > 8 * 1024 * 1024) return false;
@@ -513,6 +542,17 @@ ipcMain.handle('open-external', async (e, raw) => {
   if (denyUntrusted(e) || typeof raw !== 'string' || raw.length > 4096) return false;
   try { const u = new URL(raw); if (u.protocol !== 'https:') return false; await shell.openExternal(u.href); return true; } catch { return false; }
 });
+
+ipcMain.handle('open-downloads-folder', async e => {
+  if (denyUntrusted(e)) return false;
+  try {
+    const result = await shell.openPath(app.getPath('downloads'));
+    return !result;
+  } catch {
+    return false;
+  }
+});
+
 let updateState = { status:'idle', current:app.getVersion(), available:false, version:'', downloaded:false, progress:0, error:'' };
 const updateInfo = info => ({ version:String(info?.version || ''), releaseDate:info?.releaseDate || '', releaseName:String(info?.releaseName || '') });
 const updateReleaseUrl = 'https://github.com/sdraiky99/NovaBrowser/releases';
