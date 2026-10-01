@@ -7,7 +7,7 @@ const exists = f => fs.existsSync(path.join(root, f));
 const fail = m => { console.error('CHECK FAIL:', m); process.exitCode = 1; };
 
 const pkg = JSON.parse(read('package.json'));
-if (pkg.version !== '2.5.0') fail(`version expected 2.5.0, got ${pkg.version}`);
+if (pkg.version !== '2.5.3') fail(`version expected 2.5.3, got ${pkg.version}`);
 for (const f of ['main.js','migration.js','account-service.js','account-config.json','account-server/server.js','shell/index.html','shell/extensions.js','shell/extras6.js','shell/extras7.js','shell/extras8.js','shell/extras9.js','shell/extras11.js','shell/supercat.js','build/installer.nsh','.github/workflows/build.yml','.github/workflows/security.yml']) if (!exists(f)) fail(`missing ${f}`);
 for (const f of ['assets/welcome/welcome-hero.jpg','assets/welcome/welcome-performance.jpg','assets/welcome/welcome-security.jpg']) if (!exists(f)) fail(`missing welcome asset ${f}`);
 if (!pkg.build?.linux?.target?.includes('rpm')) fail('Fedora RPM target missing');
@@ -60,7 +60,7 @@ if (bCount !== 1) fail(`expected one Ctrl+Shift+B handler, got ${bCount}`);
 
 const ex8 = read('shell/extras8.js','shell/extras9.js');
 for (const x of ['Nova Study','workspaces','readerToggle','Accesibilidad','Rendimiento','Bienvenido a Nova 2.0.0','Gran actualización']) if (!ex8.includes(x)) fail(`2.0 feature missing: ${x}`);
-if (!read('build/installer.nsh').includes('Nova 2.5.0')) fail('installer branding is not 2.5.0');
+if (!read('build/installer.nsh').includes('Nova 2.5.3')) fail('installer branding is not 2.5.0');
 if (!exists('RELEASE_NOTES_2.0.0.md')) fail('2.0.0 release notes missing');
 if (!exists('RELEASE_NOTES_2.1.0.md')) fail('2.1.0 release notes missing');
 
@@ -83,7 +83,7 @@ console.log(`Nova 2.2.0 static check OK · ${ids.length} extensions · top toolb
 const readme = read('README.md');
 if (/^# Nova 1\.6\.4/m.test(readme)) fail('README still starts at 1.6.4');
 const installer = read('build/installer.nsh');
-if (!installer.includes('Nova 2.5.0')) fail('installer branding is not 2.5.0');
+if (!installer.includes('Nova 2.5.3')) fail('installer branding is not 2.5.0');
 const workflow = read('.github/workflows/build.yml');
 if (workflow.includes('softprops/action-gh-release')) fail('CI build workflow must not publish releases');
 const rel = read('.github/workflows/release.yml');
@@ -129,4 +129,4 @@ for (const x of ['PG.safari', 'PG.islands', 'PG.glance', 'PG.focus', 'PG.reader'
 if (!nt245.includes('#nova/islands') || !nt245.includes('#nova/writer')) fail('Nova Tab 2.5 actions missing');
 for (const f of ['assets/release/2.5/safari.svg','assets/release/2.5/islands.svg','assets/release/2.5/writer.svg','assets/release/2.5/improvements.svg','RELEASE_NOTES_2.5.0.md']) if (!exists(f)) fail(`missing 2.5.0 file ${f}`);
 if (!exists('shell/nova25.js')) fail('Nova 2.5 runtime missing');
-console.log('Nova 2.5.0 Air + Safari + Islands + Writer + feedback checks OK');
+console.log('Nova 2.5.3 recovery checks OK');

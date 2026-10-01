@@ -172,7 +172,7 @@ function createMain() {
     frame: false, show: false, title: 'Nova',
     icon: logoImg(prefs.logo),
     backgroundColor: '#0d0b1a',
-    webPreferences: { preload: path.join(__dirname, 'preload.js'), nodeIntegration: false, contextIsolation: true, sandbox: false, webviewTag: true, webSecurity: true, allowRunningInsecureContent: false }
+    webPreferences: { nodeIntegration: true, contextIsolation: false, webviewTag: true, webSecurity: true, allowRunningInsecureContent: false }
   });
   win.loadFile('shell/index.html');
   win.once('ready-to-show', () => {
@@ -379,62 +379,6 @@ ipcMain.handle('install-cfg', e => { if (denyUntrusted(e)) return {};
   try { return JSON.parse(fs.readFileSync(userFile('install.json'), 'utf8')); } catch { return {}; }
 });
 ipcMain.handle('adblock', (e, on) => { if (denyUntrusted(e) || typeof on !== 'boolean') return false; return setAdblock(on); });
-function isInside(base, target) {
-  const rb = path.resolve(base), rt = path.resolve(target);
-  return rt === rb || rt.startsWith(rb + path.sep);
-}
-function safeFileRoot(target) {
-  const roots = [app.getPath('userData'), app.getPath('downloads')];
-  return roots.some(root => isInside(root, target));
-}
-ipcMain.on('fs-list', (e, dir) => {
-  if (denyUntrusted(e) || typeof dir !== 'string' || dir.length > 4096) return e.returnValue = [];
-  const target = path.resolve(dir);
-  const roots = [path.join(__dirname, 'assets', 'wallpapers'), path.join(app.getPath('userData'), 'wallpapers')];
-  if (!roots.some(root => isInside(root, target))) return e.returnValue = [];
-  try { e.returnValue = fs.readdirSync(target); } catch { e.returnValue = []; }
-});
-ipcMain.on('fs-mkdir', (e, dir) => {
-  if (denyUntrusted(e) || typeof dir !== 'string' || dir.length > 4096) return e.returnValue = false;
-  const target = path.resolve(dir);
-  if (!isInside(app.getPath('userData'), target)) return e.returnValue = false;
-  try { fs.mkdirSync(target, { recursive: true }); e.returnValue = true; } catch { e.returnValue = false; }
-});
-ipcMain.on('fs-write', (e, file, data) => {
-  if (denyUntrusted(e) || typeof file !== 'string' || file.length > 4096) return e.returnValue = false;
-  const target = path.resolve(file);
-  if (!safeFileRoot(target)) return e.returnValue = false;
-  try {
-    const out = typeof data === 'string' ? Buffer.from(data) : Buffer.from(data || []);
-    if (out.length > 25 * 1024 * 1024) return e.returnValue = false;
-    fs.mkdirSync(path.dirname(target), { recursive: true });
-    fs.writeFileSync(target, out);
-    e.returnValue = true;
-  } catch { e.returnValue = false; }
-});
-ipcMain.handle('open-path', async (e, raw) => {
-  if (denyUntrusted(e) || typeof raw !== 'string' || raw.length > 4096) return false;
-  try {
-    const target = path.resolve(raw);
-    const roots = [app.getPath('downloads'), app.getPath('pictures'), app.getPath('userData')];
-    if (!roots.some(root => isInside(root, target))) return false;
-    const err = await shell.openPath(target);
-    return !err;
-  } catch { return false; }
-});
-ipcMain.handle('show-in-folder', (e, raw) => {
-  if (denyUntrusted(e) || typeof raw !== 'string' || raw.length > 4096) return false;
-  try {
-    const target = path.resolve(raw);
-    const roots = [app.getPath('downloads'), app.getPath('pictures'), app.getPath('userData')];
-    if (!roots.some(root => isInside(root, target))) return false;
-    shell.showItemInFolder(target); return true;
-  } catch { return false; }
-});
-ipcMain.handle('copy-shot', (e, buf) => {
-  if (denyUntrusted(e) || (!Buffer.isBuffer(buf) && !(buf instanceof Uint8Array)) || buf.length > 25 * 1024 * 1024) return false;
-  try { clipboard.writeImage(nativeImage.createFromBuffer(Buffer.from(buf))); return true; } catch { return false; }
-});
 ipcMain.handle('save-shot', (e, buf) => {
   if (denyUntrusted(e) || (!Buffer.isBuffer(buf) && !(buf instanceof Uint8Array)) || buf.length > 25 * 1024 * 1024) return null;
   const f = path.join(app.getPath('pictures'), `Nova-${Date.now()}.png`);
@@ -493,7 +437,7 @@ ipcMain.handle('save-docx', async (e, payload) => {
     const styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style><w:style w:type="paragraph" w:styleId="h1"><w:name w:val="Heading 1"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:before="240" w:after="120"/></w:pPr><w:rPr><w:b/><w:sz w:val="32"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="h2"><w:name w:val="Heading 2"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:before="180" w:after="90"/></w:pPr><w:rPr><w:b/><w:sz w:val="26"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="h3"><w:name w:val="Heading 3"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:before="140" w:after="70"/></w:pPr><w:rPr><w:b/><w:sz w:val="22"/></w:rPr></w:style></w:styles>';
     const now = new Date().toISOString();
     const core = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>${title.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</dc:title><dc:creator>Nova</dc:creator><dcterms:created xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="dcterms:W3CDTF">${now}</dcterms:created></cp:coreProperties>`;
-    const appXml2 = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Nova</Application><AppVersion>2.5.2</AppVersion></Properties>';
+    const appXml2 = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Nova</Application><AppVersion>2.5.0</AppVersion></Properties>';
     const zip = zipDocx([['[Content_Types].xml', appXml],['_rels/.rels', rels],['word/document.xml', xml],['word/styles.xml', styles],['word/_rels/document.xml.rels', docRels],['docProps/core.xml', core],['docProps/app.xml', appXml2]]);
     fs.writeFileSync(f, zip); return f;
   } catch { return null; }
@@ -679,7 +623,7 @@ ipcMain.handle('performance-cache', async e => {
 });
 ipcMain.handle('security-state', e => {
   if (denyUntrusted(e)) return {};
-  return { popupBlocked: true, insecureContentBlocked: true, webSecurity: true, webviewSandbox: true, nodeIntegration: false, contextIsolation: true, webviewNodeIntegration: false, fileAccessFromFileUrls: false, universalAccessFromFileUrls: false, singleInstance: !!gotLock, adblock: blockOn !== false, csp: true };
+  return { popupBlocked: true, insecureContentBlocked: true, webSecurity: true, webviewSandbox: true, webviewNodeIntegration: false, fileAccessFromFileUrls: false, universalAccessFromFileUrls: false, singleInstance: !!gotLock, adblock: blockOn !== false, csp: true };
 });
 ipcMain.handle('ai-ask', async (e, data) => {
   if (denyUntrusted(e) || !data || typeof data !== 'object') return { error: 'Solicitud no válida.' };
