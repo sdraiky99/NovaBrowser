@@ -1,3 +1,10 @@
+## Nova 2.2.0 + Super Cat
+
+- Añadido Super Cat como asistente flotante con animaciones de ánimo.
+- Chat con OpenAI/ChatGPT mediante la Responses API y clave almacenada con `safeStorage`.
+- Voz de salida con `speechSynthesis` y dictado por voz cuando está disponible.
+- El contexto de la pestaña actual puede enviarse opcionalmente al asistente.
+
 ## Nova 2.2.0 — auditoría y distribución Fedora
 
 - Auditoría técnica de seguridad, IPC, navegación, cuentas, actualización, extensiones y persistencia.

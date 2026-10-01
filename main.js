@@ -381,6 +381,47 @@ ipcMain.handle('pick-wp', async (e, sec) => {
   return r.filePaths.length;
 });
 const keyFile = () => userFile('nova.key');
+const superCatKeyFile = () => userFile('supercat-openai.key');
+const getSuperCatKey = () => { try { return safeStorage.isEncryptionAvailable() ? safeStorage.decryptString(fs.readFileSync(superCatKeyFile())) : null; } catch { return null; } };
+ipcMain.handle('supercat-key-set', (e, k) => {
+  try {
+    if (denyUntrusted(e) || typeof k !== 'string' || k.length > 2048) return false;
+    if (!k) { fs.rmSync(superCatKeyFile(), { force: true }); return true; }
+    if (!safeStorage.isEncryptionAvailable()) return false;
+    atomicWrite(superCatKeyFile(), safeStorage.encryptString(k));
+    return true;
+  } catch { return false; }
+});
+ipcMain.handle('supercat-key-has', e => denyUntrusted(e) ? false : !!getSuperCatKey());
+ipcMain.handle('supercat-chat', async (e, data) => {
+  if (denyUntrusted(e) || !data || typeof data !== 'object') return { error: 'Solicitud no válida.' };
+  const { messages, system, model, page } = data;
+  if (!Array.isArray(messages) || messages.length > 20 || typeof system !== 'string' || system.length > 12000) return { error: 'Solicitud no válida.' };
+  if (messages.some(m => !m || typeof m !== 'object' || !['user','assistant'].includes(m.role) || typeof m.content !== 'string' || m.content.length > 12000)) return { error: 'Solicitud no válida.' };
+  const key = getSuperCatKey();
+  if (!key) return { error: 'CHATGPT_KEY_MISSING' };
+  const post = async (url, headers, body) => {
+    const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body), signal: AbortSignal.timeout(60000) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d?.error?.message || ('HTTP ' + r.status));
+    return d;
+  };
+  try {
+    let input = messages.slice(-20);
+    if (typeof page === 'string' && page.length) {
+      input = [...input, { role: 'user', content: 'Contexto de la pestaña actual:\n' + page.slice(0, 12000) }];
+    }
+    const d = await post('https://api.openai.com/v1/responses', { authorization: 'Bearer ' + key }, {
+      model: typeof model === 'string' && model.trim() ? model.trim() : 'gpt-5.6-luna',
+      instructions: system,
+      input,
+      max_output_tokens: 1200
+    });
+    return { text: String(d.output_text || ''), model: d.model || model || 'gpt-5.6-luna', src: 'openai' };
+  } catch (err) {
+    return { error: String(err?.message || err || 'Error desconocido') };
+  }
+});
 const getKey = () => { try { return safeStorage.isEncryptionAvailable() ? safeStorage.decryptString(fs.readFileSync(keyFile())) : null; } catch { return null; } };
 ipcMain.handle('key-set', (e, k) => { try { if (denyUntrusted(e) || typeof k !== 'string' || k.length > 2048) return false; if (!k) { fs.rmSync(keyFile(), { force: true }); return true; } if (!safeStorage.isEncryptionAvailable()) return false; atomicWrite(keyFile(), safeStorage.encryptString(k)); return true; } catch { return false; } });
 ipcMain.handle('key-has', e => denyUntrusted(e) ? false : !!getKey());

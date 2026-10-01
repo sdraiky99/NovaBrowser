@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'self' file: data: blob:; object-src 'none'; base-uri 'none'; frame-src 'self' file:; img-src 'self' file: data: blob: https:; style-src 'self' 'unsafe-inline' file:; script-src 'self' 'unsafe-inline' file:; connect-src 'self' https://api.anthropic.com https://text.pollinations.ai https://api.github.com https://github.com;"><title>Nova</title>
+<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'self' file: data: blob:; object-src 'none'; base-uri 'none'; frame-src 'self' file:; img-src 'self' file: data: blob: https:; style-src 'self' 'unsafe-inline' file:; script-src 'self' 'unsafe-inline' file:; connect-src 'self' https://api.anthropic.com https://text.pollinations.ai https://api.openai.com https://api.github.com https://github.com;"><title>Nova</title>
 <link rel="stylesheet" href="themes.css"><link rel="icon" href="../assets/icon.png">
 <style>
 #app{display:flex;flex-direction:column;height:100vh}
@@ -207,4 +207,4 @@ async function ask(text,shown){if(!text.trim())return;if(!S.key){chat.push({role
   if(panel==='ai')draw()}
 
 (async()=>{if(!localStorage.nova){const c=await ipc.invoke('install-cfg');if(c.theme)S.theme=c.theme;if(c.adblock===false)S.adblock=false;save()}applyTheme();newTab()})();
-</script><script src="extras.js"></script><script src="extras2.js"></script><script src="extras3.js"></script><script src="extras4.js"></script><script src="extras5.js"></script><script src="extras6.js"></script><script src="extras7.js"></script><script src="extras8.js"></script><script src="extras9.js"></script><script src="extras10.js"></script></body></html>
+</script><script src="extras.js"></script><script src="extras2.js"></script><script src="extras3.js"></script><script src="extras4.js"></script><script src="extras5.js"></script><script src="extras6.js"></script><script src="extras7.js"></script><script src="extras8.js"></script><script src="extras9.js"></script><script src="extras10.js"></script><script src="supercat.js"></script></body></html>

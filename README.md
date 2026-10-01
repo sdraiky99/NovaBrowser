@@ -34,3 +34,6 @@ Nueva barra superior para acceder a las funciones principales, vista dividida, m
 ## Fedora / Linux
 
 Nova puede distribuirse para Fedora mediante RPM y, de forma más universal, AppImage. El build de Linux se genera con `npm run dist:linux`; en una release de GitHub se publican los artefactos Linux junto a los de Windows. El RPM se instala con `sudo dnf install ./Nova-2.2.0.x86_64.rpm`.
+## Super Cat
+
+Nova incluye ahora un asistente flotante llamado **Super Cat**. Usa el dibujo de `assets/super-cat.png`, tiene animaciones de estado, respuestas habladas mediante la voz del sistema y dictado por micrófono cuando Chromium lo permite. Para las conversaciones con ChatGPT, la clave de OpenAI se guarda cifrada mediante `safeStorage` y las peticiones se envían desde el proceso principal de Electron a la Responses API.
