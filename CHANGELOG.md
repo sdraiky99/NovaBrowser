@@ -1,3 +1,8 @@
+## 2.4.5
+- Nova Air: interfaz limpia, translucidez suave y comportamiento adaptativo claro/oscuro.
+- Pestañas: botón + integrado junto a la última pestaña y reordenable con el resto.
+- Enlaces: soporte para abrir directamente en una nueva pestaña (opción en Ajustes), además de Ctrl/Cmd+clic y clic central.
+
 ## 2.4.0
 - Nuevo tema **Cyberpunk** inspirado en Cyberpunk 2077: negro profundo, amarillo neón, cian y rojo; pestañas, botones y menús de esquinas cortadas; barra de direcciones tipo terminal y marca con efecto glitch. Se aplica también a Nova Tab y a las páginas internas.
 - Nuevo logotipo **Retro 2009** (esfera azul brillante estilo Web 2.0) con icono de Windows (.ico) y su propia **animación de inicio**: ventana clara, orbe que rebota, destello, nombre con reflejo y barra de progreso verde.

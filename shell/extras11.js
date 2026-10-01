@@ -2,7 +2,7 @@
 (() => {
   if (window.__novaRetro) return; window.__novaRetro = true;
   const { PG } = window.NOVA;
-  Object.assign(THEMES, { aero: 'Windows 7 Aero', nova44: 'Nova 44' });
+  Object.assign(THEMES, { air: 'Air', aero: 'Windows 7 Aero', nova44: 'Nova 44' });
   if (S.glass == null) S.glass = 55;
   if (S.glassReal == null) S.glassReal = true;
 
@@ -22,6 +22,15 @@
   .t-aero .tab:not(.on):hover::after,.t-nova44 .tab:not(.on):hover::after{background:var(--tabhov)}
   .t-aero #top,.t-nova44 #top{position:relative;z-index:3}
   .t-aero .tab.ld img,.t-nova44 .tab.ld img{content:var(--spin);animation:rspin .8s linear infinite}
+
+  /* ================= NOVA AIR ================= */
+  body.t-air{--ring:transparent;--tabbg:transparent;--tabhov:transparent;--tabon:var(--bar);--spin:${SPIN('%235b7cfa')};}
+  html:has(body.t-air){background:transparent}
+  body.t-air #app{position:relative;z-index:1}
+  body.t-air:not(.maxi) #app{padding:0 4px 4px}
+  body.t-air.nomat{background:radial-gradient(ellipse at 18% 0,rgba(160,180,230,.55),transparent 55%),radial-gradient(ellipse at 88% 100%,rgba(180,212,204,.48),transparent 52%),linear-gradient(160deg,#edf2f8,#dde4ed 60%,#e8eee8)}
+  @media(prefers-color-scheme:dark){body.t-air.nomat{background:radial-gradient(ellipse at 18% 0,rgba(91,124,250,.20),transparent 55%),radial-gradient(ellipse at 88% 100%,rgba(80,130,120,.18),transparent 52%),linear-gradient(160deg,#171a20,#11141a 60%,#181c1b)}}
+  body.t-air .tab.ld::after{background:var(--acc);height:2px;bottom:2px;border-radius:2px}
 
   /* ================= WINDOWS 7 AERO ================= */
   body.t-aero{--ring:rgba(30,55,90,.7);--tabbg:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.14));--tabhov:linear-gradient(rgba(255,255,255,.75),rgba(200,230,255,.35));--tabon:linear-gradient(#fdfeff,#e4edf9);--spin:${SPIN('%232f7fd0')};--ga:.55;
@@ -114,16 +123,16 @@
   /* ---------- cristal real: el sistema difumina lo que hay detrás ---------- */
   const mat = { want: 'none', ok: false, sent: null };
   function sync() {
-    const b = document.body, aero = b.classList.contains('t-aero');
+    const b = document.body, aero = b.classList.contains('t-aero'), air = b.classList.contains('t-air');
     document.documentElement.style.setProperty('--ga', (S.glass ?? 55) / 100);
     b.style.setProperty('--ga', (S.glass ?? 55) / 100);
     b.classList.toggle('maxi', outerWidth >= screen.availWidth - 2 && outerHeight >= screen.availHeight - 2);
-    const want = aero && S.glassReal !== false ? 'acrylic' : 'none';
+    const want = (aero || air) && S.glassReal !== false ? 'acrylic' : 'none';
     if (want !== mat.sent) {
       mat.sent = want;
-      ipc.invoke('window-material', want).then(r => { mat.ok = !!(r && r.ok); if (mat.sent === want) b.classList.toggle('nomat', aero && !mat.ok); }).catch(() => { b.classList.toggle('nomat', aero); });
+      ipc.invoke('window-material', want).then(r => { mat.ok = !!(r && r.ok); if (mat.sent === want) b.classList.toggle('nomat', (aero || air) && !mat.ok); }).catch(() => { b.classList.toggle('nomat', aero || air); });
     }
-    b.classList.toggle('nomat', aero && !(mat.ok && want === 'acrylic'));
+    b.classList.toggle('nomat', (aero || air) && !(mat.ok && want === 'acrylic'));
   }
   const bAT = applyTheme;
   applyTheme = function () { bAT(); sync(); };

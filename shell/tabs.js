@@ -6,6 +6,8 @@ const PFX = '__N__' + N.NONCE + ':';
 S.groups = S.groups || {};
 const isW = t => t && t.wv && t.wv.tagName === 'WEBVIEW';
 const tabsEl = $('#tabs');
+const tabAdd = $('#nt');
+const keepTabAddAtEnd = () => { if (tabAdd && tabsEl.lastElementChild !== tabAdd) tabsEl.appendChild(tabAdd); };
 
 /* ---------- estilos ---------- */
 const st = document.createElement('style');
@@ -57,7 +59,7 @@ function renderGroups() {
       c.ondragover = e => { if (drag) e.preventDefault(); }; c.ondrop = e => { e.preventDefault(); if (drag) setGroup(drag, t.g); };
     }
     if (g.collapsed && cur !== t) t.el.classList.add('gh');
-  }); save();
+  }); keepTabAddAtEnd(); save();
 }
 function setGroup(t, gid) {
   if (gid) { t.el.classList.remove('pin'); t.g = gid; const mem = tabs.filter(x => x !== t && x.g === gid); if (mem.length) mem[mem.length - 1].el.after(t.el); } else t.g = null;
@@ -98,7 +100,7 @@ function dnd(t) {
 tabsEl.addEventListener('dragover', e => {
   if (!drag) return; e.preventDefault();
   const after = [...tabsEl.querySelectorAll('.tab:not(.dragging)')].find(x => x.offsetParent && e.clientX < x.getBoundingClientRect().left + x.offsetWidth / 2);
-  after ? tabsEl.insertBefore(drag.el, after) : tabsEl.appendChild(drag.el);
+  after ? tabsEl.insertBefore(drag.el, after) : tabsEl.insertBefore(drag.el, tabAdd); keepTabAddAtEnd();
 });
 
 /* ---------- envolver newTab / sel: arrastrar, selección, audio, favicon ---------- */
@@ -106,11 +108,16 @@ const bn = newTab;
 newTab = function (u) {
   const t = bn(u); if (!t || t._x) return t; t._x = 1; dnd(t);
   if (isW(t)) {
-    t.wv.addEventListener('dom-ready', () => t.wv.executeJavaScript(`(()=>{if(window.__ns)return;window.__ns=1;const P=${JSON.stringify(PFX)};let z;
+    t.wv.addEventListener('dom-ready', () => t.wv.executeJavaScript(`(()=>{const P=${JSON.stringify(PFX)};window.__novaLinkMode=${!!S.newTabLinks};
+if(!window.__novaLinks){window.__novaLinks=1;const openLink=a=>{if(!a||!a.href||!/^https?:$/i.test((()=>{try{return new URL(a.href).protocol}catch{return ''}})()))return false;console.log(P+JSON.stringify({k:'link',u:a.href}));return true};
+document.addEventListener('click',e=>{const a=e.target&&e.target.closest&&e.target.closest('a[href]');if(!a)return;if(!(window.__novaLinkMode||e.ctrlKey||e.metaKey))return;if(openLink(a)){e.preventDefault();e.stopPropagation()}},true);
+document.addEventListener('auxclick',e=>{if(e.button!==1)return;const a=e.target&&e.target.closest&&e.target.closest('a[href]');if(!a)return;if(openLink(a)){e.preventDefault();e.stopPropagation()}},true)}
+if(window.__ns)return;window.__ns=1;let z;
 document.addEventListener('mouseup',e=>{clearTimeout(z);z=setTimeout(()=>{const s=String(getSelection()).trim();console.log(P+JSON.stringify(s.length>2?{k:'sel',t:s.slice(0,6000),x:e.clientX,y:e.clientY}:{k:'clr'}))},30)},true);
 document.addEventListener('mousedown',()=>console.log(P+JSON.stringify({k:'clr'})),true)})()`).catch(() => { }));
     t.wv.addEventListener('console-message', e => {
       if (!e.message.startsWith(PFX)) return; let m; try { m = JSON.parse(e.message.slice(PFX.length)); } catch { return; }
+      if (m.k === 'link' && typeof m.u === 'string') return newTab(m.u);
       if (m.k === 'clr') return hideChip();
       if (m.k === 'sel' && typeof m.t === 'string' && cur === t) return showChip(t, m);
       if (m.k === 'cmd' && isNT(t.wv.getURL())) runCmd(m);
