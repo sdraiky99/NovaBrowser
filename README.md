@@ -1,4 +1,4 @@
-# Nova 2.3.0
+# Nova 2.4.0
 Navegador basado en Chromium (Electron). Paginas: nova://historial, descargas, marcadores, notas, juegos, ajustes, privacidad, novedades, acerca, personalizar, tienda, bienvenida.
 Atajos: Ctrl+K comandos, Ctrl+Espacio Nova IA, Ctrl+D marcador. Nova IA: Ajustes > Nova IA (clave cifrada).
 Navegador predeterminado: menu > Navegador predeterminado (solo con Nova-Setup, no con el portable).
@@ -10,7 +10,12 @@ En `nova://migrar` puedes detectar perfiles locales de Google Chrome, Microsoft 
 Nova incorpora validación de IPC, aislamiento de `webview`, restricciones de navegación y ventanas, permisos controlados, recuperación ante procesos renderer bloqueados, copias atómicas del estado y comprobaciones automáticas de seguridad en GitHub.
 
 
-## Nova 2.3.0 · versión actual
+## Nova 2.4.0 · versión actual
+- Tema Cyberpunk (negro, amarillo neón, cian y rojo) y logotipo Retro 2009 con su propia animación de inicio.
+- Nueva pestaña minimalista: solo la barra de búsqueda; el resto está en la pestaña «Más».
+- Notas de actualización 2.4.0 en nova://novedades.
+
+## Nova 2.3.0
 - Super Cat opcional: se quita y se vuelve a activar desde Ajustes › Super Cat (o con el botón 🚫 de su panel).
 - Tema Windows 7 Aero con cristal real (Windows 11 22H2+) y tema Nova 44 (estilo Chrome 44).
 

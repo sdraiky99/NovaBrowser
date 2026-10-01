@@ -23,7 +23,7 @@ const { createMigrationService } = require('./migration.js');
 const migration = createMigrationService(app);
 const { createAccountService } = require('./account-service.js');
 const accounts = createAccountService({ app, safeStorage, fetch });
-const LOGOS = ['classic', 'orbita', 'estrella', 'cometa', 'minimal'], SPLASH_MS = 1800;
+const LOGOS = ['classic', 'orbita', 'estrella', 'cometa', 'minimal', 'retro09'], SPLASH_MS = 1800;
 const logoId = id => (LOGOS.includes(id) ? id : 'classic');
 const logoIco = id => path.join(__dirname, `assets/logos/${logoId(id)}.ico`);      // dentro del paquete (asar)
 const logoImg = id => { const i = nativeImage.createFromPath(process.platform === 'win32' ? logoIco(id) : path.join(__dirname, `assets/logos/${logoId(id)}.png`)); return i.isEmpty() ? nativeImage.createFromPath(path.join(__dirname, 'assets/icon.png')) : i; };

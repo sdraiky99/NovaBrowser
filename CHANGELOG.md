@@ -1,3 +1,10 @@
+## 2.4.0
+- Nuevo tema **Cyberpunk** inspirado en Cyberpunk 2077: negro profundo, amarillo neón, cian y rojo; pestañas, botones y menús de esquinas cortadas; barra de direcciones tipo terminal y marca con efecto glitch. Se aplica también a Nova Tab y a las páginas internas.
+- Nuevo logotipo **Retro 2009** (esfera azul brillante estilo Web 2.0) con icono de Windows (.ico) y su propia **animación de inicio**: ventana clara, orbe que rebota, destello, nombre con reflejo y barra de progreso verde.
+- Nova Tab minimalista: la página de inicio muestra solo la barra de búsqueda. Reloj, accesos rápidos, marcadores, historial, descargas, Nova IA, Centro rápido y recientes pasan a la pestaña **Más**.
+- Ajustes › Apariencia: accesos directos a Cyberpunk, al logotipo Retro 2009 y a la vista previa de su animación.
+- Novedades (nova://novedades) incluye las notas de actualización 2.4.0.
+
 ## 2.3.0
 - Super Cat se puede quitar y volver a activar (Ajustes › Super Cat).
 - Windows 7 Aero rehecho con cristal real (Windows 11 22H2+) y reflejos.

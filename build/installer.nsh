@@ -1,15 +1,15 @@
-; Nova 2.3.0 - instalador: textos, presentación animada y registro como navegador.
+; Nova 2.4.0 - instalador: textos, presentación animada y registro como navegador.
 ; Si la compilación falla por la presentación animada, añade la línea siguiente al principio de este archivo:
 ;   !define NOVA_NO_ANIM
 ; (el flujo de GitHub Actions lo hace solo si el primer intento falla).
 
 !macro customHeader
-  BrandingText "Nova Browser 2.3.0"
+  BrandingText "Nova Browser 2.4.0"
   !define MUI_WELCOMEPAGE_TITLE "Bienvenido a Nova"
   !define MUI_WELCOMEPAGE_TEXT "Nova 2.2: barra superior, Study, vista dividida, perfiles, zoom, seguridad, rendimiento y actualizaciones directas.$\r$\n$\r$\nEste asistente instalará Nova en tu equipo en menos de un minuto. No necesitas permisos de administrador y tus datos se conservan si ya tenías una versión anterior."
   !define MUI_DIRECTORYPAGE_TEXT_TOP "Elige la carpeta donde se instalará Nova. Se instala solo para tu usuario, por lo que no se piden permisos de administrador."
   !define MUI_FINISHPAGE_TITLE "Nova está listo"
-  !define MUI_FINISHPAGE_TEXT "Nova 2.3.0 está instalada o actualizada correctamente.$\r$\n$\r$\nAl abrir Nova por primera vez verás un centro de bienvenida renovado, Nova Study y un recorrido rápido por las nuevas funciones. Para usarlo como navegador predeterminado, abre el menú y elige «Navegador predeterminado»."
+  !define MUI_FINISHPAGE_TEXT "Nova 2.4.0 está instalada o actualizada correctamente.$\r$\n$\r$\nAl abrir Nova por primera vez verás un centro de bienvenida renovado, Nova Study y un recorrido rápido por las nuevas funciones. Para usarlo como navegador predeterminado, abre el menú y elige «Navegador predeterminado»."
   !define MUI_UNCONFIRMPAGE_TEXT_TOP "Nova se quitará de tu equipo. Tu historial, marcadores y ajustes se conservan por si decides volver a instalarlo."
 !macroend
 

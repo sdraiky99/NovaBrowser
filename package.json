@@ -1,14 +1,14 @@
 {
   "name": "nova-browser",
   "productName": "Nova",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Navegador web moderno basado en Chromium con Nova Tab, Study, vista dividida, perfiles, zoom, seguridad, rendimiento y actualizaciones directas",
   "author": "Nova",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "dist": "npm run dist:win",
-    "check": "node --check main.js && node --check migration.js && node --check account-service.js && node --check account-server/server.js && node --check shell/extensions.js && node --check shell/tabs.js && node --check shell/extras.js && node --check shell/extras2.js && node --check shell/extras3.js && node --check shell/extras4.js && node --check shell/extras5.js && node --check shell/extras6.js && node --check shell/extras7.js && node --check shell/extras8.js && node --check shell/extras9.js && node --check shell/extras10.js && node --check shell/extras11.js && node --check shell/supercat.js && node scripts/check-project.js",
+    "check": "node --check main.js && node --check migration.js && node --check account-service.js && node --check account-server/server.js && node --check shell/extensions.js && node --check shell/tabs.js && node --check shell/extras.js && node --check shell/extras2.js && node --check shell/extras3.js && node --check shell/extras4.js && node --check shell/extras5.js && node --check shell/extras6.js && node --check shell/extras7.js && node --check shell/extras8.js && node --check shell/extras9.js && node --check shell/extras10.js && node --check shell/extras11.js && node --check shell/extras12.js && node --check shell/supercat.js && node scripts/check-project.js",
     "dist:win": "electron-builder --win --publish never",
     "dist:linux": "electron-builder --linux rpm AppImage --publish never"
   },

@@ -4,6 +4,7 @@ body.t-code{--bg:#080d09;--bar:#0e1a11;--fg:#b8f5b0;--mut:#5f9a62;--acc:#39ff14;
 body.t-undertale{--bg:#000;--bar:#000;--fg:#fff;--mut:#bbb;--acc:#ffe600;--acc2:#ff2b2b;--bd:#fff;--font:"Determination Mono","Courier New",monospace;--r:0;--fs:14px}
 body.t-aero{--bg:#eef3f9;--bar:#dfe9f5;--fg:#0b1f33;--mut:#46617d;--acc:#2f7fd0;--acc2:#6cc3f5;--bd:#8aa4c2;--font:"Segoe UI",Tahoma,"Noto Sans",sans-serif;--r:3px;--fs:12px}
 body.t-nova44{--bg:#fff;--bar:#f2f2f2;--fg:#212121;--mut:#6b6b6b;--acc:#4285f4;--acc2:#0f9d58;--bd:#c6c6c6;--font:"Segoe UI","Noto Sans","Open Sans","Droid Sans",Arial,sans-serif;--r:2px;--fs:13px}
+body.t-cyberpunk{--bg:#050507;--bar:#0d0d12;--fg:#f2efc9;--mut:#9b9660;--acc:#fcee0a;--acc2:#00f0ff;--bd:#3b3711;--font:"Rajdhani","Bahnschrift","Eurostile","Segoe UI Semibold","Arial Narrow",sans-serif;--r:0;--fs:14px}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font:var(--fs)/1.4 var(--font);overflow:hidden}
 button,input,select{font:inherit;color:inherit}

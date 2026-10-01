@@ -1,7 +1,7 @@
 <!doctype html><html><head><meta charset="utf-8"><title>Nova</title>
 <link rel="stylesheet" href="themes.css"><link rel="icon" href="../assets/icon.png">
 <style>
-body{display:flex;justify-content:center;align-items:center;overflow:auto;background:var(--bg)}
+body{display:flex;justify-content:center;align-items:safe center;overflow:auto;background:var(--bg)}
 #bg{position:fixed;inset:-5%;background:center/cover no-repeat;transition:transform .25s ease-out;z-index:-1}
 body.hasbg::before{content:"";position:fixed;inset:0;background:linear-gradient(#0005,#000a);z-index:-1}
 main{display:flex;flex-direction:column;align-items:center;gap:18px;width:min(720px,92vw);padding:30px 0}
@@ -33,6 +33,34 @@ body.t-safari{background:#f5f5f7}body.t-safari h1{font-weight:300;letter-spacing
 body.t-safari input{border-radius:12px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 body.t-safari a.c,body.t-safari .box{background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.06)}
 body.t-safari a.c.acc{background:var(--acc);color:#fff}
+
+main[hidden]{display:none}
+#home{min-height:60vh;justify-content:center}
+#home form{animation:up .5s cubic-bezier(.2,.8,.2,1) both}
+#home input{padding:16px 22px;font-size:17px}
+#tabmas{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);padding:7px 22px 8px;background:var(--bar);border:1px solid var(--bd);border-bottom:0;border-radius:var(--r) var(--r) 0 0;color:var(--mut);cursor:pointer;font-size:13px;letter-spacing:.04em;transition:color .15s,border-color .15s,background .15s;bottom:0}
+#tabmas:hover,#tabmas[aria-expanded=true]{color:var(--acc);border-color:var(--acc)}
+#tabmas::before{content:"\25B2  ";font-size:9px;vertical-align:1px}#tabmas[aria-expanded=true]::before{content:"\25BC  "}
+body.hasbg #tabmas{background:#121021cc;color:#fff}
+#more{padding-bottom:60px}
+
+body.t-cyberpunk{background:radial-gradient(ellipse at 85% 0,#ff003c18,transparent 45%),radial-gradient(ellipse at 10% 100%,#00f0ff14,transparent 45%),linear-gradient(#fcee0a07 1px,transparent 1px) 0 0/100% 4px,linear-gradient(90deg,#fcee0a06 1px,transparent 1px) 0 0/48px 100%,#050507;font-family:"Rajdhani","Bahnschrift","Eurostile","Segoe UI Semibold","Arial Narrow",sans-serif}
+body.t-cyberpunk h1{font-weight:700;text-transform:uppercase;letter-spacing:.22em;color:var(--acc);text-shadow:3px 0 #ff003c,-3px 0 #00f0ff;animation:cpg 5s infinite}
+body.t-cyberpunk .sub,body.t-cyberpunk #clock{color:var(--acc2);text-transform:uppercase;letter-spacing:.14em;font-size:13px}
+body.t-cyberpunk input{background:#0b0b10;border:1px solid var(--acc);border-radius:0;color:var(--acc2);font-family:"Cascadia Code",Consolas,monospace;font-size:16px;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px))}
+body.t-cyberpunk input::placeholder{color:var(--mut)}
+body.t-cyberpunk input:focus{border-color:var(--acc2);box-shadow:0 0 18px #00f0ff55;color:#fff}
+body.t-cyberpunk #home form{position:relative;filter:drop-shadow(0 0 10px #fcee0a44)}
+body.t-cyberpunk a.c,body.t-cyberpunk .box,body.t-cyberpunk #nova21 .n21box{background:#0d0d12;border:1px solid var(--bd);border-radius:0;color:var(--fg);text-transform:uppercase;letter-spacing:.06em;font-size:13px;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px))}
+body.t-cyberpunk a.c:hover{border-color:var(--acc);background:var(--acc);color:#050507;transform:none;box-shadow:0 0 14px #fcee0a66}
+body.t-cyberpunk a.c.acc,body.t-cyberpunk #nova21 .n21hot{background:var(--acc);border-color:var(--acc);color:#050507;font-weight:700}
+body.t-cyberpunk a.c.acc:hover,body.t-cyberpunk #nova21 .n21hot:hover{background:var(--acc2);border-color:var(--acc2)}
+body.t-cyberpunk #nova21 .n21title{color:var(--acc);text-transform:uppercase;letter-spacing:.12em}
+body.t-cyberpunk .box b{color:var(--acc);text-transform:uppercase;letter-spacing:.1em}
+body.t-cyberpunk #tabmas{background:#12110a;border:1px solid var(--acc);border-bottom:0;border-radius:0;color:var(--acc);text-transform:uppercase;letter-spacing:.18em;font-weight:700;clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 100%,0 100%)}
+body.t-cyberpunk #tabmas:hover,body.t-cyberpunk #tabmas[aria-expanded=true]{background:var(--acc);color:#050507}
+body.t-cyberpunk *::-webkit-scrollbar{width:9px;background:#07070a}body.t-cyberpunk *::-webkit-scrollbar-thumb{background:#5b5416;border:1px solid var(--acc)}
+@keyframes cpg{0%,92%,100%{text-shadow:3px 0 #ff003c,-3px 0 #00f0ff;transform:none}94%{text-shadow:-4px 0 #ff003c,4px 0 #00f0ff;transform:translateX(2px) skewX(-8deg)}96%{text-shadow:4px 0 #ff003c,-4px 0 #00f0ff;transform:translateX(-2px)}}
 @keyframes up{from{opacity:0;transform:translateY(16px)}}@media(prefers-reduced-motion:reduce){*{animation:none!important}}
 
 #nova21{width:100%;display:flex;flex-direction:column;gap:10px;margin-top:2px}
@@ -47,8 +75,8 @@ body.t-safari a.c.acc{background:var(--acc);color:#fff}
 body.hasbg #nova21 .n21box{background:#121021b8}
 @media(max-width:600px){#nova21{gap:8px}#nova21 .n21more{grid-template-columns:1fr 1fr}}
 </style></head><body><div id="bg"></div>
-<main><div id="clock"></div><img class="logo" src="../assets/icon.png"><h1>Nova</h1><div class="sub">¿Qué quieres hacer?</div>
-<form id="f"><input id="s" placeholder="Busca o escribe una dirección" autofocus></form>
+<main id="home"><form id="f"><input id="s" placeholder="Busca o escribe una dirección" autofocus></form></main>
+<main id="more" hidden><div id="clock"></div><img class="logo" src="../assets/icon.png"><h1>Nova</h1><div class="sub">¿Qué quieres hacer?</div>
 <div class="q" id="quick"></div><div class="q" id="tools"></div>
 <section id="nova21" aria-label="Centro Nova 2.2">
   <div class="n21head"><span class="n21title">Nova 2.2 · Centro rápido</span><span class="sub">Todo desde Nova Tab</span></div>
@@ -62,6 +90,7 @@ body.hasbg #nova21 .n21box{background:#121021b8}
     <div class="n21box"><b>⭐ Marcadores</b><span class="sub">Gestiona favoritos y la barra inferior.</span><br><a class="c" href="#nova/marcadores">Abrir marcadores</a></div>
   </div>
 </section><div class="box" id="recent" hidden></div></main>
+<button id="tabmas" type="button" aria-controls="more" aria-expanded="false">Más</button>
 <script>
 const p=new URLSearchParams(location.search),J=(k,d)=>{try{return JSON.parse(p.get(k)||'')}catch{return d}};
 let th=p.get('t')||'nova';if(th==='system')th=matchMedia('(prefers-color-scheme:light)').matches?'light':'nova';
@@ -79,4 +108,9 @@ const quick=document.getElementById('quick');if(D.quick)quick.innerHTML=links.sl
 const tools=document.getElementById('tools');let h='<a class="c" href="#nova/marcadores">Marcadores</a><a class="c" href="#nova/historial">Historial</a>';
 if(D.dl)h+=`<a class="c" href="#nova/descargas">Descargas${+p.get('nd')?' ('+p.get('nd')+')':''}</a>`;if(D.ai)h+='<a class="c acc" href="#nova/ia">Preguntar a Nova IA</a>';tools.innerHTML=h;
 const rec=J('r',[]),rb=document.getElementById('recent');if(D.recent&&rec.length){rb.hidden=false;rb.innerHTML='<b>Recientes</b>'+rec.map(m=>`<a href="${esc(m.u)}">${esc(m.t||m.u)}</a>`).join('')}
+
+{const tab=document.getElementById('tabmas'),home=document.getElementById('home'),more=document.getElementById('more');
+const show=m=>{more.hidden=!m;home.hidden=m;tab.setAttribute('aria-expanded',m?'true':'false');tab.textContent='Buscar';if(!m){tab.textContent='Más';const i=document.getElementById('s');if(i)i.focus()}};
+tab.onclick=()=>show(more.hidden);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!more.hidden)show(false)});}
 </script></body></html>
