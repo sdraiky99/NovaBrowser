@@ -1,7 +1,7 @@
 {
   "name": "nova-browser",
   "productName": "Nova",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "description": "Navegador Chromium minimalista con Nova Air, Safari Mode, Islands, Focus, Writer, DOCX, Study, perfiles, privacidad y rendimiento",
   "author": "Nova",
   "main": "main.js",
