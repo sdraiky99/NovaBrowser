@@ -1,12 +1,21 @@
-# Nova 2.5.4 — Hotfix
+# Nova 3.0.0 — Calm Power
 
 - Repara Nova IA desde el panel y Command Center: acciones de abrir, nueva conversación, selección y resumen vuelven a ejecutar su lógica.
 - Añade un puente seguro `nova-ai` en el proceso principal para no depender de la clave API en el renderer.
 - Hace robustos los enlaces internos de Nova Tab y añade aliases para evitar caídas silenciosas a «Acerca de Nova».
 - Expone el Command Center (`NOVA.palette`) y el acceso rápido a Nueva nota.
-- Unifica etiquetas del instalador y versión 2.5.4.
+- Unifica etiquetas del instalador y versión 3.0.0.
 
 # Changelog
+
+## 3.0.0 - 2026-10-01
+- Calm Power: Air + Safari + Zen-inspired Spaces/Islands.
+- Glance, Focus, Reader+, Command Center y atajos personalizables.
+- Writer/Docs con exportación DOCX real, Study 3, Collections, Reading List y Nova Send.
+- Privacy Center, Performance Center, Download Hub, Web Apps, Web Panels, Media Hub y Picture-in-Picture.
+- Sessions, Tab Manager/Snooze, QR sharing, Backup/Restore y pestañas verticales opcionales.
+- Nova AI y Super Cat permanecen compatibles mediante la capa de hotfix.
+
 
 ## 2.5.0 - 2026-10-01
 - Safari Mode, Nova Islands y Glance.

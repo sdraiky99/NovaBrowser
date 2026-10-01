@@ -437,7 +437,7 @@ ipcMain.handle('save-docx', async (e, payload) => {
     const styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style><w:style w:type="paragraph" w:styleId="h1"><w:name w:val="Heading 1"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:before="240" w:after="120"/></w:pPr><w:rPr><w:b/><w:sz w:val="32"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="h2"><w:name w:val="Heading 2"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:before="180" w:after="90"/></w:pPr><w:rPr><w:b/><w:sz w:val="26"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="h3"><w:name w:val="Heading 3"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:before="140" w:after="70"/></w:pPr><w:rPr><w:b/><w:sz w:val="22"/></w:rPr></w:style></w:styles>';
     const now = new Date().toISOString();
     const core = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>${title.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</dc:title><dc:creator>Nova</dc:creator><dcterms:created xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="dcterms:W3CDTF">${now}</dcterms:created></cp:coreProperties>`;
-    const appXml2 = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Nova</Application><AppVersion>2.5.4</AppVersion></Properties>';
+    const appXml2 = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Nova</Application><AppVersion>3.0.0</AppVersion></Properties>';
     const zip = zipDocx([['[Content_Types].xml', appXml],['_rels/.rels', rels],['word/document.xml', xml],['word/styles.xml', styles],['word/_rels/document.xml.rels', docRels],['docProps/core.xml', core],['docProps/app.xml', appXml2]]);
     fs.writeFileSync(f, zip); return f;
   } catch { return null; }
@@ -551,6 +551,30 @@ ipcMain.handle('open-downloads-folder', async e => {
   } catch {
     return false;
   }
+});
+
+ipcMain.handle('show-in-folder', (e, raw) => {
+  if (denyUntrusted(e) || typeof raw !== 'string' || raw.length > 4096) return false;
+  try { const f = path.resolve(raw); if (!fs.existsSync(f)) return false; shell.showItemInFolder(f); return true; } catch { return false; }
+});
+ipcMain.handle('save-text', async (e, payload) => {
+  if (denyUntrusted(e) || !payload || typeof payload !== 'object') return null;
+  const name = String(payload.name || 'Nova-archivo').replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').trim().slice(0, 100) || 'Nova-archivo';
+  const ext = String(payload.ext || 'txt').replace(/[^a-z0-9]/gi, '').slice(0, 8) || 'txt';
+  const content = typeof payload.content === 'string' && payload.content.length <= 8 * 1024 * 1024 ? payload.content : null;
+  if (content === null) return null;
+  try { const f = path.join(app.getPath('downloads'), `${name}-${Date.now()}.${ext}`); fs.writeFileSync(f, content, 'utf8'); return f; } catch { return null; }
+});
+ipcMain.handle('launch-web-app', async (e, payload) => {
+  if (denyUntrusted(e) || !payload || typeof payload !== 'object') return { ok:false, error:'Solicitud no válida.' };
+  let u = ''; try { const x = new URL(String(payload.url || '')); if (!['http:','https:'].includes(x.protocol)) return { ok:false, error:'URL no válida.' }; u = x.href; } catch { return { ok:false, error:'URL no válida.' }; }
+  const name = String(payload.name || 'Nova App').replace(/[<>:"/\\|?*\x00-\x1f]/g,'_').trim().slice(0,80) || 'Nova App';
+  const bw = new BrowserWindow({ width:1100, height:760, minWidth:600, minHeight:420, title:name, icon:logoImg(prefs.logo), webPreferences:{ nodeIntegration:false, contextIsolation:true, sandbox:true, webSecurity:true, allowRunningInsecureContent:false } });
+  bw.loadURL(u);
+  bw.setTitle(name);
+  bw.webContents.setWindowOpenHandler(({url}) => { if (/^https?:/i.test(url)) bw.loadURL(url).catch(()=>{}); return {action:'deny'}; });
+  bw.webContents.on('will-navigate',(ev,url)=>{ if(!safeWebUrl(url)) ev.preventDefault(); });
+  return { ok:true };
 });
 
 let updateState = { status:'idle', current:app.getVersion(), available:false, version:'', downloaded:false, progress:0, error:'' };

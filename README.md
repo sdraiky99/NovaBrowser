@@ -1,5 +1,5 @@
 
-## Nova 2.5.4 · Air + Safari + Power
+## Nova 3.0.0 · Air + Safari + Power
 - Safari Mode con superficie cristalina y navegación compacta.
 - Nova Islands, Glance y Command Center ampliado.
 - Focus, Reader+, Colecciones y Web Capture.
@@ -9,7 +9,7 @@
 - Setup, onboarding y Novedades rehechos con recursos locales.
 - `nova://mejoras` para sugerir y votar ideas dentro de Nova.
 
-# Nova 2.5.4
+# Nova 3.0.0
 Navegador basado en Chromium (Electron). Paginas: nova://historial, descargas, marcadores, notas, juegos, ajustes, privacidad, novedades, acerca, personalizar, tienda, bienvenida.
 Atajos: Ctrl+K comandos, Ctrl+Espacio Nova IA, Ctrl+D marcador. Nova IA: Ajustes > Nova IA (clave cifrada).
 Navegador predeterminado: menu > Navegador predeterminado (solo con Nova-Setup, no con el portable).
@@ -21,13 +21,13 @@ En `nova://migrar` puedes detectar perfiles locales de Google Chrome, Microsoft 
 Nova incorpora validación de IPC, aislamiento de `webview`, restricciones de navegación y ventanas, permisos controlados, recuperación ante procesos renderer bloqueados, copias atómicas del estado y comprobaciones automáticas de seguridad en GitHub.
 
 
-## Nova 2.5.4 · versión actual
+## Nova 3.0.0 · versión actual
 - Nova Air: interfaz limpia con cristal suave, pestañas redondeadas y modo claro/oscuro adaptativo.
 - Nueva pestaña minimalista, accesos profundos mediante Command Center y sidebar más silenciosa.
 - El botón `+` permanece junto a la última pestaña y se mueve al reordenarlas.
 - Los enlaces pueden abrirse en pestaña nueva con Ctrl/Cmd + clic, clic central o mediante el ajuste de clic normal.
 - Se conservan los temas y funciones retro/avanzadas anteriores, incluida la personalización Cyberpunk y Aero.
-- Novedades 2.5.4 en nova://novedades.
+- Novedades 3.0.0 en nova://novedades.
 
 ## Nova 2.3.0
 - Super Cat opcional: se quita y se vuelve a activar desde Ajustes › Super Cat (o con el botón 🚫 de su panel).
@@ -55,7 +55,7 @@ Nueva barra superior para acceder a las funciones principales, vista dividida, m
 
 ## Fedora / Linux
 
-Nova puede distribuirse para Fedora mediante RPM y, de forma más universal, AppImage. El build de Linux se genera con `npm run dist:linux`; en una release de GitHub se publican los artefactos Linux junto a los de Windows. El RPM se instala con `sudo dnf install ./Nova-2.2.0.x86_64.rpm`.
+Nova puede distribuirse para Fedora mediante RPM y, de forma más universal, AppImage. El build de Linux se genera con `npm run dist:linux`; en una release de GitHub se publican los artefactos Linux junto a los de Windows. El RPM se instala con `sudo dnf install ./Nova-3.0.0.x86_64.rpm`.
 ## Super Cat
 
 Nova incluye ahora un asistente flotante llamado **Super Cat**. Usa el dibujo de `assets/super-cat.png`, tiene animaciones de estado, respuestas habladas mediante la voz del sistema y dictado por micrófono cuando Chromium lo permite. Para las conversaciones con ChatGPT, la clave de OpenAI se guarda cifrada mediante `safeStorage` y las peticiones se envían desde el proceso principal de Electron a la Responses API.
