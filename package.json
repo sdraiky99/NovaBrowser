@@ -2,7 +2,7 @@
   "name": "nova-browser",
   "productName": "Nova",
   "version": "2.5.0",
-  "description": "Navegador web moderno basado en Chromium con Nova Tab, Study, vista dividida, perfiles, zoom, seguridad, rendimiento y actualizaciones directas",
+  "description": "Navegador Chromium minimalista con Nova Air, Safari Mode, Islands, Focus, Writer, DOCX, Study, perfiles, privacidad y rendimiento",
   "author": "Nova",
   "main": "main.js",
   "scripts": {

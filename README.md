@@ -1,4 +1,15 @@
-# Nova 2.4.5
+
+## Nova 2.5.0 · Air + Safari + Power
+- Safari Mode con superficie cristalina y navegación compacta.
+- Nova Islands, Glance y Command Center ampliado.
+- Focus, Reader+, Colecciones y Web Capture.
+- Nova Writer + Nova Docs con exportación DOCX.
+- Nova Study 3, Privacy Center, Performance Center y Download Hub.
+- Web Apps para guardar accesos rápidos a webs.
+- Setup, onboarding y Novedades rehechos con recursos locales.
+- `nova://mejoras` para sugerir y votar ideas dentro de Nova.
+
+# Nova 2.5.0
 Navegador basado en Chromium (Electron). Paginas: nova://historial, descargas, marcadores, notas, juegos, ajustes, privacidad, novedades, acerca, personalizar, tienda, bienvenida.
 Atajos: Ctrl+K comandos, Ctrl+Espacio Nova IA, Ctrl+D marcador. Nova IA: Ajustes > Nova IA (clave cifrada).
 Navegador predeterminado: menu > Navegador predeterminado (solo con Nova-Setup, no con el portable).
@@ -10,13 +21,13 @@ En `nova://migrar` puedes detectar perfiles locales de Google Chrome, Microsoft 
 Nova incorpora validación de IPC, aislamiento de `webview`, restricciones de navegación y ventanas, permisos controlados, recuperación ante procesos renderer bloqueados, copias atómicas del estado y comprobaciones automáticas de seguridad en GitHub.
 
 
-## Nova 2.4.5 · versión actual
+## Nova 2.5.0 · versión actual
 - Nova Air: interfaz limpia con cristal suave, pestañas redondeadas y modo claro/oscuro adaptativo.
 - Nueva pestaña minimalista, accesos profundos mediante Command Center y sidebar más silenciosa.
 - El botón `+` permanece junto a la última pestaña y se mueve al reordenarlas.
 - Los enlaces pueden abrirse en pestaña nueva con Ctrl/Cmd + clic, clic central o mediante el ajuste de clic normal.
 - Se conservan los temas y funciones retro/avanzadas anteriores, incluida la personalización Cyberpunk y Aero.
-- Notas de actualización 2.4.5 en nova://novedades.
+- Novedades 2.5.0 en nova://novedades.
 
 ## Nova 2.3.0
 - Super Cat opcional: se quita y se vuelve a activar desde Ajustes › Super Cat (o con el botón 🚫 de su panel).

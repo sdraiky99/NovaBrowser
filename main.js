@@ -392,6 +392,57 @@ ipcMain.handle('pick-wp', async (e, sec) => {
   r.filePaths.forEach(f => fs.copyFileSync(f, path.join(dir, path.basename(f))));
   return r.filePaths.length;
 });
+
+/* ---------- Nova 2.5 · DOCX minimal writer ---------- */
+function crc32(buf) {
+  let c = 0xffffffff;
+  for (let i = 0; i < buf.length; i++) {
+    c ^= buf[i];
+    for (let k = 0; k < 8; k++) c = (c >>> 1) ^ (0xedb88320 & -(c & 1));
+  }
+  return (c ^ 0xffffffff) >>> 0;
+}
+function zipDocx(entries) {
+  const files = [], central = [], localOffset = { value: 0 };
+  for (const [name, content] of entries) {
+    const data = Buffer.isBuffer(content) ? content : Buffer.from(content);
+    const comp = require('zlib').deflateRawSync(data, { level: 6 });
+    const nameBuf = Buffer.from(name);
+    const c = crc32(data);
+    const lh = Buffer.alloc(30);
+    lh.writeUInt32LE(0x04034b50, 0); lh.writeUInt16LE(20, 4); lh.writeUInt16LE(0, 6); lh.writeUInt16LE(8, 8);
+    lh.writeUInt16LE(0, 10); lh.writeUInt16LE(0, 12); lh.writeUInt32LE(c, 14); lh.writeUInt32LE(comp.length, 18); lh.writeUInt32LE(data.length, 22); lh.writeUInt16LE(nameBuf.length, 26); lh.writeUInt16LE(0, 28);
+    files.push(lh, nameBuf, comp);
+    const ch = Buffer.alloc(46);
+    ch.writeUInt32LE(0x02014b50, 0); ch.writeUInt16LE(20, 4); ch.writeUInt16LE(20, 6); ch.writeUInt16LE(0, 8); ch.writeUInt16LE(8, 10);
+    ch.writeUInt16LE(0, 12); ch.writeUInt16LE(0, 14); ch.writeUInt32LE(c, 16); ch.writeUInt32LE(comp.length, 20); ch.writeUInt32LE(data.length, 24); ch.writeUInt16LE(nameBuf.length, 28); ch.writeUInt16LE(0, 30); ch.writeUInt16LE(0, 32); ch.writeUInt16LE(0, 34); ch.writeUInt16LE(0, 36); ch.writeUInt32LE(0, 38); ch.writeUInt32LE(localOffset.value, 42);
+    central.push(ch, nameBuf);
+    localOffset.value += lh.length + nameBuf.length + comp.length;
+  }
+  const body = Buffer.concat(files), cbody = Buffer.concat(central), e = Buffer.alloc(22);
+  e.writeUInt32LE(0x06054b50, 0); e.writeUInt16LE(0, 4); e.writeUInt16LE(0, 6); const count = entries.length; e.writeUInt16LE(count, 8); e.writeUInt16LE(count, 10); e.writeUInt32LE(cbody.length, 12); e.writeUInt32LE(body.length, 16); e.writeUInt16LE(0, 20);
+  return Buffer.concat([body, cbody, e]);
+}
+ipcMain.handle('save-docx', async (e, payload) => {
+  if (denyUntrusted(e) || !payload || typeof payload !== 'object') return null;
+  const title = typeof payload.title === 'string' ? payload.title.trim().slice(0, 100) : 'Nova Documento';
+  const xml = typeof payload.documentXml === 'string' && payload.documentXml.length < 2 * 1024 * 1024 ? payload.documentXml : '';
+  if (!xml) return null;
+  try {
+    const safe = (title || 'Nova Documento').replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').trim() || 'Nova Documento';
+    const f = path.join(app.getPath('downloads'), `${safe}-${new Date().toISOString().slice(0, 10)}.docx`);
+    const appXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>';
+    const rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>';
+    const docRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
+    const styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style><w:style w:type="paragraph" w:styleId="h1"><w:name w:val="Heading 1"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:before="240" w:after="120"/></w:pPr><w:rPr><w:b/><w:sz w:val="32"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="h2"><w:name w:val="Heading 2"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:before="180" w:after="90"/></w:pPr><w:rPr><w:b/><w:sz w:val="26"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="h3"><w:name w:val="Heading 3"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:before="140" w:after="70"/></w:pPr><w:rPr><w:b/><w:sz w:val="22"/></w:rPr></w:style></w:styles>';
+    const now = new Date().toISOString();
+    const core = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>${title.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</dc:title><dc:creator>Nova</dc:creator><dcterms:created xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="dcterms:W3CDTF">${now}</dcterms:created></cp:coreProperties>`;
+    const appXml2 = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Nova</Application><AppVersion>2.5.0</AppVersion></Properties>';
+    const zip = zipDocx([['[Content_Types].xml', appXml],['_rels/.rels', rels],['word/document.xml', xml],['word/styles.xml', styles],['word/_rels/document.xml.rels', docRels],['docProps/core.xml', core],['docProps/app.xml', appXml2]]);
+    fs.writeFileSync(f, zip); return f;
+  } catch { return null; }
+});
+
 const keyFile = () => userFile('nova.key');
 const superCatKeyFile = () => userFile('supercat-openai.key');
 const getSuperCatKey = () => { try { return safeStorage.isEncryptionAvailable() ? safeStorage.decryptString(fs.readFileSync(superCatKeyFile())) : null; } catch { return null; } };

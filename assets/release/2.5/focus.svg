@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#eef3ff"/><stop offset="0.52" stop-color="#dfe7f4"/><stop offset="1" stop-color="#f9fbff"/></linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".82"/><stop offset="1" stop-color="#ffffff" stop-opacity=".18"/></linearGradient>
+    <filter id="s"><feDropShadow dx="0" dy="22" stdDeviation="32" flood-opacity=".18"/></filter>
+  </defs>
+  <rect width="1200" height="675" rx="38" fill="url(#g)"/>
+  <circle cx="1050" cy="120" r="180" fill="#ffffff" opacity=".35"/>
+  <circle cx="180" cy="600" r="220" fill="#cfd9ff" opacity=".25"/>
+  <rect x="90" y="75" width="1020" height="525" rx="28" fill="url(#b)" stroke="#ffffff" stroke-opacity=".85" filter="url(#s)"/>
+  <rect x="126" y="108" width="948" height="56" rx="18" fill="#ffffff" fill-opacity=".58"/>
+  <circle cx="158" cy="136" r="7" fill="#ff6b7a"/><circle cx="184" cy="136" r="7" fill="#ffd45c"/><circle cx="210" cy="136" r="7" fill="#69d58b"/>
+  <rect x="260" y="123" width="285" height="26" rx="13" fill="#ffffff" fill-opacity=".75"/>
+  <rect x="560" y="123" width="120" height="26" rx="13" fill="#dfe7f4"/>
+  <rect x="700" y="123" width="150" height="26" rx="13" fill="#dfe7f4"/>
+  <text x="150" y="250" fill="#1f2937" font-family="Segoe UI,Arial,sans-serif" font-size="34" font-weight="700">NOVA FOCUS</text>
+  <text x="150" y="295" fill="#667085" font-family="Segoe UI,Arial,sans-serif" font-size="24">Quiet timer · minimal chrome</text>
+  <text x="150" y="420" fill="#5b7cfa" font-family="Segoe UI Symbol,Segoe UI,Arial,sans-serif" font-size="110" font-weight="600">✦</text>
+  <rect x="820" y="420" width="200" height="54" rx="27" fill="#ffffff" fill-opacity=".82" stroke="#c9d2e1"/>
+  <text x="920" y="454" text-anchor="middle" fill="#44516a" font-family="Segoe UI,Arial,sans-serif" font-size="18">NOVA 2.5.0</text>
+</svg>
