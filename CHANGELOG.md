@@ -1,5 +1,17 @@
 # Nova 4.0.0 — Ultimate Workspace
 
+## Limpieza y mejora
+- Se retira `shell/tabs.js`, módulo heredado que no formaba parte del shell activo.
+- Se eliminan `shell/qa-runtime.html`, `qa-mock-runtime.js` y `qa-runner-runtime.js` del paquete fuente de entrega; son artefactos temporales generados por la QA antigua.
+- Nova Launcher ahora encuentra funciones de Nova 3.x/4.0, pestañas, historial y URLs, con navegación por teclado.
+- Quick Actions se concentra en las acciones de uso frecuente y el Hub queda como punto único de entrada.
+- Page Brain/Talk to Page usan el contexto de la página para Nova IA cuando está disponible y mantienen un fallback local.
+- Research Mode analiza el contenido de las pestañas en lugar de guardar solo sus URLs.
+- Vault incorpora búsqueda, edición de notas, exportación y gestión centralizada.
+- Se corrige la resolución de rutas camelCase y la selección de pestañas desde el Launcher.
+- Los perfiles Web Superpowers se reaplican al navegar.
+- Se amplía la QA a 49 pruebas y se comprueba que todos los botones de la capa Ultimate tengan callback.
+
 ## Qué cambia
 - Nova Ultimate Hub: una entrada única para las novedades.
 - Nova Launcher: búsqueda rápida de funciones, pestañas e historial.

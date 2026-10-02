@@ -17,4 +17,4 @@ npm start
 npm run check
 ```
 
-La validación local de esta entrega pasa 43 pruebas de runtime, 86 rutas y 0 errores de arranque en el harness incluido. El entorno de construcción actual no dispone de Electron instalado para ejecutar una ventana GUI real.
+La validación local de esta entrega pasa 49 pruebas de runtime, 86 rutas y 0 errores de arranque en el harness incluido. También se comprueban todos los controles de la capa Ultimate, búsqueda del launcher y estados persistentes. El entorno de construcción actual no dispone de Electron instalado para ejecutar una ventana GUI real.

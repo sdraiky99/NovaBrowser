@@ -9,7 +9,7 @@ Contexto técnico y procedimiento: sigue el documento de abajo.
 Nova es una app Electron (Chromium por dentro). El .exe NO se compila en mi PC: lo compila GitHub Actions (Windows) cada vez que se sube código, y lo publica solo en Releases.
 Estructura correcta en la RAÍZ del repositorio (no dentro de una carpeta "nova"):
 - package.json, main.js, README.md, LEEME-SIN-ADMIN.txt, COPIA-build.yml
-- shell/ (index.html, extensions.js, extras.js, extras2.js, extras3.js, extras4.js, extras5.js, tabs.js, newtab.html, offline.html, splash.html, themes.css)
+- shell/ (index.html, extensions.js, extras.js, extras2.js, extras3.js, extras4.js, extras5.js, newtab.html, offline.html, splash.html, themes.css)
 - assets/ (icon.png, icon.ico, logos/ con .png y .ico de cada logotipo, wallpapers/)
 - build/ (installerSidebar.bmp, uninstallerSidebar.bmp, LICENSE.txt, installer.nsh)
 - .github/workflows/build.yml  <- imprescindible; sin él no hay compilación
