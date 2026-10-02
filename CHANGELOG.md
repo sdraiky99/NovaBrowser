@@ -1,3 +1,27 @@
+# Nova 4.0.0 — Ultimate Workspace
+
+## Qué cambia
+- Nova Ultimate Hub: una entrada única para las novedades.
+- Nova Launcher: búsqueda rápida de funciones, pestañas e historial.
+- Nova Dock: accesos persistentes a las herramientas nuevas.
+- Page Brain + Talk to Page + Research Mode.
+- Nova Vault + Timeline + Continue Anywhere.
+- Web Superpowers por sitio, Visual Search y Magic Translate.
+- Workspaces+, Islands 2.0 y Spaces 2.0.
+- Nova Studio, Nova Flows y Extensions 2.0.
+- Nova Companion, Nova Sync y Desktop Mode.
+- Acceso desde el Hub a Snapshot, Link Preview, Notifications, Smart Groups, Cleanup y Daily ya existentes en 3.1.
+
+## Compatibilidad
+Los módulos existentes de Nova 3.0/3.1 siguen presentes. `shell/nova40.js` es una capa adicional.
+
+# Nova 3.1.0 — New Things
+
+- Añade 15 funciones nuevas en una capa independiente: Quick Actions, Pinboard, Nova Memory, Smart Tab Groups, Search Anything, Link Preview, Website Themes, Smart Notifications, Permission Center, Automations, Mini Mode, Nova Send, Page Snapshot, Nova Daily y One-Click Cleanup.
+- Añade acceso **✨ Nuevas** al centro de novedades y al Command Center.
+- Mantiene intacta la arquitectura estable de Nova 3.0.1 y guarda el nuevo estado bajo `S.nova31`.
+- Verificación runtime: 31/31 pruebas, 66 rutas, 0 errores de arranque y 38 canales IPC `invoke` cubiertos.
+
 # Nova 3.0.1 — QA Hotfix
 
 - Corrige errores de arranque causados por referencias de módulo faltantes.
