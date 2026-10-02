@@ -1,5 +1,5 @@
 
-## Nova 3.0.0 · Air + Safari + Power
+## Nova 3.0.1 · Air + Safari + Power · QA Hotfix
 - Safari Mode con superficie cristalina y navegación compacta.
 - Nova Islands, Glance y Command Center ampliado.
 - Focus, Reader+, Colecciones y Web Capture.
@@ -9,7 +9,7 @@
 - Setup, onboarding y Novedades rehechos con recursos locales.
 - `nova://mejoras` para sugerir y votar ideas dentro de Nova.
 
-# Nova 3.0.0
+# Nova 3.0.1
 Navegador basado en Chromium (Electron). Paginas: nova://historial, descargas, marcadores, notas, juegos, ajustes, privacidad, novedades, acerca, personalizar, tienda, bienvenida.
 Atajos: Ctrl+K comandos, Ctrl+Espacio Nova IA, Ctrl+D marcador. Nova IA: Ajustes > Nova IA (clave cifrada).
 Navegador predeterminado: menu > Navegador predeterminado (solo con Nova-Setup, no con el portable).
@@ -21,13 +21,21 @@ En `nova://migrar` puedes detectar perfiles locales de Google Chrome, Microsoft 
 Nova incorpora validación de IPC, aislamiento de `webview`, restricciones de navegación y ventanas, permisos controlados, recuperación ante procesos renderer bloqueados, copias atómicas del estado y comprobaciones automáticas de seguridad en GitHub.
 
 
-## Nova 3.0.0 · versión actual
+## Nova 3.0.1 · versión actual
 - Nova Air: interfaz limpia con cristal suave, pestañas redondeadas y modo claro/oscuro adaptativo.
 - Nueva pestaña minimalista, accesos profundos mediante Command Center y sidebar más silenciosa.
 - El botón `+` permanece junto a la última pestaña y se mueve al reordenarlas.
 - Los enlaces pueden abrirse en pestaña nueva con Ctrl/Cmd + clic, clic central o mediante el ajuste de clic normal.
 - Se conservan los temas y funciones retro/avanzadas anteriores, incluida la personalización Cyberpunk y Aero.
-- Novedades 3.0.0 en nova://novedades.
+- Novedades 3.0.1 en nova://novedades.
+
+## Nova 3.0.1 · QA Hotfix - 2026-10-02
+- Corrige 6 errores de arranque por referencias de ámbito entre módulos.
+- Restaura rutas internas, aliases y accesos de Historial/Descargas/Notas.
+- Hace operativos Reader+, Capture y Collections sobre la pestaña web activa.
+- Recupera persistencia de sesión, Safari Mode y restauración de tema.
+- Corrige el Command Center, Nova IA, Super Cat y acciones contextuales.
+- Añade QA runtime reproducible: 24 pruebas dinámicas y verificación de IPC/rutas.
 
 ## Nova 2.3.0
 - Super Cat opcional: se quita y se vuelve a activar desde Ajustes › Super Cat (o con el botón 🚫 de su panel).

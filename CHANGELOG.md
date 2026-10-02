@@ -1,3 +1,13 @@
+# Nova 3.0.1 — QA Hotfix
+
+- Corrige errores de arranque causados por referencias de módulo faltantes.
+- Corrige rutas `nova://`, aliases y acciones de navegación internas.
+- Reader+, Web Capture y Collections operan sobre la pestaña web activa.
+- Corrige persistencia de sesión y restauración de Safari Mode.
+- Corrige Nova IA, Command Center, Super Cat y acciones de contexto.
+- Añade regresiones runtime que ejercitan 50 rutas y 32 acciones.
+- Verificación final: 24/24 pruebas runtime, 38 canales IPC `invoke` cubiertos y 0 errores de startup.
+
 # Nova 3.0.0 — Calm Power
 
 - Repara Nova IA desde el panel y Command Center: acciones de abrir, nueva conversación, selección y resumen vuelven a ejecutar su lógica.
