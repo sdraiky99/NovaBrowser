@@ -1,7 +1,7 @@
 /* Nova 2.1.0 - Hub aditivo desde Nova Tab: Study 2.1, rendimiento, pestañas, notas, seguridad, perfiles, sync, media, PDF y acciones. */
 (() => {
   'use strict';
-  const N = NOVA;
+  const N = NOVA, { PG } = N;
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const toast21 = m => { try { toast(m); } catch {} };
   const clone = o => { try { return JSON.parse(JSON.stringify(o)); } catch { return {}; } };
@@ -156,7 +156,7 @@
   /* ---------- Todos los accesos desde Nova Tab ---------- */
   const wrappedNewTab = newTab;
   newTab = function(u){
-    if(u==='nova://study'){let current='';try{current=cur?.wv?.getURL?.()||'';}catch{} if(current && !isNT(current) && /^https?:/i.test(current)){N.study?.();return cur;} return wrappedNewTab('nova://study');}
+    if(u==='nova://study'){let current='';try{current=(N.activeWebTab?.()||cur)?.wv?.getURL?.()||'';}catch{} if(current && !isNT(current) && /^https?:/i.test(current)){N.study?.();return cur;} return wrappedNewTab('nova://study');}
     return wrappedNewTab(u);
   };
 

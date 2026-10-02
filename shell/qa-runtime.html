@@ -149,7 +149,7 @@ body.t-air #upd{background:color-mix(in srgb,var(--acc) 8%,var(--bar));border-bo
 <div id="bar"><button class="ib" id="bk"></button><button class="ib" id="fw"></button><button class="ib" id="rl"></button>
 <input id="addr" placeholder="Busca o escribe una dirección"><button class="ib" id="st" title="Favorito"></button><button class="ib" id="sh" title="Captura"></button></div>
 <div id="mid"><div id="side"></div><div id="view"><div id="nova22-split"></div><div id="find"><input class="fld" id="fi" placeholder="Buscar en la página"><button class="btn" id="fx">✕</button></div></div><div id="panel"><div id="pin"></div></div></div></div>
-<script>
+<script src="/qa-mock-runtime.js"></script><script>
 const {ipcRenderer:ipc}=require('electron'),fs=require('fs'),path=require('path'),{pathToFileURL}=require('url');
 const $=s=>document.querySelector(s);
 const P={back:'M15 6l-6 6 6 6',fwd:'M9 6l6 6-6 6',rl:'M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5',star:'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z',
@@ -162,8 +162,7 @@ document.querySelectorAll('[data-w]').forEach(b=>{b.innerHTML=ic({min:'min',max:
 
 const ud=ipc.sendSync('userdata'),NOVA_VER=ipc.sendSync('app-version');
 let STORED={};try{STORED=JSON.parse(localStorage.nova||'{}')||{}}catch{try{localStorage.removeItem('nova')}catch{}};const S=Object.assign({theme:'air',search:'https://duckduckgo.com/?q=',adblock:true,anim:true,sec:'videojuegos',wp:'',marks:[],key:'',mods:{},memSave:false,bmbar:false,newTabLinks:false},STORED);
-let __saveTimer=0; const save=()=>{ try { const raw=JSON.stringify(S); localStorage.nova=raw; clearTimeout(__saveTimer); __saveTimer=setTimeout(()=>{ try { ipc.invoke('state-save',raw).catch?.(()=>{}); } catch {} },350); } catch {} };
-(async()=>{ try { if(!localStorage.nova){ const backup=await ipc.invoke('state-load'); if(backup){ localStorage.nova=backup; location.reload(); return; } } } catch {} })();
+const save=()=>localStorage.nova=JSON.stringify(S);
 window.save = save;
 const tabAdd=$('#nt');
 const keepTabAddAtEnd=()=>{if(tabAdd&&tabAdd.parentNode!==$('#tabs'))$('#tabs').appendChild(tabAdd); else if(tabAdd&&$('#tabs').lastElementChild!==tabAdd)$('#tabs').appendChild(tabAdd)};
@@ -204,7 +203,7 @@ $('#addr').onkeydown=e=>{if(e.key==='Enter')go(e.target.value)};$('#addr').onfoc
 keepTabAddAtEnd();
 $('#bk').onclick=()=>cur.wv.canGoBack()&&cur.wv.goBack();$('#fw').onclick=()=>cur.wv.canGoForward()&&cur.wv.goForward();$('#rl').onclick=()=>cur.wv.reload();$('#nt').onclick=()=>newTab();
 $('#st').onclick=()=>{const u=cur.wv.getURL();if(isNT(u))return;const i=S.marks.findIndex(m=>m.u===u);i>=0?S.marks.splice(i,1):S.marks.push({u,t:cur.el.querySelector('span').textContent});save();$('#st').style.color=i>=0?'':'var(--acc)'};
-$('#sh').onclick=async()=>{const t=NOVA?.activeWebTab?.()||cur;if(!t?.wv?.capturePage)return toast('Abre una página web para capturarla');try{const img=await t.wv.capturePage();const f=await ipc.invoke('save-shot',img.toPNG());toast('Captura guardada en '+f)}catch{toast('No se pudo capturar la página')}};
+$('#sh').onclick=async()=>{const img=await cur.wv.capturePage();const f=await ipc.invoke('save-shot',img.toPNG());toast('Captura guardada en '+f)};
 function toast(t){const d=document.createElement('div');d.textContent=t;d.style.cssText='position:fixed;bottom:18px;left:50%;transform:translateX(-50%);padding:9px 16px;background:var(--acc);color:#fff;border-radius:var(--r);z-index:9';document.body.appendChild(d);setTimeout(()=>d.remove(),2600)}
 const key=k=>{if(k==='t')newTab();if(k==='w')closeTab(cur);if(k==='l'){$('#addr').focus()}if(k==='f'){$('#find').classList.add('on');$('#fi').focus()}if(k==='d')$('#st').click()};
 ipc.on('key',(_,k)=>key(k));ipc.on('open-tab',(_,u)=>newTab(u));
@@ -234,7 +233,7 @@ function draw(){
   if(panel==='set'){p.innerHTML=`<h3>Ajustes</h3><span class="mut">Tema (cambia toda la interfaz)</span><div class="grid">${Object.entries(THEMES).map(([k,n])=>`<div class="th ${S.theme===k?'on':''}" data-t="${k}" style="background:var(--bg)">${n}</div>`).join('')}</div>
   <span class="mut">Buscador</span><select class="fld" id="se"><option value="https://duckduckgo.com/?q=">DuckDuckGo</option><option value="https://www.google.com/search?q=">Google</option><option value="https://www.bing.com/search?q=">Bing</option><option value="https://search.brave.com/search?q=">Brave</option></select>
   <div class="row"><span>Bloqueador de anuncios</span>${sw('adblock',S.adblock)}</div><div class="row"><span>Animaciones de la interfaz</span>${sw('anim',S.anim)}</div><div class="row"><span>Abrir enlaces en nueva pestaña</span>${sw('newTabLinks',S.newTabLinks)}</div><span class="mut">Con Ctrl/Cmd + clic o clic central también puedes abrir un enlace en otra pestaña.</span>
-  <span class="mut">Clave API de Nova IA (Anthropic)</span><input class="fld" id="ak" type="password" placeholder="sk-ant-…" value=""><span class="mut">Se guarda cifrada en el almacén seguro del sistema.</span><span class="mut">Nova 3.0.1 · basado en Chromium</span>`;
+  <span class="mut">Clave API de Nova IA (Anthropic)</span><input class="fld" id="ak" type="password" placeholder="sk-ant-…" value=""><span class="mut">Se guarda cifrada en el almacén seguro del sistema.</span><span class="mut">Nova 3.0.0 · basado en Chromium</span>`;
     $('#se').value=S.search;$('#se').onchange=e=>{S.search=e.target.value;save()};$('#ak').onchange=async e=>{const v=e.target.value.trim();if(!v)return;await NOVA.setKey(v);e.target.value='';};
     p.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{S.theme=b.dataset.t;save();applyTheme();refreshNT();draw()});
     p.querySelectorAll('.sw').forEach(s=>s.onclick=()=>{S[s.dataset.k]=!S[s.dataset.k];save();applyTheme();if(s.dataset.k==='newTabLinks')tabs.forEach(t=>{try{t.wv.executeJavaScript('window.__novaLinkMode='+JSON.stringify(!!S.newTabLinks))}catch{}});draw()})}
@@ -251,4 +250,4 @@ async function ask(text,shown){if(!String(text||'').trim())return;if(!S.hasKey&&
   if(panel==='ai')draw()}
 
 (async()=>{try{if(!localStorage.nova){const c=await ipc.invoke('install-cfg').catch(()=>({}));if(c?.theme)S.theme=c.theme;if(c?.adblock===false)S.adblock=false;save()}}catch{} applyTheme();newTab()})();
-</script><script src="extras.js"></script><script src="extras2.js"></script><script src="extras3.js"></script><script src="extras4.js"></script><script src="extras5.js"></script><script src="extras6.js"></script><script src="extras7.js"></script><script src="extras8.js"></script><script src="extras9.js"></script><script src="extras10.js"></script><script src="extras11.js"></script><script src="extras12.js"></script><script src="supercat.js"></script><script src="nova25.js"></script><script src="hotfix254.js"></script><script src="nova30.js"></script></body></html>
+</script><script src="extras.js"></script><script src="extras2.js"></script><script src="extras3.js"></script><script src="extras4.js"></script><script src="extras5.js"></script><script src="extras6.js"></script><script src="extras7.js"></script><script src="extras8.js"></script><script src="extras9.js"></script><script src="extras10.js"></script><script src="extras11.js"></script><script src="extras12.js"></script><script src="supercat.js"></script><script src="nova25.js"></script><script src="hotfix254.js"></script><script src="nova30.js"></script><script src="/qa-runner-runtime.js"></script></body></html>

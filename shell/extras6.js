@@ -38,7 +38,7 @@
   };
   const openBookmarkNew = m => { if (m?.u) newTab(m.u); };
   const copyUrl = async url => { try { await navigator.clipboard.writeText(url); safeToast('Dirección copiada'); } catch { safeToast('No se pudo copiar la dirección'); } };
-  const refreshPageBookmarks = () => { if (isBookmarksPage() && typeof refreshPages === 'function') refreshPages('marcadores'); };
+  const refreshPageBookmarks = () => { if (isBookmarksPage() && typeof NOVA.refreshPages === 'function') NOVA.refreshPages('marcadores'); };
   const renderBottomBar = () => {
     if (!bottomBar) return;
     bottomBar.classList.toggle('on', !!S.bmbar);

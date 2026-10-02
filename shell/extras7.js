@@ -1,6 +1,6 @@
 /* Nova 1.6.5 - capa aditiva: perfiles, F12/DevTools y Cuenta Nova con sincronización online. */
 (() => {
-  const N = NOVA;
+  const N = NOVA, { PG } = N;
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
   const toastSafe = m => { try { toast(m); } catch { } };
   const clone = o => { try { return JSON.parse(JSON.stringify(o)); } catch { return {}; } };
@@ -35,7 +35,7 @@
   ensureDefaults(); saveProfile();
 
   const profilePartition = () => S.activeProfile === 'default' ? 'persist:web' : `persist:nova-profile-${normalProfileId(S.activeProfile || 'default')}`;
-  window.NOVA_PROFILE_PARTITION = profilePartition;
+  window.NOVA_PROFILE_PARTITION = profilePartition; N.profilePartition = profilePartition;
 
   const st = document.createElement('style');
   st.id = 'nova165-style';
@@ -52,7 +52,7 @@
   document.head.appendChild(st);
 
   /* ---------- F12 / DevTools: únicamente añade el acceso; Electron mantiene DevTools habilitados. ---------- */
-  N.devtools = () => { try { if (cur?.wv?.isDevToolsOpened?.()) cur.wv.closeDevTools(); else cur?.wv?.openDevTools?.({mode:'detach', activate:true}); } catch { toastSafe('No se pudieron abrir las herramientas de desarrollador'); } };
+  N.devtools = () => { try { const t=N.activeWebTab?.()||cur; if (t?.wv?.isDevToolsOpened?.()) t.wv.closeDevTools(); else t?.wv?.openDevTools?.({mode:'detach', activate:true}); } catch { toastSafe('No se pudieron abrir las herramientas de desarrollador'); } };
   N.SHORTCUTS = (N.SHORTCUTS || []).concat([['F12','Abrir/cerrar herramientas de desarrollador']]);
   N.ACTIONS = (() => { const old = N.ACTIONS; return () => [...(typeof old === 'function' ? old() : []), ['Herramientas de desarrollador (F12)', () => N.devtools()]]; })();
   N.extraActs = Array.isArray(N.extraActs) ? N.extraActs : [];
@@ -93,7 +93,7 @@
     try { tabs.forEach(t=>{try{t.wv.remove()}catch{};try{t.el.remove()}catch{}}); tabs.length=0; cur=null; $('#tabs').replaceChildren(); } catch { }
     const list=Array.isArray(S.session2)?S.session2.slice(0,30):[]; const first=newTab(); list.forEach(s=>{const t=newTab(s.u); if(s.g && S.groups[s.g])t.g=s.g;if(s.p)t.el.classList.add('pin');});
     if(list.length && first){ try{first.wv.remove();first.el.remove();tabs.splice(tabs.indexOf(first),1)}catch{} }
-    if(typeof renderGroups==='function')renderGroups();
+    if(typeof NOVA.renderGroups==='function')NOVA.renderGroups();
   }
   async function switchProfile(id) {
     if(id===S.activeProfile)return;

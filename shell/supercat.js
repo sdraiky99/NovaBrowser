@@ -123,7 +123,7 @@
     text=String(text||'').trim(); if(!text||busy)return; if(!openaiReady){openPanel(); showSetup(); setMood('curious','necesito conexión'); sayBubble('Conéctame a ChatGPT y podremos hablar de verdad 😼',true); return; }
     busy=true; sendBtn.disabled=true; input.disabled=true; setMood('think','pensando…'); add('user',text); sayBubble('Estoy pensando…',false);
     const typing=document.createElement('div'); typing.className='sc-msg bot'; typing.textContent='…'; chat.appendChild(typing); chat.scrollTop=chat.scrollHeight;
-    let page=''; if(usePage){try{page=await cur.wv.executeJavaScript('document.body.innerText.slice(0,12000)')}catch{page=''}}
+    let page=''; if(usePage){try{const t=window.NOVA?.currentWebTab?.()||window.NOVA?.activeWebTab?.()||cur; if(t?.wv?.executeJavaScript) page=await t.wv.executeJavaScript('document.body.innerText.slice(0,12000)')}catch{page=''}}
     try{
       const res=await ipc.invoke('supercat-chat',{messages,system:systemPrompt(),model:'gpt-5.6-luna',page});
       if(typing.isConnected)typing.remove();

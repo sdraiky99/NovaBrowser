@@ -61,6 +61,7 @@ function renderGroups() {
     if (g.collapsed && cur !== t) t.el.classList.add('gh');
   }); keepTabAddAtEnd(); save();
 }
+N.enforcePins = enforcePins; N.renderGroups = renderGroups; N.syncTabOrder = syncOrder;
 function setGroup(t, gid) {
   if (gid) { t.el.classList.remove('pin'); t.g = gid; const mem = tabs.filter(x => x !== t && x.g === gid); if (mem.length) mem[mem.length - 1].el.after(t.el); } else t.g = null;
   syncOrder(); renderGroups();
@@ -110,13 +111,14 @@ newTab = function (u) {
   if (isW(t)) {
     t.wv.addEventListener('dom-ready', () => t.wv.executeJavaScript(`(()=>{const P=${JSON.stringify(PFX)};window.__novaLinkMode=${!!S.newTabLinks};
 if(!window.__novaLinks){window.__novaLinks=1;const openLink=a=>{if(!a||!a.href||!/^https?:$/i.test((()=>{try{return new URL(a.href).protocol}catch{return ''}})()))return false;console.log(P+JSON.stringify({k:'link',u:a.href}));return true};
-document.addEventListener('click',e=>{const a=e.target&&e.target.closest&&e.target.closest('a[href]');if(!a)return;if(!(window.__novaLinkMode||e.ctrlKey||e.metaKey))return;if(openLink(a)){e.preventDefault();e.stopPropagation()}},true);
+document.addEventListener('click',e=>{const a=e.target&&e.target.closest&&e.target.closest('a[href]');if(a&&/^#nova\/[\w-]+$/i.test(a.getAttribute('href')||'')){const route=(a.getAttribute('href')||'').slice(6);console.log(P+JSON.stringify({k:'route',route}));e.preventDefault();e.stopPropagation();return;}if(!a)return;if(!(window.__novaLinkMode||e.ctrlKey||e.metaKey))return;if(openLink(a)){e.preventDefault();e.stopPropagation()}},true);
 document.addEventListener('auxclick',e=>{if(e.button!==1)return;const a=e.target&&e.target.closest&&e.target.closest('a[href]');if(!a)return;if(openLink(a)){e.preventDefault();e.stopPropagation()}},true)}
 if(window.__ns)return;window.__ns=1;let z;
 document.addEventListener('mouseup',e=>{clearTimeout(z);z=setTimeout(()=>{const s=String(getSelection()).trim();console.log(P+JSON.stringify(s.length>2?{k:'sel',t:s.slice(0,6000),x:e.clientX,y:e.clientY}:{k:'clr'}))},30)},true);
 document.addEventListener('mousedown',()=>console.log(P+JSON.stringify({k:'clr'})),true)})()`).catch(() => { }));
     t.wv.addEventListener('console-message', e => {
       if (!e.message.startsWith(PFX)) return; let m; try { m = JSON.parse(e.message.slice(PFX.length)); } catch { return; }
+      if (m.k === 'route' && typeof m.route === 'string') return (N.openFeature ? N.openFeature(m.route) : newTab('nova://' + m.route));
       if (m.k === 'link' && typeof m.u === 'string') return newTab(m.u);
       if (m.k === 'clr') return hideChip();
       if (m.k === 'sel' && typeof m.t === 'string' && cur === t) return showChip(t, m);
@@ -174,7 +176,7 @@ document.addEventListener('keydown', e => {
 /* ---------- acciones del Command Center ---------- */
 const setT = k => { S.theme = k; save(); applyTheme(); refreshNT(); };
 N.ACTIONS = () => [
-  ['Nueva pestaña', () => newTab()], ['Cerrar pestaña', () => closeTab(cur)], ['Reabrir pestaña cerrada', () => N.reopen()], ['Nueva ventana', () => ipc.send('new-window')],
+  ['Nueva pestaña', () => newTab()], ['Cerrar pestaña', () => closeTab(cur)], ['Reabrir pestaña cerrada', () => N.reopen()],
   ['Historial', () => newTab('nova://historial')], ['Descargas', () => newTab('nova://descargas')], ['Marcadores', () => newTab('nova://marcadores')], ['Guardar esta página en marcadores', () => $('#st').click()],
   ['Modo oscuro', () => setT('nova')], ['Modo claro', () => setT('light')], ['Tema del sistema', () => setT('system')],
   ['Abrir ajustes', () => newTab('nova://ajustes')], ['Abrir Nova IA', () => { panel = 'ai'; draw(); }], ['Nueva conversación con Nova IA', () => N.aiNew && N.aiNew()], ['Resumir página', () => N.aiAct && N.aiAct('sum')],
@@ -196,7 +198,7 @@ async function checkUpd(manual) {
 N.checkUpd = checkUpd; setTimeout(checkUpd, 8000); setInterval(checkUpd, 6 * 3600e3);
 
 /* ---------- sesión (pestañas + grupos + fijadas) y copia de seguridad de ajustes ---------- */
-const snap = () => { S.session2 = tabs.map(t => { try { const u = t.wv.getURL(); return !u || isNT(u) || u.includes('offline.html') || u.startsWith('nova:') ? null : { u, g: t.g || '', p: t.el.classList.contains('pin') ? 1 : 0 }; } catch { return null; } }).filter(Boolean); save(); };
+const snap = () => { const list = tabs.map(t => { try { const u = t.wv.getURL(); return !u || isNT(u) || u.includes('offline.html') || u.startsWith('nova:') ? null : { u, g: t.g || '', p: t.el.classList.contains('pin') ? 1 : 0 }; } catch { return null; } }).filter(Boolean); const hasWeb = tabs.some(t => isW(t)); if (list.length || hasWeb) S.session2 = list; save(); };
 setInterval(snap, 5000); addEventListener('beforeunload', snap);
 setTimeout(() => {
   if (S.restore && S.session2 && S.session2.length && tabs.length === 1) {

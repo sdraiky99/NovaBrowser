@@ -1,11 +1,15 @@
 /* Nova 1.5 - IA 2.0, grupos de pestañas, marcadores, historial, descargas, notas, privacidad, actualizaciones */
 (() => {
-const { PG, SECT, SEC, row, toURL, fmt, refreshPages, reopen } = NOVA, VER = NOVA_VER, REPO = 'sdraiky99/NovaBrowser';
+const N = NOVA, { PG, SECT, SEC, row, toURL, fmt, refreshPages, reopen } = N, VER = NOVA_VER, REPO = 'sdraiky99/NovaBrowser';
 const { shell } = require('electron'), os = require('os');
 Object.assign(THEMES, { light: 'Claro', system: 'Sistema', safari: 'Safari' });
 
 /* ---------- datos por defecto y migraciones ---------- */
-S.convs = S.convs || []; S.groups = S.groups || []; S.folders = S.folders || []; S.quick = S.quick || [];
+S.convs = S.convs || [];
+// Canonical group storage is an object map. Older builds stored an array; migrate it once.
+if (Array.isArray(S.groups)) { const migratedGroups = {}; S.groups.forEach(g => { if (g && g.id) migratedGroups[g.id] = g; }); S.groups = migratedGroups; }
+if (!S.groups || typeof S.groups !== 'object') S.groups = {};
+S.folders = S.folders || []; S.quick = S.quick || [];
 S.perms = Object.assign({ cam: 'ask', mic: 'ask', geo: 'ask', notif: 'ask' }, S.perms);
 S.dash = Object.assign({ clock: true, search: true, quick: true, recent: true, dl: true, ai: true }, S.dash);
 S.notesL = S.notesL || (S.notes ? [{ id: 1, t: 'Mi nota', b: S.notes, ts: Date.now() }] : []);
@@ -43,15 +47,29 @@ function dlg(title, fields, ok, extra) {
   ov.addEventListener('keydown', e => { if (e.key === 'Enter') ov.querySelector('#dk').click(); if (e.key === 'Escape') close(); });
   (ov.querySelector('input,select') || {}).focus?.();
 }
+
+// Public dialog/context helpers used by later feature modules.
+N.dlg = (title, fields, ok = 'Guardar', extra) => new Promise(resolve => {
+  const ov = document.createElement('div'); ov.className = 'ov';
+  ov.innerHTML = `<div class="card"><h3>${esc(title)}</h3>${fields.map((f,i) => f.type === 'note' ? `<span class="mut">${esc(f.label)}</span>` : f.type === 'select' ? `<label class="mut">${esc(f.label)}</label><select class="fld" data-i="${i}">${(f.opts||[]).map(o => { const pair = Array.isArray(o) ? o : [o,o]; return `<option value="${esc(pair[0])}">${esc(pair[1])}</option>`; }).join('')}</select>` : `<label class="mut">${esc(f.label)}</label><input class="fld" data-i="${i}" value="${esc(f.value ?? '')}">`).join('')}<div class="row"><span>${extra ? `<button class="btn" id="dx">${esc(typeof extra === 'string' ? extra : extra[0])}</button>` : ''}</span><span><button class="btn" id="dc">Cancelar</button> <button class="btn on" id="dk">${esc(ok)}</button></span></div></div>`;
+  document.body.appendChild(ov); const els=[...ov.querySelectorAll('[data-i]')]; els.forEach((e,i)=>{const f=fields[i];if(f?.type==='select')e.value=f.value ?? (Array.isArray(f.opts?.[0])?f.opts[0][0]:f.opts?.[0] ?? '');});
+  const done=v=>{ov.remove();resolve(v)}; ov.querySelector('#dc').onclick=()=>done(null); ov.querySelector('#dk').onclick=()=>done(els.map(e=>e.value));
+  if(extra) ov.querySelector('#dx').onclick=()=>{done('__extra__'); if(Array.isArray(extra)) extra[1]?.();};
+  ov.onkeydown=e=>{if(e.key==='Escape')done(null);if(e.key==='Enter'&&e.target.tagName!=='SELECT')ov.querySelector('#dk').click()}; ov.onmousedown=e=>{if(e.target===ov)done(null)}; els[0]?.focus?.();
+});
 const cx = document.createElement('div'); cx.className = 'ctx'; document.body.appendChild(cx);
 function menu(items, x, y) {
-  cx.innerHTML = items.map((m, i) => m === '-' ? '<hr style="border:0;border-top:1px solid var(--bd);margin:4px 0;width:100%">' : `<button data-i="${i}">${m[0]}</button>`).join('');
+  const itemLabel = m => Array.isArray(m) ? m[0] : m?.label;
+  const disabled = m => Array.isArray(m) ? !!m[2] : !!m?.disabled;
+  const action = m => Array.isArray(m) ? m[1] : m?.onClick;
+  cx.innerHTML = items.map((m, i) => m === '-' ? '<hr style="border:0;border-top:1px solid var(--bd);margin:4px 0;width:100%">' : `<button data-i="${i}" ${disabled(m) ? 'disabled' : ''}>${esc(itemLabel(m) || '')}</button>`).join('');
   cx.style.cssText = `left:${Math.max(4, Math.min(x, innerWidth - 230))}px;top:${Math.max(4, Math.min(y, innerHeight - items.length * 34 - 16))}px`; cx.classList.add('on');
-  cx.onclick = e => { const b = e.target.closest('button'); if (b) { cx.classList.remove('on'); items[b.dataset.i][1](); } };
+  cx.onclick = e => { const b = e.target.closest('button'); if (b) { const m = items[+b.dataset.i]; if (disabled(m)) return; cx.classList.remove('on'); action(m)?.(); } };
 }
+N.ctx = (x,y,items) => menu(items, x, y);
 document.addEventListener('click', () => cx.classList.remove('on'));
-const pageText = async () => { try { return cur.wv.tagName === 'WEBVIEW' ? await cur.wv.executeJavaScript('document.body.innerText.slice(0,12000)') : ''; } catch { return ''; } };
-const selText = async () => { try { return cur.wv.tagName === 'WEBVIEW' ? await cur.wv.executeJavaScript('getSelection().toString()') : ''; } catch { return ''; } };
+const pageText = async () => { try { const t = N.activeWebTab?.() || cur; return t?.wv?.tagName === 'WEBVIEW' ? await t.wv.executeJavaScript('document.body.innerText.slice(0,12000)') : ''; } catch { return ''; } };
+const selText = async () => { try { const t = N.activeWebTab?.() || cur; return t?.wv?.tagName === 'WEBVIEW' ? await t.wv.executeJavaScript('getSelection().toString()') : ''; } catch { return ''; } };
 
 /* ---------- tema Claro / Sistema ---------- */
 const bat = applyTheme;
@@ -68,11 +86,12 @@ function layout() {
   const tb = $('#tabs'); $$('.tg', tb).forEach(x => x.remove());
   const isPin = t => t.el.classList.contains('pin'), rest = tabs.filter(t => !isPin(t)), seen = new Set(), order = tabs.filter(isPin).map(t => t.el);
   rest.forEach(t => {
-    const g = S.groups.find(x => x.id === t.g); if (!g) return order.push(t.el);
+    const g = t.g ? S.groups[t.g] : null; if (!g) { t.g = null; return order.push(t.el); }
     if (seen.has(g.id)) return; seen.add(g.id); order.push(header(g)); rest.filter(x => x.g === g.id).forEach(x => order.push(x.el));
   });
   order.forEach(el => tb.appendChild(el));
-  tabs.forEach(t => { const g = S.groups.find(x => x.id === t.g); t.el.style.borderTop = g ? '2px solid ' + g.color : ''; t.el.style.display = g && g.collapsed && t !== cur ? 'none' : ''; });
+  tabs.forEach(t => { const g = t.g ? S.groups[t.g] : null; t.el.style.borderTop = g ? '2px solid ' + g.color : ''; t.el.style.display = g && g.collapsed && t !== cur ? 'none' : ''; });
+  const add = $('#nt'); if (add) tb.appendChild(add);
   tabs.sort(byDom);
 }
 function header(g) {
@@ -83,19 +102,19 @@ function groupMenu(g, x, y) {
   menu([['Renombrar grupo', () => dlg('Renombrar grupo', [{ k: 'n', label: 'Nombre', val: g.name }], v => { g.name = v.n || g.name; save(); layout(); })],
     ...Object.entries(COLORS).map(([n, c]) => ['Color: ' + n, () => { g.color = c; save(); layout(); }]), '-',
     [g.collapsed ? 'Expandir' : 'Contraer', () => { g.collapsed = !g.collapsed; save(); layout(); }],
-    ['Desagrupar', () => { tabs.forEach(t => t.g === g.id && (t.g = undefined)); S.groups = S.groups.filter(z => z !== g); save(); layout(); }],
-    ['Cerrar grupo', () => { tabs.filter(t => t.g === g.id && !t.el.classList.contains('pin')).forEach(closeTab); S.groups = S.groups.filter(z => z !== g); save(); }]], x, y);
+    ['Desagrupar', () => { tabs.forEach(t => t.g === g.id && (t.g = undefined)); delete S.groups[g.id]; save(); layout(); }],
+    ['Cerrar grupo', () => { tabs.filter(t => t.g === g.id && !t.el.classList.contains('pin')).forEach(closeTab); delete S.groups[g.id]; save(); }]], x, y);
 }
 function groupDialog(t) {
   dlg('Nuevo grupo', [{ k: 'n', label: 'Nombre (Trabajo, Ocio, Desarrollo…)' }, { k: 'c', label: 'Color', opts: Object.keys(COLORS), val: 'azul' }], v => {
-    const g = { id: 'g' + Date.now(), name: v.n || 'Grupo', color: COLORS[v.c] || COLORS.azul, collapsed: false }; S.groups.push(g); t.g = g.id; save(); layout();
+    const g = { id: 'g' + Date.now(), name: v.n || 'Grupo', color: COLORS[v.c] || COLORS.azul, collapsed: false }; S.groups[g.id] = g; (t || N.activeWebTab?.() || cur).g = g.id; save(); layout();
   });
 }
 function tabMenu(t, x, y) {
   const pin = t.el.classList.contains('pin'), i = tabs.indexOf(t);
   menu([['Nueva pestaña', () => newTab()], ['Nueva pestaña a la derecha', () => { const n = newTab(); t.el.after(n.el); tabs.sort(byDom); layout(); }],
     ['Duplicar', () => { try { newTab(t.wv.getURL()); } catch { } }], [pin ? 'Desfijar' : 'Fijar', () => { t.el.classList.toggle('pin'); layout(); }], '-',
-    ...S.groups.map(g => ['Mover a grupo: ' + esc(g.name), () => { t.g = g.id; layout(); }]), ['Mover a grupo nuevo…', () => groupDialog(t)], ...(t.g ? [['Quitar del grupo', () => { t.g = undefined; layout(); }]] : []), '-',
+    ...Object.values(S.groups).map(g => ['Mover a grupo: ' + esc(g.name), () => { t.g = g.id; layout(); }]), ['Mover a grupo nuevo…', () => groupDialog(t)], ...(t.g ? [['Quitar del grupo', () => { t.g = undefined; layout(); }]] : []), '-',
     [t.muted ? 'Activar sonido' : 'Silenciar', () => { t.muted = !t.muted; try { t.wv.setAudioMuted(t.muted); } catch { } t.el.classList.toggle('mut', t.muted); }], ['Recargar', () => t.wv.reload()], '-',
     ['Cerrar', () => { t.el.classList.remove('pin'); closeTab(t); }], ['Cerrar otras', () => tabs.filter(z => z !== t && !z.el.classList.contains('pin')).forEach(closeTab)],
     ['Cerrar a la derecha', () => tabs.slice(i + 1).filter(z => !z.el.classList.contains('pin')).forEach(closeTab)], ['Reabrir pestaña cerrada', reopen]], x, y);
@@ -116,28 +135,32 @@ newTab = function (u) {
     if (t.wv.tagName === 'WEBVIEW') {
       t.wv.addEventListener('page-favicon-updated', e => { const h = S.hist.find(z => z.u === t.wv.getURL()); if (h) h.i = e.favicons[0]; });
       t.wv.addEventListener('did-navigate-in-page', e => { const m = e.url.match(/#nova\/([\w-]+)/); if (m) { newTab('nova://' + m[1]); t.wv.executeJavaScript('history.replaceState(null,"",location.href.split("#")[0])').catch(() => { }); } });
+      t.wv.addEventListener('dom-ready', () => { try { const mode=!!S.newTabLinks; t.wv.executeJavaScript(`(()=>{window.__novaLinkMode=${mode};if(window.__novaLinksInstalled)return;window.__novaLinksInstalled=1;const open=(a)=>{try{return /^https?:$/i.test(new URL(a.href).protocol)}catch{return false}};document.addEventListener('click',e=>{const a=e.target?.closest?.('a[href]');if(!a)return;const href=a.getAttribute('href')||'';if(/^#nova\/[\w-]+$/i.test(href)){e.preventDefault();e.stopPropagation();return}if(!(window.__novaLinkMode||e.ctrlKey||e.metaKey))return;if(open(a)){e.preventDefault();e.stopPropagation();const u=a.href;console.log('__NOVA_LINK__'+u)}},true);document.addEventListener('auxclick',e=>{if(e.button!==1)return;const a=e.target?.closest?.('a[href]');if(!a||!open(a))return;e.preventDefault();e.stopPropagation();console.log('__NOVA_LINK__'+a.href)},true)})()`)} catch {} });
+      t.wv.addEventListener('console-message',e=>{if(typeof e.message==='string'&&e.message.startsWith('__NOVA_LINK__')){const u=e.message.slice('__NOVA_LINK__'.length);if(/^https?:/i.test(u))newTab(u)}});
     }
     layout();
   }
   return t;
 };
-const bs = sel; sel = function (t) { bs(t); if (S.groups.length) layout(); };
-const bcl = closeTab; closeTab = function (t) { bcl(t); setTimeout(() => S.groups.length && layout(), 200); };
+NOVA.newTab = newTab; NOVA.closeTab = closeTab; NOVA.selectTab = sel; NOVA.stepTab = step;
+const bs = sel; sel = function (t) { bs(t); if (Object.keys(S.groups).length) layout(); };
+const bcl = closeTab; closeTab = function (t) { bcl(t); setTimeout(() => Object.keys(S.groups).length && layout(), 200); };
+N.renderGroups = layout; N.enforcePins = () => { tabs.filter(t => t.el.classList.contains('pin')).reverse().forEach(t => $('#tabs').prepend(t.el)); tabs.sort(byDom); const add=$('#nt'); if(add) $('#tabs').appendChild(add); }; N.syncTabOrder = () => tabs.sort(byDom); N.newGroup = groupDialog; N.saveSession = saveSession;
 
-function saveSession() { S.session = tabs.map(t => { let u = ''; try { u = t.wv.getURL(); } catch { } return !u || isNT(u) || u.includes('offline.html') || u.startsWith('nova:') ? null : { u, pin: t.el.classList.contains('pin'), g: t.g || '' }; }).filter(Boolean); save(); }
+function saveSession() { const list = tabs.map(t => { let u = ''; try { u = t.wv.getURL(); } catch { } return !u || isNT(u) || u.includes('offline.html') || u.startsWith('nova:') ? null : { u, pin: t.el.classList.contains('pin'), p: t.el.classList.contains('pin') ? 1 : 0, g: t.g || '' }; }).filter(Boolean); if (list.length) { S.session = list; S.session2 = list.map(x => ({u:x.u,g:x.g||'',p:x.p||0})); save(); } }
 setInterval(saveSession, 5000); addEventListener('beforeunload', saveSession);
 setTimeout(() => {
-  if (S.restore && S.session && S.session.length && tabs.length === 1) {
-    const f = tabs[0]; S.session.forEach(s => { s = typeof s === 'string' ? { u: s } : s; const t = newTab(s.u); if (s.pin) t.el.classList.add('pin'); if (s.g && S.groups.some(g => g.id === s.g)) t.g = s.g; }); layout(); closeTab(f);
+  if (S.restore && Array.isArray(S.session) && S.session.length && tabs.length === 1) {
+    const f = tabs[0]; S.session.forEach(s => { s = typeof s === 'string' ? { u: s } : s; const t = newTab(s.u); if (s.pin) t.el.classList.add('pin'); if (s.g && S.groups[s.g]) t.g = s.g; }); layout(); closeTab(f);
   }
 }, 1000);
 
 /* ================= MARCADORES ================= */
 const folderList = () => ['', ...new Set([...S.folders, ...S.marks.map(m => m.f).filter(Boolean)])].sort();
 function saveMark() {
-  const u = cur.wv.getURL(); if (!u || isNT(u) || u.startsWith('nova:') || u.includes('offline.html')) return toast('Esta página no se puede guardar');
+  const tcur = N.activeWebTab?.() || cur; const u = tcur?.wv?.getURL?.(); if (!u || isNT(u) || u.startsWith('nova:') || u.includes('offline.html')) return toast('Esta página no se puede guardar');
   const ex = S.marks.find(m => m.u === u);
-  dlg(ex ? 'Editar marcador' : 'Guardar esta página', [{ k: 't', label: 'Nombre', val: ex ? ex.t : cur.el.querySelector('span').textContent }, { k: 'f', label: 'Carpeta', opts: folderList(), val: ex ? ex.f : '' }],
+  dlg(ex ? 'Editar marcador' : 'Guardar esta página', [{ k: 't', label: 'Nombre', val: ex ? ex.t : tcur?.el?.querySelector('span')?.textContent || u }, { k: 'f', label: 'Carpeta', opts: folderList(), val: ex ? ex.f : '' }],
     v => { if (ex) { ex.t = v.t || ex.t; ex.f = v.f; } else S.marks.push({ u, t: v.t || u, f: v.f }); save(); bmBar(); $('#st').style.color = 'var(--acc)'; refreshPages('marcadores'); },
     ex ? ['Eliminar', () => { S.marks.splice(S.marks.indexOf(ex), 1); save(); bmBar(); $('#st').style.color = ''; }] : null);
 }
@@ -151,11 +174,11 @@ const bmb = document.createElement('div'); bmb.id = 'bmb'; $('#mid').after(bmb);
 function bmBar() {
   bmb.classList.toggle('on', !!S.bmbar); if (!S.bmbar) return;
   const top = S.marks.filter(m => !m.f), fol = folderList().filter(f => f && !f.includes('/'));
-  bmb.innerHTML = (fol.map(f => `<button class="btn" data-f="${esc(f)}">▸ ${esc(f)}</button>`).join('') + top.map(m => `<button class="btn" data-u="${esc(m.u)}">${esc((m.t || m.u).slice(0, 26))}</button>`).join('')) || '<span class="mut">Guarda páginas con Ctrl+D</span>'; bmb.insertAdjacentHTML('beforeend','<button class="btn bmc" id="bmbclose" title="Ocultar barra de marcadores">Ocultar</button>'); q('#bmbclose').onclick=toggleBar;
-  $$('[data-u]', bmb).forEach(b => b.onclick = () => cur.wv.tagName === 'WEBVIEW' ? cur.wv.loadURL(b.dataset.u) : newTab(b.dataset.u));
+  bmb.innerHTML = (fol.map(f => `<button class="btn" data-f="${esc(f)}">▸ ${esc(f)}</button>`).join('') + top.map(m => `<button class="btn" data-u="${esc(m.u)}">${esc((m.t || m.u).slice(0, 26))}</button>`).join('')) || '<span class="mut">Guarda páginas con Ctrl+D</span>'; bmb.insertAdjacentHTML('beforeend','<button class="btn bmc" id="bmbclose" title="Ocultar barra de marcadores">Ocultar</button>'); bmb.querySelector('#bmbclose').onclick=toggleBar;
+  $$('[data-u]', bmb).forEach(b => b.onclick = () => (N.activeWebTab?.()||cur)?.wv?.tagName === 'WEBVIEW' ? (N.activeWebTab?.()||cur).wv.loadURL(b.dataset.u) : newTab(b.dataset.u));
   $$('[data-f]', bmb).forEach(b => b.onclick = e => { e.stopPropagation(); const r = b.getBoundingClientRect(); menu(S.marks.filter(m => m.f === b.dataset.f).map(m => [esc((m.t || m.u).slice(0, 40)), () => newTab(m.u)]).concat(S.marks.some(m => m.f === b.dataset.f) ? [] : [['(vacía)', () => { }]]), r.left, r.bottom + 4); });
 }
-const toggleBar = () => { S.bmbar = !S.bmbar; save(); bmBar(); }; N.bbar = toggleBar;
+const toggleBar = () => { S.bmbar = !S.bmbar; save(); bmBar(); }; N.bbar = toggleBar; N.toggleBar = toggleBar;
 function parseHTML(txt) {
   const d = new DOMParser().parseFromString(txt, 'text/html'), out = [], fol = [];
   const walk = (dl, p) => [...dl.children].forEach(ch => {
@@ -355,7 +378,9 @@ const bd4 = draw; draw = function () { bd4(); if (panel === 'ai') aiPanel(); };
 
 /* ================= ATAJOS, PALETA, AJUSTES ================= */
 const toggleAI = () => { panel = panel === 'ai' ? null : 'ai'; draw(); };
-const K = { r: () => cur.wv.reload(), R: () => { try { cur.wv.reloadIgnoringCache(); } catch { cur.wv.reload(); } }, D: bookmarkAll, B: () => N.bbar(), ' ': toggleAI, tab: () => step(1), 'shift-tab': () => step(-1), shot: () => $('#sh').click() };
+const openAI = () => { if (panel !== 'ai') { panel = 'ai'; draw(); } };
+NOVA.toggleAI = toggleAI; NOVA.openAI = openAI; NOVA.aiPanel = aiPanel; NOVA.askAI = ask;
+const K = { r: () => { const t=N.activeWebTab?.()||cur; t?.wv?.reload?.(); }, R: () => { const t=N.activeWebTab?.()||cur; try { t?.wv?.reloadIgnoringCache?.(); } catch { t?.wv?.reload?.(); } }, D: bookmarkAll, B: () => N.bbar(), ' ': toggleAI, tab: () => step(1), 'shift-tab': () => step(-1), shot: () => $('#sh').click() };
 ipc.on('key', (_, k) => K[k] && K[k]());
 document.addEventListener('keydown', e => { if (!e.ctrlKey) return; const k = e.key === 'Tab' ? (e.shiftKey ? 'shift-tab' : 'tab') : e.key; if (K[k] && k !== 'shot') { e.preventDefault(); K[k](); } });
 NOVA.extraActs = [['Cerrar pestaña', () => closeTab(cur)], ['Reabrir pestaña cerrada', reopen], ['Marcadores', () => newTab('nova://marcadores')], ['Guardar esta página', saveMark], ['Guardar todas las pestañas', bookmarkAll], ['Mostrar/ocultar barra de marcadores', toggleBar],

@@ -71,7 +71,7 @@ mp.innerHTML = MENU.map((m, i) => `<button data-i="${i}">${m[0]}</button>`).join
 mn.onclick = e => { e.stopPropagation(); mp.classList.toggle('on'); };
 mp.onclick = e => { const b = e.target.closest('button'); if (b) { mp.classList.remove('on'); MENU[b.dataset.i][1](); } };
 document.addEventListener('click', () => mp.classList.remove('on'));
-const zoom = d => { try { cur.wv.setZoomLevel(cur.wv.getZoomLevel() + d); } catch { } };
+const zoom = d => { try { const t = activeWebTab?.() || cur; if (!t?.wv?.setZoomLevel) return toast('Este contenido no permite cambiar el zoom'); t.wv.setZoomLevel((t.wv.getZoomLevel?.() || 0) + d); } catch { } };
 let lastB = 0;
 ipc.on('blocked', (_, n) => { S.blocked += n - lastB; lastB = n; save(); bl.querySelector('b').textContent = S.blocked.toLocaleString('es'); });
 ipc.on('tab-health', (_, d) => { if (d?.type === 'unresponsive') toast('Una pestaña se ha quedado bloqueada; Nova la está recuperando.'); });
@@ -90,6 +90,7 @@ newTab = function (u) {
   t.wv.addEventListener('did-navigate', e => {
     if (isNT(e.url) || e.url.startsWith('file:')) return;
     S.hist.unshift({ u: e.url, t: e.url, d: Date.now() }); S.hist = S.hist.slice(0, 500); save();
+    try { NOVA.saveSession?.(); } catch {}
   });
   t.wv.addEventListener('page-title-updated', e => { const h = S.hist.find(x => x.u === t.wv.getURL()); if (h) h.t = e.title; });
   return t;
@@ -106,14 +107,22 @@ draw = function () { baseDraw(); if (panel === 'walls') wallsPanel(); if (panel 
 
 /* ---------- pestañas internas ---------- */
 function refreshPages(n) { document.querySelectorAll('.ipage').forEach(e => { if (e.dataset.p === n && e.classList.contains('on')) PG[n](e); }); }
+const activeWebTab = () => {
+  if (cur?.wv?.tagName === 'WEBVIEW' && !cur.wv.classList.contains('ipage')) return cur;
+  for (let i = tabs.length - 1; i >= 0; i--) { const t = tabs[i]; if (t?.wv?.tagName === 'WEBVIEW' && !t.wv.classList.contains('ipage')) return t; }
+  return null;
+};
 function internalTab(u) {
-  let name = u.replace('nova://', '').split(/[/?]/)[0]; if (!PG[name]) name = 'acerca';
+  const raw = String(u || '').replace(/^nova:\/\//i, '').split(/[/?#]/)[0].trim().toLowerCase();
+  const localAliases = { settings:'ajustes', setting:'ajustes', preferences:'ajustes', preference:'ajustes', about:'acerca', privacy:'privacidad', history:'historial', downloads:'descargas', download:'descargas', notes:'notas', bookmarks:'marcadores', favorites:'marcadores', news:'novedades', welcome:'bienvenida', start:'bienvenida', performance:'rendimiento', security:'seguridad', migrate:'migrar', apps:'apps', panels:'panels', reading:'reading', readinglist:'reading', work:'workspaces', workspace:'workspaces', tabs:'pestanas', sessions:'sesiones', feedback:'mejoras', improvements:'mejoras', safari:'safari', islands:'islands', glance:'glance', focus:'focus', reader:'reader', collections:'collections', capture:'capture', writer:'writer', docs:'docs', study3:'study3', 'privacy-center':'privacidad2', privacy2:'privacidad2', performance2:'rendimiento2', downloads2:'descargas2', apps2:'apps', webapps:'apps', command:'acciones', 'command-center':'acciones', qr:'qr', backup:'backup', shortcuts:'shortcuts', send:'send', pip:'pip', mediahub:'media', webpanels:'panels' };
+  const name = (typeof NOVA.resolveFeatureRoute === 'function' ? NOVA.resolveFeatureRoute(raw) : (localAliases[raw] || raw));
+  if (!PG[name]) { try { toast('Ruta Nova no encontrada: ' + raw); } catch {} return null; }
   const old = tabs.find(t => t.wv.dataset && t.wv.dataset.p === name); if (old) { sel(old); PG[name](old.wv); return old; }
   const el = document.createElement('div'); el.className = 'ipage'; el.dataset.p = name;
   Object.assign(el, { getURL: () => 'nova://' + name, canGoBack: () => false, canGoForward: () => false, goBack() { }, goForward() { }, reload: () => PG[name](el), loadURL() { }, stopFindInPage() { }, findInPage() { } });
   $('#view').appendChild(el);
   const te = document.createElement('div'); te.className = 'tab';
-  const T = { historial: 'Historial', descargas: 'Descargas', notas: 'Notas', juegos: 'Nova Snake', ajustes: 'Ajustes', acerca: 'Acerca de Nova', novedades: 'Novedades', marcadores: 'Marcadores', privacidad: 'Privacidad', personalizar: 'Personalizar', tienda: 'Tienda de extensiones', bienvenida: 'Bienvenida', migrar: 'Migrar navegador', rendimiento: 'Rendimiento y RAM', seguridad: 'Seguridad' }[name] || name;
+  const T = { safari:'Safari Air', islands:'Nova Islands', glance:'Glance', focus:'Nova Focus', reader:'Nova Reader+', collections:'Colecciones', capture:'Web Capture', writer:'Nova Writer', docs:'Nova Docs', study3:'Nova Study 3', privacidad2:'Centro de privacidad', rendimiento2:'Centro de rendimiento', descargas2:'Download Hub', apps:'Nova Apps', mejoras:'Mejoras de Nova', workspaces:'Spaces', pestanas:'Gestor de pestañas', sesiones:'Sesiones', reading:'Reading List', qr:'Compartir con QR', media:'Media Hub', panels:'Web Panels', backup:'Backup & Restore', shortcuts:'Atajos', send:'Nova Send', pip:'Picture-in-Picture', novedades:'Novedades 3.0', bienvenida:'Bienvenida 3.0', historial: 'Historial', descargas: 'Descargas' , notas: 'Notas', juegos: 'Nova Snake', ajustes: 'Ajustes', acerca: 'Acerca de Nova', novedades: 'Novedades', marcadores: 'Marcadores', privacidad: 'Privacidad', personalizar: 'Personalizar', tienda: 'Tienda de extensiones', bienvenida: 'Bienvenida', migrar: 'Migrar navegador', rendimiento: 'Rendimiento y RAM', seguridad: 'Seguridad' }[name] || name;
   te.innerHTML = '<img src="../assets/icon.png"><span>' + T + '</span><button class="ib sm">' + ic('x') + '</button>';
   const t = { wv: el, el: te }; tabs.push(t); $('#tabs').appendChild(te);
   te.onmousedown = e => { if (e.button === 1) closeTab(t); };
@@ -275,7 +284,7 @@ function onboard() {
   };
   r();
 }
-window.NOVA = { PG, MENU, internalTab, sw2, themeGrid, toURL, fmt, refreshPages, tour: () => onboard() };
+window.NOVA = { PG, MENU, internalTab, sw2, themeGrid, toURL, fmt, refreshPages, activeWebTab, save, tour: () => onboard() };
 applyTheme();
 if (!S.done) setTimeout(onboard, 700);
 })();

@@ -1,5 +1,6 @@
 /* Nova 2.2.0 - capa aditiva: barra superior, vista dividida, menú web robusto, perfiles, zoom, primer inicio, novedades y actualizaciones directas. */
 (() => {
+  const N = NOVA, { PG } = N;
   const esc22 = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const toast22 = m => { try { toast(m); } catch {} };
   S.v22 = Object.assign({ firstRunGuide:false, defaultPromptSeen:false, zoom:100, topOpen:false }, S.v22 || {});
@@ -30,9 +31,9 @@
   // ---------- Zoom real ----------
   const zoomPop=document.createElement('div'); zoomPop.id='nova22-zoom-pop'; document.body.appendChild(zoomPop);
   zoomPop.innerHTML=`<div class="row"><b>Zoom</b><button class="btn" id="zreset">Restablecer</button></div><div class="nova22-zoomrow" style="margin-top:8px"><button class="btn" id="zminus">−</button><div class="nova22-zoompct" id="zpct">100%</div><button class="btn" id="zplus">+</button></div><div class="mut" style="margin-top:7px">Ctrl + + / Ctrl + − · Ctrl + 0</div>`;
-  const zoomFactor=()=>{try{return Math.max(.25,Math.min(5,Number(cur?.wv?.getZoomFactor?.()||1)))}catch{return 1}};
+  const zoomFactor=()=>{try{return Math.max(.25,Math.min(5,Number((N.activeWebTab?.()||cur)?.wv?.getZoomFactor?.()||1)))}catch{return 1}};
   const paintZoom=()=>{const n=Math.round(zoomFactor()*100);zoomBtn.textContent=n+'%';zoomPop.querySelector('#zpct').textContent=n+'%';S.v22.zoom=n;save22();};
-  const setZoom22=n=>{try{cur?.wv?.setZoomFactor?.(Math.max(.25,Math.min(5,n)));paintZoom();}catch{toast22('Este contenido no permite cambiar el zoom.')}};
+  const setZoom22=n=>{try{(N.activeWebTab?.()||cur)?.wv?.setZoomFactor?.(Math.max(.25,Math.min(5,n)));paintZoom();}catch{toast22('Este contenido no permite cambiar el zoom.')}};
   zoomBtn.onclick=e=>{e.stopPropagation();const on=!zoomPop.classList.contains('on');zoomPop.classList.toggle('on',on);topPop.classList.remove('on');profilePop.classList.remove('on');paintZoom();};
   zoomPop.querySelector('#zminus').onclick=()=>setZoom22(zoomFactor()-.1);
   zoomPop.querySelector('#zplus').onclick=()=>setZoom22(zoomFactor()+.1);
@@ -66,13 +67,13 @@
   }
   async function splitView22(){
     if(split){closeSplit22();return;}
-    if(!cur?.wv)return;
-    const current=cleanHttp(cur.wv.getURL?.());
+    const source = N.activeWebTab?.() || cur; if(!source?.wv)return;
+    const current=cleanHttp(source.wv.getURL?.());
     let target='';
     try{const r=await N.dlg?.('Vista dividida',[{label:'Dirección del panel derecho',value:'https://www.google.com'}],'Abrir');if(!r)return;target=cleanHttp(r[0]);}catch{}
     if(!target)return toast22('Escribe una dirección HTTP o HTTPS.');
     const host=document.getElementById('nova22-split');if(!host)return;
-    const t=cur;
+    const t=source;
     const left=document.createElement('div');left.className='nova22-split-pane nova22-split-left';
     const right=document.createElement('div');right.className='nova22-split-pane nova22-split-right';
     const head=document.createElement('div');head.className='nova22-split-head';head.innerHTML=`<b style="font-size:12px">Vista dividida</b><button class="btn" id="swap22">Intercambiar</button><button class="btn" id="close22">Cerrar</button>`;
@@ -80,7 +81,7 @@
     document.getElementById('view').appendChild(host);
     left.appendChild(t.wv);
     Object.assign(t.wv.style,{position:'absolute',left:'0',top:'0',right:'0',bottom:'0',width:'100%',height:'100%',display:'flex'});
-    const second=document.createElement('webview');second.setAttribute('partition',typeof profilePartition==='function'?profilePartition():'persist:web');second.src=target;right.appendChild(second);
+    const second=document.createElement('webview');second.setAttribute('partition',N.profilePartition?.()||'persist:web');second.src=target;right.appendChild(second);
     split={t,left,right,host,second};
     attachCtx22({wv:second});
     head.querySelector('#close22').onclick=closeSplit22;

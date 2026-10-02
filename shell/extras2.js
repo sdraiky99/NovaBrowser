@@ -41,6 +41,7 @@ draw = function () {
 const baseClose = closeTab;
 closeTab = function (t) { try { const u = t.wv.getURL(); if (u && !isNT(u)) S.closed = [u, ...S.closed].slice(0, 15); save(); } catch { } baseClose(t); };
 const reopen = () => { const u = S.closed.shift(); if (u) { save(); newTab(u); } else toast('No hay pestañas cerradas'); };
+NOVA.reopen = reopen;
 const sug = document.createElement('div'); sug.id = 'sug'; document.body.appendChild(sug);
 const addr = $('#addr');
 addr.addEventListener('input', () => {
@@ -143,10 +144,10 @@ const SEC = {
     const l = () => { const q = c.querySelector('#hq').value.toLowerCase(); c.querySelector('#hl').innerHTML = S.hist.map((h, i) => [h, i]).filter(([h]) => (h.t + h.u).toLowerCase().includes(q)).slice(0, 150).map(([h, i]) => `<div class="li" data-u="${esc(h.u)}"><span>${esc(h.t)}</span><span class="mut">${new Date(h.d).toLocaleString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} <b data-x="${i}" style="cursor:pointer">✕</b></span></div>`).join('') || '<span class="mut">Sin resultados.</span>'; c.querySelectorAll('.li').forEach(e => e.onclick = ev => { if (ev.target.dataset.x !== undefined) { S.hist.splice(+ev.target.dataset.x, 1); save(); l(); } else newTab(e.dataset.u); }); };
     c.querySelector('#hq').oninput = l; c.querySelector('#hc').onclick = () => { S.hist = []; save(); l(); }; l();
   },
-  ia: c => {
+  ia: (c, again) => {
     c.innerHTML = '<h2>Nova IA</h2><span class="mut">Clave API de Anthropic</span><div class="row"><input class="fld" type="password" id="akey" placeholder="' + (S.hasKey ? 'Clave guardada de forma segura' : 'sk-ant-…') + '"><button class="btn" id="akb">Guardar</button></div><span class="mut">Modelo</span><select class="fld" data-set="model"><option value="claude-sonnet-4-6">Claude Sonnet 4.6 (equilibrado)</option><option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (rápido)</option><option value="claude-opus-5-5">Claude Opus 5.5 (potente)</option></select><span class="mut">Personalidad / instrucciones extra</span><textarea class="fld" data-set="persona" rows="4" placeholder="Ej: Respóndeme como un pirata programador.">' + esc(S.persona || '') + '</textarea>';
     c.querySelector('[data-set=model]').value = S.model || 'claude-sonnet-4-6';
-    c.querySelector('#akb').onclick = async () => { await NOVA.setKey(c.querySelector('#akey').value.trim()); again(); };
+    c.querySelector('#akb').onclick = async () => { await NOVA.setKey(c.querySelector('#akey').value.trim()); if(typeof PG.ajustes==='function') PG.ajustes(r); };
   },
   datos: (c, again) => {
     c.innerHTML = '<h2>Privacidad y datos</h2><div class="row"><button class="btn" id="d1">Borrar historial</button><button class="btn" id="d2">Borrar cookies y caché</button></div><div class="row"><button class="btn" id="d3">Exportar ajustes</button><label class="btn">Importar ajustes<input type="file" id="d4" accept=".json" hidden></label><button class="btn on" id="dm">Migrar navegador</button></div><button class="btn" id="d5" style="align-self:flex-start">Restablecer todo Nova</button><span class="mut">Exportar guarda nova-ajustes.json en tu carpeta Descargas.</span>';

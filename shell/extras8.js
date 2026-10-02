@@ -1,12 +1,12 @@
 /* Nova 2.0.0 - gran actualización: Study, Workspaces, lectura, rendimiento, accesibilidad, seguridad y experiencia renovada. */
 (() => {
-  const N = NOVA;
+  const N = NOVA, { PG } = N;
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const toast2 = m => { try { toast(m); } catch {} };
   const clone = o => { try { return JSON.parse(JSON.stringify(o)); } catch { return {}; } };
   const safeUrl = u => { try { const x = new URL(String(u || '')); return /^https?:$/.test(x.protocol) ? x.href : ''; } catch { return ''; } };
-  const currentUrl = () => { try { return safeUrl(cur?.wv?.getURL?.()); } catch { return ''; } };
-  const currentTitle = () => { try { return cur?.el?.querySelector('span')?.textContent || currentUrl() || 'Pestaña'; } catch { return 'Pestaña'; } };
+  const currentUrl = () => { try { const t=N.activeWebTab?.()||cur; return safeUrl(t?.wv?.getURL?.()); } catch { return ''; } };
+  const currentTitle = () => { try { const t=N.activeWebTab?.()||cur; return t?.el?.querySelector('span')?.textContent || currentUrl() || 'Pestaña'; } catch { return 'Pestaña'; } };
 
   S.v200 = Object.assign({
     workspaces: [], activeWorkspace: 'general',
@@ -38,7 +38,7 @@
   const ws = () => S.v200.workspaces.find(w => w.id === S.v200.activeWorkspace) || S.v200.workspaces[0];
   const captureWorkspace = () => { const w = ws(); if (!w) return; w.tabs = tabs.map(t => { try { const u = safeUrl(t.wv.getURL()); if (!u || isNT(u) || t.wv.classList.contains('ipage')) return null; return { u, title:t.el.querySelector('span')?.textContent||'', g:t.g||null, p:t.el.classList.contains('pin') }; } catch { return null; } }).filter(Boolean).slice(0,40); save(); };
   const destroyTabs = () => { tabs.slice().forEach(t => { try { t.wv.remove(); } catch {} try { t.el.remove(); } catch {} }); tabs.length = 0; cur = null; $('#tabs').replaceChildren(); };
-  const loadWorkspace = () => { const w = ws(); if (!w) return; const items = Array.isArray(w.tabs) ? w.tabs.slice(0,40) : []; if (!items.length) { newTab(); return; } items.forEach(x => { const t = newTab(x.u); if (x.g && S.groups[x.g]) t.g = x.g; if (x.p) t.el.classList.add('pin'); }); typeof renderGroups === 'function' && renderGroups(); };
+  const loadWorkspace = () => { const w = ws(); if (!w) return; const items = Array.isArray(w.tabs) ? w.tabs.slice(0,40) : []; if (!items.length) { newTab(); return; } items.forEach(x => { const t = newTab(x.u); if (x.g && S.groups[x.g]) t.g = x.g; if (x.p) t.el.classList.add('pin'); }); typeof NOVA.renderGroups === 'function' && NOVA.renderGroups(); };
   const switchWorkspace = id => { if (id === S.v200.activeWorkspace) return; captureWorkspace(); const target = S.v200.workspaces.find(x => x.id === id); if (!target) return; S.v200.activeWorkspace = id; save(); destroyTabs(); loadWorkspace(); refreshWorkspaceUI(); toast2('Espacio: ' + target.name); };
   const refreshWorkspaceUI = () => { const b = $('#nova20-wsbtn'); if (b) b.textContent = '▦ ' + ws().name; const pop = $('#nova20-pop'); if (pop) { pop.innerHTML = `<div class="mut" style="padding:4px 8px">Espacios de trabajo</div>${S.v200.workspaces.map(w=>`<button class="nova20-wi" data-w="${esc(w.id)}"><span style="width:24px;text-align:center">${esc(w.icon||'•')}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis">${esc(w.name)}</span>${w.id===S.v200.activeWorkspace?'<b style="color:var(--acc)">Activo</b>':''}</button>`).join('')}<hr style="border:0;border-top:1px solid var(--bd);width:100%;margin:3px 0"><button class="nova20-wi" id="nova20-newws">＋ Nuevo espacio</button><button class="nova20-wi" id="nova20-managews">⚙ Administrar espacios</button>`; pop.querySelectorAll('[data-w]').forEach(x=>x.onclick=()=>{pop.classList.remove('on');switchWorkspace(x.dataset.w)}); pop.querySelector('#nova20-newws')?.addEventListener('click',createWorkspace); pop.querySelector('#nova20-managews')?.addEventListener('click',()=>{pop.classList.remove('on');newTab('nova://workspaces')}); } };
   const createWorkspace = async () => { const r = await N.dlg?.('Nuevo espacio',[{label:'Nombre',value:'Nuevo espacio'},{label:'Icono',value:'◈'}],'Crear'); if (!r) return; const id='ws-'+Date.now().toString(36); captureWorkspace(); const n={id,name:String(r[0]||'Nuevo espacio').slice(0,40),icon:String(r[1]||'◈').slice(0,2),color:'var(--acc)',tabs:[]}; S.v200.workspaces.push(n); save(); switchWorkspace(id); };
@@ -51,7 +51,7 @@
 
   /* ---------- Reader ---------- */
   const readerCss = `article,main,[role=main]{max-width:820px!important;margin:40px auto!important;padding:0 24px!important}body{line-height:1.8!important;font-size:19px!important}header,nav,aside,footer,[class*=ad-],[id*=banner],[class*=popup],[class*=modal]{display:none!important}img,video{max-width:100%!important;height:auto!important}`;
-  N.readerToggle = () => { if(!cur?.wv?.executeJavaScript)return; S.v200.reader=!S.v200.reader; try { cur.wv.executeJavaScript(`(()=>{let s=document.getElementById('__nova20_reader');if(${S.v200.reader}){if(!s){s=document.createElement('style');s.id='__nova20_reader';s.textContent=${JSON.stringify(readerCss)};(document.head||document.documentElement).appendChild(s)}}else if(s)s.remove()})()`); } catch {} save(); $('#nova20-reader-state')?.classList.toggle('on',S.v200.reader); };
+  N.readerToggle = () => { const t=N.activeWebTab?.()||cur; if(!t?.wv?.executeJavaScript)return; S.v200.reader=!S.v200.reader; try { t.wv.executeJavaScript(`(()=>{let s=document.getElementById('__nova20_reader');if(${S.v200.reader}){if(!s){s=document.createElement('style');s.id='__nova20_reader';s.textContent=${JSON.stringify(readerCss)};(document.head||document.documentElement).appendChild(s)}}else if(s)s.remove()})()`); } catch {} save(); $('#nova20-reader-state')?.classList.toggle('on',S.v200.reader); };
 
   /* ---------- Study ---------- */
   const study = { root:null, left:null, right:null, ai:null, messages:[], provider:'nova' };
@@ -92,7 +92,7 @@
     ['🎓 Nova Study',()=>openStudy()],['▦ Espacios de trabajo',()=>newTab('nova://workspaces')],['📖 Activar/desactivar modo lectura',()=>N.readerToggle()],['📊 Rendimiento y RAM',()=>newTab('nova://rendimiento')],['🛡 Auditoría de seguridad',()=>newTab('nova://seguridad')],['♿ Accesibilidad',()=>newTab('nova://ajustes')],['📝 Nueva nota',()=>newTab('nova://notas')]
   ];
   N.extraActs = Array.isArray(N.extraActs)?N.extraActs:[];for(const a of acts)if(!N.extraActs.some(x=>x[0]===a[0]))N.extraActs.push(a);
-  if(Array.isArray(MENU)){for(const a of acts)if(!MENU.some(x=>x[0]===a[0]))MENU.push(a);const mp=document.getElementById('mnp');if(mp)mp.innerHTML=MENU.map((m,i)=>`<button data-i="${i}">${esc(m[0])}</button>`).join('');}
+  if(Array.isArray(N.MENU)){for(const a of acts)if(!N.MENU.some(x=>x[0]===a[0]))N.MENU.push(a);const mp=document.getElementById('mnp');if(mp)mp.innerHTML=N.MENU.map((m,i)=>`<button data-i="${i}">${esc(m[0])}</button>`).join('');}
 
   /* ---------- Diagnóstico de rendimiento periódico, sin telemetría ---------- */
   N.performanceSnapshot = () => ipc.invoke('performance-info').catch(()=>({ok:false}));

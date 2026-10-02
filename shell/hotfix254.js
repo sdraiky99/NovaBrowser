@@ -1,4 +1,4 @@
-/* Nova 2.5.4 Hotfix · functional routing, IA actions and command bridge */
+/* Nova 3.0.1 Hotfix · functional routing, IA actions and command bridge */
 (() => {
   const N = window.NOVA;
   if (!N) return;
@@ -23,7 +23,7 @@
   N.resolveFeatureRoute = resolve;
   N.openFeature = route => {
     const name = resolve(route);
-    if (name === 'ia') { N.toggleAI?.(); return window.cur || null; }
+    if (name === 'ia') { N.openAI?.(); return window.cur || null; }
     if (!N.PG?.[name]) {
       try { if (typeof toast === 'function') toast('Esta función no está disponible en esta versión: ' + name); } catch {}
       return null;
@@ -46,15 +46,20 @@
     N.__hotfixInternalRouter = true;
   }
   // Working AI bridge for the Command Center, selection chip and New Tab.
-  N.aiNew = () => { try { chat.length = 0; panel = 'ai'; draw(); } catch { N.toggleAI?.(); } };
-  N.aiSend = q => { try { panel = 'ai'; draw(); return ask(String(q || '')); } catch { return null; } };
+  N.aiNew = () => { try { if (typeof S !== 'undefined' && Array.isArray(S.convs)) { const fresh = { id: Date.now(), title: 'Nueva conversación', msgs: [], ts: Date.now() }; S.convs.unshift(fresh); S.cid = fresh.id; save?.(); } N.openAI?.(); return (typeof S !== 'undefined') ? S.cid : null; } catch { N.openAI?.(); return null; } };
+  N.aiSend = q => { try { N.openAI?.(); return N.askAI?.(String(q || '')); } catch { return null; } };
   N.askSel = t => N.aiSend('Explica o resume este texto seleccionado:\n\n' + String(t || '').slice(0, 6000));
   N.aiAct = kind => {
     if (kind === 'sum') {
-      let text = '';
-      try { text = cur?.wv?.executeJavaScript ? '' : ''; } catch {}
+      const source = N.currentWebTab?.() || N.activeWebTab?.();
       (async () => {
-        try { const body = cur?.wv?.executeJavaScript ? await cur.wv.executeJavaScript('document.body.innerText.slice(0,12000)') : ''; N.aiSend('Resume en español, en pocos puntos, esta página:\n\n' + body); } catch { N.aiSend('Resume la página actual.'); }
+        try {
+          const body = source?.wv?.executeJavaScript ? await source.wv.executeJavaScript('document.body.innerText.slice(0,12000)') : '';
+          if (!body) throw new Error('no-web-page');
+          N.aiSend('Resume en español, en pocos puntos, esta página:\n\n' + body);
+        } catch {
+          N.aiSend('Abre una página web para poder resumirla.');
+        }
       })();
       return;
     }
@@ -75,7 +80,7 @@
   ensure('Abrir Nova IA', () => N.toggleAI?.());
   ensure('Nueva conversación con Nova IA', () => N.aiNew());
   ensure('Resumir página', () => N.aiAct('sum'));
-  ensure('Preguntar a Nova IA', () => N.toggleAI?.());
+  ensure('Preguntar a Nova IA', () => N.openAI?.());
   ensure('Command Center', () => N.palette?.());
   ensure('Nueva nota', () => N.newNote());
   ensure('Safari Mode', () => N.openFeature('safari'));
