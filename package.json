@@ -1,7 +1,7 @@
 {
   "name": "nova-browser",
   "productName": "Nova",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Navegador Chromium calmado y potente con Nova Air, Safari, Islands, Spaces, Focus, Reader+, Writer, Docs, Study, IA y herramientas avanzadas",
   "author": "Nova",
   "main": "main.js",
