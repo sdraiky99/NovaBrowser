@@ -1,10 +1,12 @@
-<!doctype html><html><head><meta charset="utf-8"><title>Nova</title>
+<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'self' file: data: blob:; object-src 'none'; base-uri 'none'; frame-src 'self' file:; img-src 'self' file: data: blob: https:; style-src 'self' 'unsafe-inline' file:; script-src 'self' 'unsafe-inline' file:; connect-src 'self' https://api.anthropic.com https://text.pollinations.ai https://api.openai.com https://api.github.com https://github.com;"><title>Nova</title>
 <link rel="stylesheet" href="themes.css"><link rel="icon" href="../assets/icon.png">
 <style>
 #app{display:flex;flex-direction:column;height:100vh}
 #top{height:38px;display:flex;align-items:flex-end;background:var(--bar);border-bottom:1px solid var(--bd);-webkit-app-region:drag;padding-left:8px}
 #brand{display:flex;align-items:center;gap:6px;padding:0 10px 8px 0;font-weight:600}#brand img{width:18px}
-#tabs{display:flex;gap:2px;flex:1;min-width:0;align-items:flex-end}
+#tabs{display:flex;gap:2px;flex:1;min-width:0;align-items:flex-end;overflow:hidden}
+#tabs #nt{flex:0 0 30px;width:30px;height:30px;margin:0 2px 0 0;border-radius:var(--r) var(--r) 0 0}
+#tabs #nt:hover{background:color-mix(in srgb,var(--fg) 9%,transparent)}
 .tab{-webkit-app-region:no-drag;display:flex;align-items:center;gap:6px;height:30px;padding:0 8px;min-width:60px;max-width:210px;flex:1;background:transparent;border:1px solid transparent;border-bottom:0;border-radius:var(--r) var(--r) 0 0;cursor:default;position:relative;animation:tin .22s ease-out}
 .tab.on{background:var(--bg);border-color:var(--bd);color:var(--fg)}
 .tab:not(.on){color:var(--mut)}.tab:not(.on):hover{background:color-mix(in srgb,var(--fg) 8%,transparent)}
@@ -40,45 +42,75 @@ h3{margin:0;font-size:15px}.mut{color:var(--mut);font-size:12px}
 body.noanim *{animation:none!important;transition:none!important}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
-/* ---------- Windows 95 ---------- */
-.t-win95 #top{background:linear-gradient(90deg,#000080,#1084d0);color:#fff;border:0}
-.t-win95 .tab{border-radius:0;border:0;box-shadow:inset -1px -1px #404040,inset 1px 1px #fff;background:#c0c0c0;color:#000}
-.t-win95 .tab.on{font-weight:700;box-shadow:inset -1px -1px #808080,inset 1px 1px #fff,0 0 0 1px #000}
-.t-win95 #wc .ib{color:#000;background:#c0c0c0;width:22px;height:20px;margin:9px 1px;box-shadow:inset -1px -1px #404040,inset 1px 1px #fff}
-.t-win95 .ib,.t-win95 .btn{box-shadow:inset -1px -1px #404040,inset 1px 1px #fff;background:#c0c0c0;border:0;border-radius:0}
-.t-win95 .ib:active,.t-win95 .btn:active{box-shadow:inset 1px 1px #404040,inset -1px -1px #fff}
-.t-win95 #addr,.t-win95 .fld{background:#fff;border:0;border-radius:0;box-shadow:inset 1px 1px #808080,inset -1px -1px #fff,inset 2px 2px #404040}
-.t-win95 #bar,.t-win95 #side,.t-win95 #panel{border-color:#808080}.t-win95 .m.u{background:#000080}.t-win95 .th{border-radius:0}
-.t-win95 .sw{border-radius:0;background:#808080}.t-win95 .sw::after{border-radius:0;background:#c0c0c0}
-/* ---------- Código ---------- */
-.t-code .tab.on::before{content:"$";color:var(--acc)}.t-code #addr::placeholder{color:var(--mut)}
-.t-code #bar::before{content:"~/nova";color:var(--acc);margin-right:6px}.t-code .tab{border-radius:0}
-.t-code #brand{color:var(--acc)}.t-code .btn,.t-code .fld,.t-code .th,.t-code .wp{border-radius:2px}
-.t-code #top{background-image:repeating-linear-gradient(0deg,#0000 0 2px,#39ff1408 2px 3px)}
-/* ---------- Undertale ---------- */
-.t-undertale #top,.t-undertale #bar,.t-undertale #side,.t-undertale #panel{border-color:#fff;border-width:3px}
-.t-undertale .tab.on{color:var(--acc);border:3px solid #fff;border-bottom:0;background:#000}.t-undertale .tab.on::before{content:"♥";color:#f00}
-.t-undertale .tab{border-radius:0}.t-undertale #addr{border:3px solid #fff;border-radius:0}
-.t-undertale .btn:hover,.t-undertale .ib:hover{color:var(--acc);background:none}.t-undertale .btn:hover::before{content:"♥ ";color:#f00}
-.t-undertale #addr:focus{border-color:var(--acc);box-shadow:none}.t-undertale .m.a{border:3px solid #fff}.t-undertale .m.u{background:#000;color:var(--acc);border:3px solid var(--acc)}
-.t-undertale .sw{border-radius:0}.t-undertale .sw::after{border-radius:0}.t-undertale *{animation-timing-function:steps(6)!important}
-/* ---------- Aero ---------- */
-.t-aero{background:linear-gradient(160deg,#8fc3ee,#dcecf9)}
-.t-aero #top{background:linear-gradient(#ffffffb0,#ffffff30 48%,#7fb8e880 50%,#a9d3f5aa);backdrop-filter:blur(14px);box-shadow:inset 0 1px #fff,0 1px 8px #0004;border-color:#5b8db8}
-.t-aero .tab{background:linear-gradient(#ffffff90,#ffffff20 50%,#ffffff10);border:1px solid #ffffffa0;box-shadow:inset 0 1px #fff}
-.t-aero .tab.on{background:linear-gradient(#fff,#e9f4ff 50%,#cfe6fb);border-color:#5b8db8;color:#0b2238}
-.t-aero #bar,.t-aero #side,.t-aero #panel{background:linear-gradient(#ffffffa0,#bcdcf5a0);backdrop-filter:blur(12px);border-color:#ffffffa0}
-.t-aero .ib:hover,.t-aero .btn:hover{background:linear-gradient(#fff8,#7fc6f088);box-shadow:inset 0 0 0 1px #fff,0 0 8px #7fd0ff}
-.t-aero .btn,.t-aero .fld,.t-aero #addr{background:linear-gradient(#fff,#e6f2fc);border:1px solid #7ea6c8;box-shadow:inset 0 1px #fff}
-.t-aero #wc .ib{height:22px;margin-top:0;align-self:flex-start;width:40px;background:linear-gradient(#ffffff90,#9cc8ee);border:1px solid #5b8db8;border-top:0;border-radius:0 0 6px 6px}
-.t-aero #wc .ib:last-child{background:linear-gradient(#f6b1a6,#d8412a 50%,#b81e0c);color:#fff;width:52px}
-</style></head><body class="t-nova"><div id="app">
-<div id="top"><div id="brand"><img src="../assets/icon.png">Nova</div><div id="tabs"></div>
-<button class="ib" id="nt" title="Nueva pestaña (Ctrl+T)"></button>
+/* ---------- Air: superficie ligera, cristal suave y controles discretos ---------- */
+body.t-air{background:var(--bg);letter-spacing:.005em}
+body.t-air #top{height:44px;padding-left:8px;background:transparent;border-bottom:0}
+body.t-air #brand{width:30px;padding:0 4px 7px 0;font-size:0;justify-content:center;gap:0;color:var(--fg)}
+body.t-air #brand img{width:20px;height:20px;opacity:.9}
+body.t-air #tabs{gap:4px;align-items:center;padding:5px 4px 0 2px}
+body.t-air .tab{height:32px;min-width:72px;max-width:230px;flex:0 1 190px;padding:0 10px;border:1px solid transparent;border-radius:12px;background:transparent;color:var(--mut);box-shadow:none}
+body.t-air .tab.on{background:var(--bar);border-color:var(--bd);color:var(--fg);box-shadow:0 3px 14px rgba(40,50,70,.08),inset 0 1px rgba(255,255,255,.55)}
+body.t-air .tab:not(.on):hover{background:color-mix(in srgb,var(--fg) 6%,transparent);color:var(--fg)}
+body.t-air .tab img{width:15px;height:15px;border-radius:4px}
+body.t-air #tabs #nt{order:999;flex:0 0 30px;width:30px;height:30px;margin:0 2px 0 2px;border-radius:50%;background:color-mix(in srgb,var(--fg) 5%,transparent);color:var(--fg)}
+body.t-air #tabs #nt:hover{background:color-mix(in srgb,var(--acc) 12%,transparent);color:var(--acc)}
+body.t-air #tabs #nt svg{width:16px;height:16px}
+body.t-air #nova22-top-tools{height:44px;gap:3px;margin-left:2px}
+body.t-air #nova22-top-tools>.nova22-topbtn{height:30px;min-width:30px;padding:0 9px;border-radius:12px;color:var(--mut)}
+body.t-air #nova22-top-tools>.nova22-topbtn:hover,body.t-air #nova22-top-tools>.nova22-topbtn.on{background:var(--bar);border-color:var(--bd);color:var(--fg);box-shadow:0 3px 12px rgba(40,50,70,.07)}
+body.t-air #nova22-main-btn{font-size:0;width:32px;padding:0;border-radius:50%}
+body.t-air #nova22-main-btn::before{content:'✦';font-size:15px;color:var(--acc)}
+body.t-air #nova22-zoom-btn{font-size:11px;min-width:48px;color:var(--mut)}
+body.t-air #wc{align-self:center;height:44px}
+body.t-air #wc .ib{width:38px;height:44px;border-radius:0;color:var(--mut)}
+body.t-air #wc .ib:hover{background:color-mix(in srgb,var(--fg) 7%,transparent);color:var(--fg)}
+body.t-air #wc .ib:last-child:hover{background:#e35d6a;color:#fff}
+body.t-air #bar{gap:6px;padding:7px 12px;background:var(--bar);border-top:1px solid var(--bd);border-bottom:1px solid var(--bd);backdrop-filter:blur(18px) saturate(130%);box-shadow:0 6px 18px rgba(40,50,70,.05)}
+body.t-air #addr{height:34px;max-width:760px;margin:0 auto;padding:0 16px;background:color-mix(in srgb,var(--fg) 6%,transparent);border:1px solid transparent;border-radius:17px;color:var(--fg);box-shadow:inset 0 1px 0 rgba(255,255,255,.45)}
+body.t-air #addr:focus{background:color-mix(in srgb,var(--bg) 90%,white);border-color:color-mix(in srgb,var(--acc) 45%,transparent);box-shadow:0 0 0 4px color-mix(in srgb,var(--acc) 14%,transparent),inset 0 1px 0 rgba(255,255,255,.55)}
+body.t-air #side{width:48px;background:transparent;border-right:0;gap:8px;padding:10px 4px}
+body.t-air #side .ib{width:38px;height:38px;border-radius:13px;color:var(--mut)}
+body.t-air #side .ib:hover{background:color-mix(in srgb,var(--fg) 6%,transparent);color:var(--fg)}
+body.t-air #side .ib.on{background:color-mix(in srgb,var(--acc) 12%,transparent);color:var(--acc);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--acc) 10%,transparent)}
+body.t-air #panel{background:color-mix(in srgb,var(--bar) 88%,var(--bg));border-left:1px solid var(--bd);backdrop-filter:blur(20px) saturate(125%);box-shadow:-18px 0 40px rgba(40,50,70,.08)}
+body.t-air #panel.open{width:330px}
+body.t-air .btn{background:color-mix(in srgb,var(--bg) 86%,white);border-color:var(--bd);border-radius:11px;box-shadow:0 2px 10px rgba(40,50,70,.04)}
+body.t-air .btn:hover,body.t-air .btn.on{background:color-mix(in srgb,var(--acc) 10%,var(--bg));border-color:color-mix(in srgb,var(--acc) 45%,var(--bd));color:var(--acc)}
+body.t-air .fld{background:color-mix(in srgb,var(--bg) 90%,white);border-color:var(--bd);border-radius:11px}
+body.t-air .card{background:color-mix(in srgb,var(--bar) 92%,var(--bg));border:1px solid var(--bd);border-radius:18px;box-shadow:0 24px 80px rgba(30,40,60,.18);backdrop-filter:blur(24px) saturate(135%)}
+body.t-air #nova22-top-pop,body.t-air #nova22-zoom-pop,body.t-air #nova22-webctx{background:color-mix(in srgb,var(--bar) 92%,var(--bg));border-color:var(--bd);border-radius:16px;box-shadow:0 24px 80px rgba(30,40,60,.18);backdrop-filter:blur(22px) saturate(130%)}
+body.t-air #nova22-top-pop .nova22-menuitem,body.t-air .nova22-ctxitem{border-radius:11px}
+body.t-air #nova22-top-pop .nova22-menuitem:hover,body.t-air .nova22-ctxitem:hover{background:color-mix(in srgb,var(--acc) 10%,transparent);color:var(--acc)}
+body.t-air #nova22-split{background:var(--bg)}
+body.t-air .nova22-split-head{background:var(--bar);border-bottom:1px solid var(--bd);backdrop-filter:blur(18px)}
+body.t-air #find{top:12px;right:14px}
+body.t-air .selchip{border-radius:999px}
+body.t-air #upd{background:color-mix(in srgb,var(--acc) 8%,var(--bar));border-bottom-color:color-mix(in srgb,var(--acc) 20%,var(--bd))}
+/* ---------- Microanimaciones (100-250 ms) ---------- */
+.ib,.btn,.tab,.fld,#addr{transition:background-color .12s,color .12s,border-color .12s,box-shadow .12s}
+.ib:active,.btn:active{transform:scale(.96)}
+
+#nova22-top-tools{display:flex;align-items:center;gap:2px;height:38px;-webkit-app-region:no-drag;position:relative;z-index:120}
+#nova22-top-tools>.nova22-topbtn{height:30px;padding:0 9px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--fg);cursor:pointer;font-size:12px;white-space:nowrap}
+#nova22-top-tools>.nova22-topbtn:hover,#nova22-top-tools>.nova22-topbtn.on{background:color-mix(in srgb,var(--acc) 14%,transparent);border-color:var(--acc);color:var(--acc)}
+#nova22-top-pop{position:fixed;top:40px;right:72px;z-index:240;display:none;min-width:300px;max-width:430px;padding:10px;background:var(--bar);border:1px solid var(--bd);border-radius:14px;box-shadow:0 25px 80px #000c}
+#nova22-top-pop.on{display:grid;gap:6px}
+#nova22-top-pop .nova22-menuitem{display:flex;align-items:center;gap:9px;width:100%;padding:9px 10px;border:0;border-radius:9px;background:transparent;color:var(--fg);cursor:pointer;text-align:left}
+#nova22-top-pop .nova22-menuitem:hover{background:color-mix(in srgb,var(--acc) 13%,transparent);color:var(--acc)}
+#nova22-zoom-pop{position:fixed;top:40px;right:120px;z-index:241;display:none;min-width:170px;padding:10px;background:var(--bar);border:1px solid var(--bd);border-radius:12px;box-shadow:0 22px 70px #000c}
+#nova22-zoom-pop.on{display:block}.nova22-zoomrow{display:flex;align-items:center;justify-content:space-between;gap:7px}.nova22-zoomrow button{min-width:38px}.nova22-zoompct{min-width:62px;text-align:center;font-weight:700}
+#nova22-webctx{position:fixed;z-index:1000;display:none;min-width:230px;max-width:330px;padding:6px;background:var(--bar);border:1px solid var(--bd);border-radius:12px;box-shadow:0 25px 90px #000c}
+#nova22-webctx.on{display:grid;gap:2px}.nova22-ctxitem{border:0;background:transparent;color:var(--fg);text-align:left;padding:8px 10px;border-radius:8px;cursor:pointer}.nova22-ctxitem:hover{background:color-mix(in srgb,var(--acc) 13%,transparent);color:var(--acc)}.nova22-ctxsep{height:1px;background:var(--bd);border:0;margin:4px 0}
+#nova22-split{position:absolute;inset:0;z-index:30;background:var(--bg);display:none}.nova22-split-pane{position:absolute;top:38px;bottom:0;overflow:hidden;background:#fff}.nova22-split-left{left:0;width:50%;border-right:1px solid var(--bd)}.nova22-split-right{right:0;width:50%}.nova22-split-pane webview{position:absolute!important;inset:0!important;display:flex!important;width:100%!important;height:100%!important}.nova22-split-head{position:absolute;left:0;right:0;top:0;height:38px;background:var(--bar);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:6px;padding:0 7px;z-index:40}.nova22-split-head input{flex:1;height:26px}.nova22-split-close{margin-left:auto}
+#nova22-first{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:800;width:min(590px,92vw);padding:18px;background:var(--bar);border:1px solid var(--acc);border-radius:18px;box-shadow:0 30px 100px #000c;display:none}.nova22-first.on{display:block}.nova22-first-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.nova22-first-card{padding:13px;border:1px solid var(--bd);background:color-mix(in srgb,var(--bg) 80%,transparent);border-radius:12px}.nova22-first-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
+@media(max-width:900px){#nova22-top-tools>.nova22-topbtn{padding:0 6px;font-size:11px}.nova22-split-left,.nova22-split-right{width:100%;position:absolute;left:0;right:0;height:50%}.nova22-split-left{top:38px;bottom:auto;border-right:0;border-bottom:1px solid var(--bd)}.nova22-split-right{top:calc(50% + 19px);bottom:0}.nova22-split-pane{top:38px}}
+</style><link rel="stylesheet" href="phase2.css"></head><body class="t-nova"><div id="app">
+<div id="top"><div id="brand"><img src="../assets/icon.png">Nova</div><div id="tabs"><button class="ib" id="nt" title="Nueva pestaña (Ctrl+T)"></button></div>
+<div id="nova22-top-tools"></div>
 <div id="wc"><button class="ib" data-w="min"></button><button class="ib" data-w="max"></button><button class="ib" data-w="close"></button></div></div>
 <div id="bar"><button class="ib" id="bk"></button><button class="ib" id="fw"></button><button class="ib" id="rl"></button>
 <input id="addr" placeholder="Busca o escribe una dirección"><button class="ib" id="st" title="Favorito"></button><button class="ib" id="sh" title="Captura"></button></div>
-<div id="mid"><div id="side"></div><div id="view"><div id="find"><input class="fld" id="fi" placeholder="Buscar en la página"><button class="btn" id="fx">✕</button></div></div><div id="panel"><div id="pin"></div></div></div></div>
+<div id="mid"><div id="side"></div><div id="view"><div id="nova22-split"></div><div id="find"><input class="fld" id="fi" placeholder="Buscar en la página"><button class="btn" id="fx">✕</button></div></div><div id="panel"><div id="pin"></div></div></div></div>
 <script>
 const {ipcRenderer:ipc}=require('electron'),fs=require('fs'),path=require('path'),{pathToFileURL}=require('url');
 const $=s=>document.querySelector(s);
@@ -90,10 +122,16 @@ const AI=`<svg viewBox="0 0 32 32"><defs><linearGradient id="ng" x1="0" y1="0" x
 [['bk','back'],['fw','fwd'],['rl','rl'],['st','star'],['sh','cam'],['nt','plus']].forEach(([i,n])=>$('#'+i).innerHTML=ic(n));
 document.querySelectorAll('[data-w]').forEach(b=>{b.innerHTML=ic({min:'min',max:'max',close:'x'}[b.dataset.w]);b.onclick=()=>ipc.send('win',b.dataset.w)});
 
-const ud=ipc.sendSync('userdata');
-const S=Object.assign({theme:'nova',search:'https://duckduckgo.com/?q=',adblock:true,anim:true,sec:'videojuegos',wp:'',marks:[],key:'',mods:{}},JSON.parse(localStorage.nova||'{}'));
-const save=()=>localStorage.nova=JSON.stringify(S);
-const THEMES={nova:'Nova',win95:'Windows 95',code:'Código',undertale:'Undertale',aero:'Aero'};
+const ud=ipc.sendSync('userdata'),NOVA_VER=ipc.sendSync('app-version');
+let STORED={};try{STORED=JSON.parse(localStorage.nova||'{}')||{}}catch{try{localStorage.removeItem('nova')}catch{}};const S=Object.assign({theme:'air',search:'https://duckduckgo.com/?q=',adblock:true,anim:true,sec:'videojuegos',wp:'',marks:[],key:'',mods:{},memSave:false,bmbar:false,newTabLinks:false},STORED);
+if(!Object.prototype.hasOwnProperty.call(THEMES,S.theme))S.theme='air';
+let __saveTimer=0; const save=()=>{ try { const raw=JSON.stringify(S); localStorage.nova=raw; clearTimeout(__saveTimer); __saveTimer=setTimeout(()=>{ try { ipc.invoke('state-save',raw).catch?.(()=>{}); } catch {} },350); } catch {} };
+(async()=>{ try { if(!localStorage.nova){ const backup=await ipc.invoke('state-load'); if(backup){ localStorage.nova=backup; location.reload(); return; } } } catch {} })();
+window.save = save;
+const tabAdd=$('#nt');
+const keepTabAddAtEnd=()=>{if(tabAdd&&tabAdd.parentNode!==$('#tabs'))$('#tabs').appendChild(tabAdd); else if(tabAdd&&$('#tabs').lastElementChild!==tabAdd)$('#tabs').appendChild(tabAdd)};
+keepTabAddAtEnd();
+const THEMES={air:'Nova Air',light:'Claro',nova:'Oscuro'};
 const SECS={coches:'Coches',videojuegos:'Videojuegos',codigo:'Código'};
 const MODS={dark:['Modo oscuro forzado','html{filter:invert(1) hue-rotate(180deg)}img,video,picture{filter:invert(1) hue-rotate(180deg)}'],
 reader:['Modo lectura','header,nav,aside,footer,[class*=ad-],[id*=banner]{display:none!important}body{max-width:720px!important;margin:auto!important;font:18px/1.7 Georgia,serif!important}'],
@@ -103,12 +141,14 @@ function applyTheme(){document.body.className='t-'+S.theme+(S.anim?'':' noanim')
 
 /* ---- Tabs ---- */
 let tabs=[],cur=null;
-const NT=()=>pathToFileURL(path.join(__dirname,'newtab.html')).href+'?t='+S.theme+'&s='+encodeURIComponent(S.search)+(S.wp?'&wp='+encodeURIComponent(pathToFileURL(S.wp).href):'');
+const TAB_ADD=tabAdd;
+const profilePartition=()=>window.NOVA_PROFILE_PARTITION?window.NOVA_PROFILE_PARTITION():`persist:nova-profile-${String(S.activeProfile||'default').replace(/[^a-z0-9_-]/gi,'').slice(0,32)||'default'}`;
+const NT=()=>pathToFileURL(path.join(__dirname,'newtab.html')).href+'?l='+encodeURIComponent(S.logo||'classic')+'&t='+S.theme+'&s='+encodeURIComponent(S.search)+'&n='+encodeURIComponent(S.name||'')+'&a='+encodeURIComponent(S.acc||'')+'&b='+encodeURIComponent(JSON.stringify((S.marks||[]).slice(0,8)))+'&d='+encodeURIComponent(JSON.stringify(S.dash||{}))+'&r='+encodeURIComponent(JSON.stringify((S.hist||[]).slice(0,6).map(x=>({u:x.u,t:x.t}))))+'&x='+encodeURIComponent(JSON.stringify(S.quick||[]))+'&nd='+((S.dls||[]).length)+(S.wp?'&wp='+encodeURIComponent(pathToFileURL(S.wp).href):'');
 const isNT=u=>u&&u.includes('newtab.html');
 function newTab(u){
-  const wv=document.createElement('webview');wv.setAttribute('allowpopups','');wv.src=u||NT();$('#view').appendChild(wv);
+  const wv=document.createElement('webview');wv.setAttribute('partition',profilePartition());wv.src=u||NT();$('#view').appendChild(wv);
   const el=document.createElement('div');el.className='tab';el.innerHTML='<img src="../assets/icon.png"><span>Nueva pestaña</span><button class="ib sm">'+ic('x')+'</button>';
-  const t={wv,el};tabs.push(t);$('#tabs').appendChild(el);
+  const t={wv,el};tabs.push(t);$('#tabs').insertBefore(el,TAB_ADD);keepTabAddAtEnd();
   el.onmousedown=e=>{if(e.button===1)closeTab(t)};el.onclick=e=>{if(e.target.closest('button'))closeTab(t);else sel(t)};
   const up=()=>{if(cur===t){const x=wv.getURL?.call(wv)||'';$('#addr').value=isNT(x)?'':x;$('#st').style.color=S.marks.some(m=>m.u===x)?'var(--acc)':''}};
   wv.addEventListener('page-title-updated',e=>el.querySelector('span').textContent=e.title);
@@ -124,9 +164,10 @@ function closeTab(t){const i=tabs.indexOf(t);t.wv.remove();t.el.remove();tabs.sp
 function go(v){v=v.trim();if(!v)return;const u=/^https?:\/\//.test(v)?v:/^[\w-]+(\.[\w-]+)+(:\d+)?(\/.*)?$/.test(v)||/^localhost/.test(v)?'https://'+v:S.search+encodeURIComponent(v);cur.wv.loadURL(u)}
 function mod(wv,k,on){wv.executeJavaScript(`(()=>{let s=document.getElementById('nm-${k}');if(${on}){if(!s){s=document.createElement('style');s.id='nm-${k}';s.textContent=${JSON.stringify(MODS[k][1])};document.head.appendChild(s)}}else if(s)s.remove()})()`).catch(()=>{})}
 $('#addr').onkeydown=e=>{if(e.key==='Enter')go(e.target.value)};$('#addr').onfocus=e=>e.target.select();
+keepTabAddAtEnd();
 $('#bk').onclick=()=>cur.wv.canGoBack()&&cur.wv.goBack();$('#fw').onclick=()=>cur.wv.canGoForward()&&cur.wv.goForward();$('#rl').onclick=()=>cur.wv.reload();$('#nt').onclick=()=>newTab();
 $('#st').onclick=()=>{const u=cur.wv.getURL();if(isNT(u))return;const i=S.marks.findIndex(m=>m.u===u);i>=0?S.marks.splice(i,1):S.marks.push({u,t:cur.el.querySelector('span').textContent});save();$('#st').style.color=i>=0?'':'var(--acc)'};
-$('#sh').onclick=async()=>{const img=await cur.wv.capturePage();const f=await ipc.invoke('save-shot',img.toPNG());toast('Captura guardada en '+f)};
+$('#sh').onclick=async()=>{const t=NOVA?.activeWebTab?.()||cur;if(!t?.wv?.capturePage)return toast('Abre una página web para capturarla');try{const img=await t.wv.capturePage();const f=await ipc.invoke('save-shot',img.toPNG());toast('Captura guardada en '+f)}catch{toast('No se pudo capturar la página')}};
 function toast(t){const d=document.createElement('div');d.textContent=t;d.style.cssText='position:fixed;bottom:18px;left:50%;transform:translateX(-50%);padding:9px 16px;background:var(--acc);color:#fff;border-radius:var(--r);z-index:9';document.body.appendChild(d);setTimeout(()=>d.remove(),2600)}
 const key=k=>{if(k==='t')newTab();if(k==='w')closeTab(cur);if(k==='l'){$('#addr').focus()}if(k==='f'){$('#find').classList.add('on');$('#fi').focus()}if(k==='d')$('#st').click()};
 ipc.on('key',(_,k)=>key(k));ipc.on('open-tab',(_,u)=>newTab(u));
@@ -144,8 +185,9 @@ let chat=[];
 function draw(){
   document.querySelectorAll('#side .ib').forEach(b=>b.classList.toggle('on',b.dataset.p===panel));
   $('#panel').classList.toggle('open',!!panel);if(!panel)return;const p=$('#pin');
-  if(panel==='ai'){p.innerHTML=`<div class="row"><h3>Nova IA</h3><span class="mut">${S.key?'conectada':'sin clave API'}</span></div><button class="btn" id="sum">Resumir esta página</button><div id="chat">${chat.map(m=>`<div class="m ${m.role==='user'?'u':'a'}">${esc(m.content)}</div>`).join('')||'<span class="mut">Pregúntame lo que quieras o pídeme que resuma la página abierta.</span>'}</div><div class="row"><input class="fld" id="q" placeholder="Escribe a Nova IA…"><button class="btn" id="go">Enviar</button></div>`;
+  if(panel==='ai'){p.innerHTML=`<div class="row"><h3>Nova IA</h3><span class="mut">${(S.hasKey||S.key)?'conectada':'sin clave API'}</span></div>${(S.hasKey||S.key)?'':'<button class="btn on" id="ai-settings">Configurar Nova IA</button>'}<button class="btn" id="sum">Resumir esta página</button><div id="chat">${chat.map(m=>`<div class="m ${m.role==='user'?'u':'a'}">${esc(m.content)}</div>`).join('')||'<span class="mut">Pregúntame lo que quieras o pídeme que resuma la página abierta.</span>'}</div><div class="row"><input class="fld" id="q" placeholder="Escribe a Nova IA…"><button class="btn" id="go">Enviar</button></div>`;
     const c=$('#chat');c.scrollTop=1e9;$('#go').onclick=()=>ask($('#q').value);$('#q').onkeydown=e=>e.key==='Enter'&&ask(e.target.value);
+    $('#ai-settings')?.addEventListener('click',()=>{const t=newTab('nova://ajustes');setTimeout(()=>{try{t.wv.querySelector('nav [data-k=\"ia\"]')?.click()}catch{}},80)});
     $('#sum').onclick=async()=>{const t=await cur.wv.executeJavaScript('document.body.innerText.slice(0,12000)').catch(()=>'');ask('Resume en español, en pocos puntos, esta página:\n\n'+t,'Resume esta página')}}
   if(panel==='mods'){p.innerHTML='<h3>Mods</h3><span class="mut">Se aplican a todas las páginas.</span>'+Object.entries(MODS).map(([k,[n]])=>`<div class="row"><span>${n}</span>${sw(k,S.mods[k])}</div>`).join('')+'<h3>Herramientas</h3><button class="btn" id="m1">Captura de pantalla</button><button class="btn" id="m2">Buscar en página (Ctrl+F)</button>';
     p.querySelectorAll('.sw').forEach(s=>s.onclick=()=>{const k=s.dataset.k;S.mods[k]=!S.mods[k];save();tabs.forEach(t=>{try{mod(t.wv,k,S.mods[k])}catch{}});draw()});$('#m1').onclick=()=>$('#sh').click();$('#m2').onclick=()=>key('f')}
@@ -154,21 +196,22 @@ function draw(){
   if(panel==='marks'){p.innerHTML='<h3>Favoritos</h3>'+(S.marks.map((m,i)=>`<div class="row"><button class="btn" style="flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" data-u="${i}">${esc(m.t||m.u)}</button></div>`).join('')||'<span class="mut">Pulsa la estrella (Ctrl+D) para guardar la página actual.</span>');p.querySelectorAll('[data-u]').forEach(b=>b.onclick=()=>cur.wv.loadURL(S.marks[b.dataset.u].u))}
   if(panel==='set'){p.innerHTML=`<h3>Ajustes</h3><span class="mut">Tema (cambia toda la interfaz)</span><div class="grid">${Object.entries(THEMES).map(([k,n])=>`<div class="th ${S.theme===k?'on':''}" data-t="${k}" style="background:var(--bg)">${n}</div>`).join('')}</div>
   <span class="mut">Buscador</span><select class="fld" id="se"><option value="https://duckduckgo.com/?q=">DuckDuckGo</option><option value="https://www.google.com/search?q=">Google</option><option value="https://www.bing.com/search?q=">Bing</option><option value="https://search.brave.com/search?q=">Brave</option></select>
-  <div class="row"><span>Bloqueador de anuncios</span>${sw('adblock',S.adblock)}</div><div class="row"><span>Animaciones de la interfaz</span>${sw('anim',S.anim)}</div>
-  <span class="mut">Clave API de Nova IA (Anthropic)</span><input class="fld" id="ak" type="password" placeholder="sk-ant-…" value="${S.key}"><span class="mut">Nova 2.0 · basado en Chromium</span>`;
-    $('#se').value=S.search;$('#se').onchange=e=>{S.search=e.target.value;save()};$('#ak').onchange=e=>{S.key=e.target.value.trim();save()};
+  <div class="row"><span>Bloqueador de anuncios</span>${sw('adblock',S.adblock)}</div><div class="row"><span>Animaciones de la interfaz</span>${sw('anim',S.anim)}</div><div class="row"><span>Abrir enlaces en nueva pestaña</span>${sw('newTabLinks',S.newTabLinks)}</div><span class="mut">Con Ctrl/Cmd + clic o clic central también puedes abrir un enlace en otra pestaña.</span>
+  <span class="mut">Clave API de Nova IA (Anthropic)</span><input class="fld" id="ak" type="password" placeholder="sk-ant-…" value=""><span class="mut">Se guarda cifrada en el almacén seguro del sistema.</span><span class="mut">Nova 4.0.0 · basado en Chromium</span>`;
+    $('#se').value=S.search;$('#se').onchange=e=>{S.search=e.target.value;save()};$('#ak').onchange=async e=>{const v=e.target.value.trim();if(!v)return;await NOVA.setKey(v);e.target.value='';};
     p.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{S.theme=b.dataset.t;save();applyTheme();refreshNT();draw()});
-    p.querySelectorAll('.sw').forEach(s=>s.onclick=()=>{S[s.dataset.k]=!S[s.dataset.k];save();applyTheme();draw()})}
+    p.querySelectorAll('.sw').forEach(s=>s.onclick=()=>{S[s.dataset.k]=!S[s.dataset.k];save();applyTheme();if(s.dataset.k==='newTabLinks')tabs.forEach(t=>{try{t.wv.executeJavaScript('window.__novaLinkMode='+JSON.stringify(!!S.newTabLinks))}catch{}});draw()})}
 }
 function setWp(f){S.wp=f;save();refreshNT()}
 function refreshNT(){tabs.forEach(t=>{try{if(isNT(t.wv.getURL()))t.wv.loadURL(NT())}catch{}})}
 const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-async function ask(text,shown){if(!text.trim())return;if(!S.key){chat.push({role:'assistant',content:'Añade tu clave API en Ajustes para activar Nova IA.'});return draw()}
+async function ask(text,shown){if(!String(text||'').trim())return;if(!S.hasKey&&!S.key){chat.push({role:'assistant',content:'Añade tu clave API en Ajustes → Nova IA para activar Nova IA.'});return draw()}
   chat.push({role:'user',content:shown||text});const hist=chat.slice(-12).map(m=>({...m}));hist[hist.length-1].content=text;chat.push({role:'assistant',content:'…'});draw();
-  try{const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':S.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:'Eres Nova IA, el asistente integrado del navegador Nova. Responde en el idioma del usuario, breve y claro.',messages:hist.filter(m=>m.content!=='…')})});
-    const d=await r.json();chat[chat.length-1].content=d.content?.map(c=>c.text||'').join('')||d.error?.message||'Error desconocido'}catch(e){chat[chat.length-1].content='Sin conexión: '+e.message}
+  try{const r=await ipc.invoke('nova-ai',{model:S.model||'claude-sonnet-4-6',system:'Eres Nova IA, el asistente integrado del navegador Nova. Responde en el idioma del usuario, breve y claro. '+(S.persona||''),messages:hist.filter(m=>m.content!=='…')});
+    if(r?.error==='NOVA_KEY_MISSING') chat[chat.length-1].content='Añade tu clave API en Ajustes → Nova IA para activar Nova IA.';
+    else chat[chat.length-1].content=r?.text||r?.error||'Error desconocido';
+  }catch(e){chat[chat.length-1].content='Error de Nova IA: '+(e?.message||e)}
   if(panel==='ai')draw()}
 
-(async()=>{if(!localStorage.nova){const c=await ipc.invoke('install-cfg');if(c.theme)S.theme=c.theme;if(c.adblock===false)S.adblock=false;save()}applyTheme();newTab()})();
-</script></body></html>
+(async()=>{try{if(!localStorage.nova){const c=await ipc.invoke('install-cfg').catch(()=>({}));if(c?.theme)S.theme=c.theme;if(c?.adblock===false)S.adblock=false;save()}}catch{} applyTheme();newTab()})();
+</script><script src="extras.js"></script><script src="extras2.js"></script><script src="extras3.js"></script><script src="extras4.js"></script><script src="extras5.js"></script><script src="extras6.js"></script><script src="extras7.js"></script><script src="extras10.js"></script><script src="supercat.js"></script></body></html>

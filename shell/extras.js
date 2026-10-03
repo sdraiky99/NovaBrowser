@@ -1,0 +1,283 @@
+/* Nova 1.1.0 - extras: páginas internas, fondos reales, ajustes, onboarding */
+(() => {
+const { shell } = require('electron');
+Object.assign(SECS, { espacio: 'Espacio', naturaleza: 'Naturaleza', ciudad: 'Ciudad' });
+Object.assign(P, {
+  menu: 'M4 6h16M4 12h16M4 18h16', shield: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z',
+  dl: 'M12 4v11M7 11l5 5 5-5M5 20h14', note: 'M6 3h9l4 4v14H6zM9 12h7M9 16h7',
+  game: 'M3 9h18v8a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3zM8 12v4M6 14h4', info: 'M12 8h.01M11 12h1v5h1M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18'
+});
+S.hist = S.hist || []; S.dls = S.dls || []; S.notes = S.notes || ''; S.blocked = S.blocked || 0;
+const VERSION = NOVA_VER;
+
+/* ---------- estilos ---------- */
+const st = document.createElement('style');
+st.textContent = `
+.ipage{position:absolute;inset:0;display:none;overflow:auto;padding:32px min(8vw,90px);background:var(--bg);color:var(--fg);flex-direction:column;gap:12px}.ipage.on{display:flex}
+.ipage h2{margin:0 0 6px;font-size:26px;font-weight:300}
+.li{display:flex;justify-content:space-between;gap:10px;padding:9px 12px;background:var(--bar);border:1px solid var(--bd);border-radius:var(--r);cursor:pointer}.li:hover{border-color:var(--acc)}
+.li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ob .obcard{width:min(600px,94vw);animation:obin .35s cubic-bezier(.2,1.2,.4,1)}@keyframes obin{from{opacity:0;transform:translateY(14px) scale(.96)}}
+.dots{display:flex;gap:6px;justify-content:center}.dots i{width:22px;height:4px;border-radius:4px;background:var(--bd);transition:background .3s,width .3s}.dots i.on{background:var(--acc);width:34px}
+.obb{display:flex;flex-direction:column;gap:14px;min-height:250px;justify-content:center;animation:tin .3s}.obh{margin:0;text-align:center;font-weight:300;font-size:30px}.obc{text-align:center;font-size:14px;line-height:1.5}
+.obl{align-self:center;animation:oblf 3s ease-in-out infinite}@keyframes oblf{50%{transform:translateY(-6px) scale(1.04)}}
+.okc{align-self:center}.okc circle{stroke-dasharray:151;stroke-dashoffset:151;animation:okd .7s .1s forwards}.okc path{stroke-dasharray:50;stroke-dashoffset:50;animation:okd .5s .7s forwards}@keyframes okd{to{stroke-dashoffset:0}}
+.cmh{position:fixed;inset:0;z-index:40;pointer-events:none}.cm.hole{position:fixed;z-index:41;border-radius:12px;box-shadow:0 0 0 9999px rgba(5,4,15,.72),0 0 0 2px var(--acc),0 0 22px var(--acc);transition:all .35s cubic-bezier(.2,1,.3,1);pointer-events:none}
+.cm.tip{position:fixed;z-index:42;padding:16px 18px;display:flex;flex-direction:column;gap:8px;background:var(--bar);color:var(--fg);border:1px solid var(--acc);border-radius:calc(var(--r) * 1.4);box-shadow:0 16px 60px #000a;animation:pop .25s cubic-bezier(.2,1.3,.4,1)}.cm.tip p{margin:0;font-size:13px;line-height:1.5}.cm.tip b{font-size:16px}
+.ov{position:fixed;inset:0;z-index:20;background:#000b;display:grid;place-items:center;animation:tin .3s}
+.card{width:min(540px,92vw);max-height:90vh;overflow:auto;padding:28px;background:var(--bar);border:1px solid var(--bd);border-radius:calc(var(--r) * 1.6);display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 80px #000a}
+#mnp{position:fixed;top:78px;right:10px;z-index:15;min-width:220px;padding:6px;background:var(--bar);border:1px solid var(--bd);border-radius:var(--r);display:none;flex-direction:column;box-shadow:0 10px 40px #0008}#mnp.on{display:flex}
+#mnp button{text-align:left;padding:8px 12px;background:none;border:0;cursor:pointer;border-radius:var(--r)}#mnp button:hover{background:color-mix(in srgb,var(--acc) 22%,transparent)}
+#bl{display:flex;align-items:center;gap:4px;padding:0 8px;color:var(--acc2);font-size:12px;white-space:nowrap}#bl svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chips .btn{padding:4px 10px;font-size:12px}
+.pb{height:4px;background:var(--bd);border-radius:4px;overflow:hidden;flex:1}.pb i{display:block;height:100%;background:var(--acc)}
+`;
+document.head.appendChild(st);
+
+/* ---------- helpers ---------- */
+const toURL = v => { v = v.trim(); return /^https?:\/\//.test(v) ? v : /^[\w-]+(\.[\w-]+)+(:\d+)?(\/.*)?$/.test(v) || /^localhost/.test(v) ? 'https://' + v : S.search + encodeURIComponent(v); };
+const fmt = b => b > 1e6 ? (b / 1e6).toFixed(1) + ' MB' : Math.round(b / 1e3) + ' KB';
+const sw2 = (k, on) => `<div class="sw ${on ? 'on' : ''}" data-k="${k}"></div>`;
+const themeGrid = () => Object.entries(THEMES).map(([k, n]) => `<div class="th ${S.theme === k ? 'on' : ''}" data-t="${k}" style="background:var(--bg)">${n}</div>`).join('');
+
+/* ---------- estilo personalizado (acento, bordes, letra, sonidos) ---------- */
+const baseAT = applyTheme;
+applyTheme = function () {
+  baseAT();
+  const b = document.body.style;
+  S.acc ? b.setProperty('--acc', S.acc) : b.removeProperty('--acc');
+  S.r != null ? b.setProperty('--r', S.r + 'px') : b.removeProperty('--r');
+  S.fs ? b.setProperty('--fs', S.fs + 'px') : b.removeProperty('--fs');
+  const bl = $('#bl'); if (bl) bl.style.display = S.adblock ? 'flex' : 'none';
+};
+let ac;
+document.addEventListener('click', () => {
+});
+
+/* ---------- barra: escudo de anuncios + menú ---------- */
+const bl = document.createElement('div'); bl.id = 'bl'; bl.title = 'Anuncios y rastreadores bloqueados'; bl.innerHTML = ic('shield') + '<b>' + S.blocked + '</b>';
+$('#st').before(bl);
+const mn = document.createElement('button'); mn.className = 'ib'; mn.id = 'mn'; mn.innerHTML = ic('menu'); $('#sh').after(mn);
+const mp = document.createElement('div'); mp.id = 'mnp'; document.body.appendChild(mp);
+const MENU = [['Nueva pestaña', () => newTab()], ['Historial (Ctrl+H)', () => newTab('nova://historial')], ['Descargas (Ctrl+J)', () => newTab('nova://descargas')], ['Notas', () => newTab('nova://notas')], ['Nova Snake (juego)', () => newTab('nova://juegos')], ['Ajustes', () => newTab('nova://ajustes')], ['Zoom +', () => zoom(.5)], ['Zoom −', () => zoom(-.5)], ['Acerca de Nova', () => newTab('nova://acerca')]];
+mp.innerHTML = MENU.map((m, i) => `<button data-i="${i}">${m[0]}</button>`).join('');
+mn.onclick = e => { e.stopPropagation(); mp.classList.toggle('on'); };
+mp.onclick = e => { const b = e.target.closest('button'); if (b) { mp.classList.remove('on'); MENU[b.dataset.i][1](); } };
+document.addEventListener('click', () => mp.classList.remove('on'));
+const zoom = d => { try { const t = activeWebTab?.() || cur; if (!t?.wv?.setZoomLevel) return toast('Este contenido no permite cambiar el zoom'); t.wv.setZoomLevel((t.wv.getZoomLevel?.() || 0) + d); } catch { } };
+let lastB = 0;
+ipc.on('blocked', (_, n) => { S.blocked += n - lastB; lastB = n; save(); bl.querySelector('b').textContent = S.blocked.toLocaleString('es'); });
+ipc.on('tab-health', (_, d) => { if (d?.type === 'unresponsive') toast('Una pestaña se ha quedado bloqueada; Nova la está recuperando.'); });
+ipc.on('dl', (_, d) => { const i = S.dls.findIndex(x => x.id === d.id); i < 0 ? S.dls.unshift(d) : Object.assign(S.dls[i], d); S.dls = S.dls.slice(0, 100); if (d.state !== 'progressing') { save(); toast('Descarga: ' + d.name); } refreshPages('descargas'); });
+const keyx = k => { if (k === 'h') newTab('nova://historial'); if (k === 'j') newTab('nova://descargas'); };
+ipc.on('key', (_, k) => keyx(k));
+document.addEventListener('keydown', e => { if (e.ctrlKey && 'hj'.includes(e.key)) { e.preventDefault(); keyx(e.key); } });
+
+/* ---------- envolver funciones del navegador ---------- */
+const baseNT = newTab;
+newTab = function (u) {
+  if (u && u.startsWith('nova://')) return internalTab(u);
+  if (!u && S.home) u = toURL(S.home);
+  if (!u && S.rand) { const all = Object.keys(SECS).flatMap(wallList); if (all.length) S.wp = all[Math.random() * all.length | 0]; }
+  const t = baseNT(u);
+  t.wv.addEventListener('did-navigate', e => {
+    if (isNT(e.url) || e.url.startsWith('file:')) return;
+    S.hist.unshift({ u: e.url, t: e.url, d: Date.now() }); S.hist = S.hist.slice(0, 500); save();
+    try { NOVA.saveSession?.(); } catch {}
+  });
+  t.wv.addEventListener('page-title-updated', e => { const h = S.hist.find(x => x.u === t.wv.getURL()); if (h) h.t = e.title; });
+  return t;
+};
+const baseGo = go;
+go = function (v) {
+  v = v.trim(); if (!v) return;
+  if (v.startsWith('nova://')) return newTab(v);
+  if (cur.wv.classList.contains('ipage')) return newTab(toURL(v));
+  baseGo(v);
+};
+const baseDraw = draw;
+draw = function () { baseDraw(); if (panel === 'walls') wallsPanel(); if (panel === 'set') renderSettings($('#pin')); };
+
+/* ---------- pestañas internas ---------- */
+function refreshPages(n) { document.querySelectorAll('.ipage').forEach(e => { if (e.dataset.p === n && e.classList.contains('on')) PG[n](e); }); }
+const activeWebTab = () => {
+  if (cur?.wv?.tagName === 'WEBVIEW' && !cur.wv.classList.contains('ipage')) return cur;
+  for (let i = tabs.length - 1; i >= 0; i--) { const t = tabs[i]; if (t?.wv?.tagName === 'WEBVIEW' && !t.wv.classList.contains('ipage')) return t; }
+  return null;
+};
+function internalTab(u) {
+  const raw = String(u || '').replace(/^nova:\/\//i, '').split(/[/?#]/)[0].trim().toLowerCase();
+  const localAliases = { settings:'ajustes', setting:'ajustes', preferences:'ajustes', preference:'ajustes', about:'acerca', privacy:'privacidad', history:'historial', downloads:'descargas', download:'descargas', notes:'notas', bookmarks:'marcadores', favorites:'marcadores', news:'novedades', welcome:'bienvenida', start:'bienvenida', performance:'rendimiento', security:'seguridad', migrate:'migrar', apps:'apps', panels:'panels', reading:'reading', readinglist:'reading', work:'workspaces', workspace:'workspaces', tabs:'pestanas', sessions:'sesiones', feedback:'mejoras', improvements:'mejoras', safari:'safari', islands:'islands', glance:'glance', focus:'focus', reader:'reader', collections:'collections', capture:'capture', writer:'writer', docs:'docs', study3:'study3', 'privacy-center':'privacidad2', privacy2:'privacidad2', performance2:'rendimiento2', downloads2:'descargas2', apps2:'apps', webapps:'apps', command:'acciones', 'command-center':'acciones', qr:'qr', backup:'backup', shortcuts:'shortcuts', send:'send', pip:'pip', mediahub:'media', webpanels:'panels' };
+  const name = (typeof NOVA.resolveFeatureRoute === 'function' ? NOVA.resolveFeatureRoute(raw) : (localAliases[raw] || raw));
+  if (!PG[name]) { try { toast('Ruta Nova no encontrada: ' + raw); } catch {} return null; }
+  const old = tabs.find(t => t.wv.dataset && t.wv.dataset.p === name); if (old) { sel(old); PG[name](old.wv); return old; }
+  const el = document.createElement('div'); el.className = 'ipage'; el.dataset.p = name;
+  Object.assign(el, { getURL: () => 'nova://' + name, canGoBack: () => false, canGoForward: () => false, goBack() { }, goForward() { }, reload: () => PG[name](el), loadURL() { }, stopFindInPage() { }, findInPage() { } });
+  $('#view').appendChild(el);
+  const te = document.createElement('div'); te.className = 'tab';
+  const T = { safari:'Safari Air', islands:'Nova Islands', glance:'Glance', focus:'Nova Focus', reader:'Nova Reader+', collections:'Colecciones', capture:'Web Capture', writer:'Nova Writer', docs:'Nova Docs', study3:'Nova Study 3', privacidad2:'Centro de privacidad', rendimiento2:'Centro de rendimiento', descargas2:'Download Hub', apps:'Nova Apps', mejoras:'Mejoras de Nova', workspaces:'Spaces', pestanas:'Gestor de pestañas', sesiones:'Sesiones', reading:'Reading List', qr:'Compartir con QR', media:'Media Hub', panels:'Web Panels', backup:'Backup & Restore', shortcuts:'Atajos', send:'Nova Send', pip:'Picture-in-Picture', novedades:'Novedades 3.0', bienvenida:'Bienvenida 3.0', historial: 'Historial', descargas: 'Descargas' , notas: 'Notas', juegos: 'Nova Snake', ajustes: 'Ajustes', acerca: 'Acerca de Nova', novedades: 'Novedades', marcadores: 'Marcadores', privacidad: 'Privacidad', personalizar: 'Personalizar', tienda: 'Tienda de extensiones', bienvenida: 'Bienvenida', migrar: 'Migrar navegador', rendimiento: 'Rendimiento y RAM', seguridad: 'Seguridad' }[name] || name;
+  te.innerHTML = '<img src="../assets/icon.png"><span>' + T + '</span><button class="ib sm">' + ic('x') + '</button>';
+  const t = { wv: el, el: te }; tabs.push(t); $('#tabs').appendChild(te);
+  te.onmousedown = e => { if (e.button === 1) closeTab(t); };
+  te.onclick = e => { if (e.target.closest('button')) closeTab(t); else sel(t); };
+  sel(t); PG[name](el); return t;
+}
+
+/* ---------- ajustes (panel y página) ---------- */
+function renderSettings(p) {
+  p.innerHTML = `<h3>Apariencia</h3><div class="grid">${themeGrid()}</div>
+  <div class="row"><span>Color de acento</span><input type="color" id="ac" value="${S.acc || '#8b5cf6'}"></div>
+  <div class="row"><span>Bordes redondeados</span><input type="range" id="rr" min="0" max="22" value="${S.r ?? 10}"></div>
+  <div class="row"><span>Tamaño de letra</span><input type="range" id="ff" min="11" max="18" value="${S.fs || 13}"></div>
+  <button class="btn" id="ar">Restablecer apariencia</button>
+  <h3>Navegador</h3>
+  <span class="mut">Tu nombre (saludo en la página de inicio)</span><input class="fld" id="nm" value="${esc(S.name || '')}">
+  <span class="mut">Buscador</span><select class="fld" id="se"><option value="https://duckduckgo.com/?q=">DuckDuckGo</option><option value="https://www.google.com/search?q=">Google</option><option value="https://www.bing.com/search?q=">Bing</option><option value="https://search.brave.com/search?q=">Brave</option></select>
+  <span class="mut">Página de inicio (vacío = página Nova)</span><input class="fld" id="hm" placeholder="https://…" value="${esc(S.home || '')}">
+  <div class="row"><span>Bloqueador de anuncios</span>${sw2('adblock', S.adblock)}</div>
+  <div class="row"><span>Animaciones de la interfaz</span>${sw2('anim', S.anim)}</div>
+  <div class="row"><span>Fondo aleatorio en cada pestaña</span>${sw2('rand', S.rand)}</div>
+  <div class="row"><span>Sonidos de interfaz</span>${sw2('sound', S.sound)}</div>
+  <h3>Nova IA</h3><span class="mut">Clave API de Anthropic</span><input class="fld" id="ak" type="password" placeholder="${S.hasKey ? 'Clave guardada de forma segura' : 'sk-ant-…'}">
+  <h3>Privacidad</h3><div class="row"><button class="btn" id="ch">Borrar historial</button><button class="btn" id="cc">Borrar cookies y caché</button></div>
+  <button class="btn" id="rs">Restablecer todo Nova</button><span class="mut">Nova ${VERSION} · basado en Chromium ${process.versions.chrome}</span>`;
+  const q = s => p.querySelector(s), ap = () => { save(); applyTheme(); };
+  q('#se').value = S.search; q('#se').onchange = e => { S.search = e.target.value; save(); };
+  q('#ac').oninput = e => { S.acc = e.target.value; ap(); refreshNT(); };
+  q('#rr').oninput = e => { S.r = +e.target.value; ap(); }; q('#ff').oninput = e => { S.fs = +e.target.value; ap(); };
+  q('#ar').onclick = () => { delete S.acc; delete S.r; delete S.fs; ap(); refreshNT(); renderSettings(p); };
+  q('#nm').onchange = e => { S.name = e.target.value.trim(); save(); refreshNT(); }; q('#hm').onchange = e => { S.home = e.target.value.trim(); save(); };
+  q('#ak').onchange = e => NOVA.setKey(e.target.value.trim());
+  q('#ch').onclick = () => { S.hist = []; save(); toast('Historial borrado'); }; q('#cc').onclick = async () => { await ipc.invoke('clear'); toast('Cookies y caché borrados'); };
+  q('#rs').onclick = () => { if (confirm('¿Restablecer todo Nova?')) { localStorage.removeItem('nova'); location.reload(); } };
+  p.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { S.theme = b.dataset.t; ap(); refreshNT(); renderSettings(p); });
+  p.querySelectorAll('.sw').forEach(s => s.onclick = () => { S[s.dataset.k] = !S[s.dataset.k]; ap(); renderSettings(p); });
+}
+
+/* ---------- fondos reales (Wikimedia Commons) ---------- */
+const WQ = { coches: ['supercar', 'sports car', 'Porsche 911', 'Lamborghini', 'Nissan Skyline GT-R', 'classic car'], videojuegos: ['gaming setup', 'retro video game console', 'arcade cabinet', 'esports arena', 'video game controller'], codigo: ['source code screen', 'programming laptop', 'mechanical keyboard', 'server room', 'circuit board'], espacio: ['nebula', 'galaxy', 'Milky Way', 'aurora borealis', 'Earth from space'], naturaleza: ['mountain landscape', 'forest sunrise', 'waterfall', 'lake reflection', 'coast sunset'], ciudad: ['Tokyo skyline night', 'New York skyline', 'city lights night', 'Hong Kong skyline', 'Dubai skyline'] };
+let W = { key: '', items: [], off: 0, busy: false, tab: 'web', err: '' };
+async function wfetch(more) {
+  if (W.busy) return; W.busy = true; wallsPanel();
+  try {
+    const q = W.q || WQ[S.sec][0];
+    const u = `https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrnamespace=6&gsrlimit=40&gsroffset=${more ? W.off : 0}&gsrsearch=${encodeURIComponent(q + ' filetype:bitmap')}&prop=imageinfo&iiprop=url|size&iiurlwidth=1920`;
+    const j = await (await fetch(u)).json();
+    const l = Object.values(j.query?.pages || {}).sort((a, b) => a.index - b.index).map(p => ({ id: p.pageid, ...p.imageinfo?.[0] })).filter(i => i.thumburl && i.thumburl.includes('/thumb/') && i.width >= 1920 && i.width > i.height * 1.3);
+    W.items = more ? W.items.concat(l) : l; W.off = j.continue?.gsroffset || 0; W.err = l.length || more ? '' : 'Sin resultados, prueba otra etiqueta.';
+  } catch (e) { W.err = 'Sin conexión con Wikimedia: ' + e.message; }
+  W.busy = false; wallsPanel();
+}
+async function pickWp(it) {
+  toast('Descargando fondo…');
+  try {
+    const b = Buffer.from(await (await fetch(it.thumburl)).arrayBuffer()), dir = path.join(ud, 'wallpapers', S.sec); fs.mkdirSync(dir, { recursive: true });
+    const f = path.join(dir, 'wiki-' + it.id + (path.extname(new URL(it.thumburl).pathname) || '.jpg')); fs.writeFileSync(f, b); setWp(f); toast('Fondo aplicado');
+  } catch (e) { toast('Error: ' + e.message); }
+}
+function wallsPanel() {
+  const p = $('#pin'); if (panel !== 'walls') return;
+  if (W.key !== S.sec) { W.key = S.sec; W.q = null; W.items = []; W.off = 0; wfetch(); return; }
+  const local = W.tab === 'mine' ? Object.keys(SECS).flatMap(wallList) : [];
+  p.innerHTML = `<h3>Fondos de pantalla</h3><div class="row"><button class="btn ${W.tab === 'web' ? 'on' : ''}" data-tab="web">Fotos online</button><button class="btn ${W.tab === 'mine' ? 'on' : ''}" data-tab="mine">Mis fondos</button></div>
+  <div class="chips">${Object.entries(SECS).map(([k, n]) => `<button class="btn ${S.sec === k ? 'on' : ''}" data-s="${k}">${n}</button>`).join('')}</div>` +
+    (W.tab === 'web' ? `<div class="chips">${(WQ[S.sec] || []).map(t => `<button class="btn ${W.q === t ? 'on' : ''}" data-q="${t}">${t}</button>`).join('')}</div><div class="row"><input class="fld" id="wq" placeholder="Busca lo que quieras…"><button class="btn" id="wgo">Buscar</button></div>
+    <div class="grid">${W.items.map((i, k) => `<div class="wp" data-k="${k}" style="background-image:url('${i.thumburl.replace('/1920px-', '/500px-')}')"></div>`).join('')}</div>
+    <span class="mut">${W.busy ? 'Cargando…' : W.err}</span>${W.off && !W.busy ? '<button class="btn" id="more">Cargar más</button>' : ''}<span class="mut">Fotos libres de Wikimedia Commons. Al elegir una se guarda en tu PC.</span>`
+      : `<div class="grid">${local.map(f => `<div class="wp" data-f="${esc(f)}" style="background-image:url('${pathToFileURL(f).href}')"></div>`).join('')}</div><button class="btn" id="add">Añadir mis imágenes</button>`) + '<button class="btn" id="nowp">Quitar fondo</button>';
+  const q = s => p.querySelector(s);
+  p.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { W.tab = b.dataset.tab; wallsPanel(); });
+  p.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { S.sec = b.dataset.s; save(); wallsPanel(); });
+  p.querySelectorAll('[data-q]').forEach(b => b.onclick = () => { W.q = b.dataset.q; wfetch(); });
+  p.querySelectorAll('.wp[data-k]').forEach(w => w.onclick = () => pickWp(W.items[w.dataset.k]));
+  p.querySelectorAll('.wp[data-f]').forEach(w => w.onclick = () => setWp(w.dataset.f));
+  if (q('#wgo')) { const go2 = () => { W.q = q('#wq').value.trim() + ' '; wfetch(); }; q('#wgo').onclick = go2; q('#wq').onkeydown = e => e.key === 'Enter' && go2(); }
+  if (q('#more')) q('#more').onclick = () => wfetch(true);
+  if (q('#add')) q('#add').onclick = async () => { await ipc.invoke('pick-wp', S.sec); wallsPanel(); };
+  q('#nowp').onclick = () => setWp('');
+}
+
+/* ---------- páginas internas ---------- */
+const PG = {
+  ajustes(r) { renderSettings(r); },
+  acerca(r) {
+    r.innerHTML = `<div style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px"><img src="../assets/icon.png" width="110"><h2>Nova ${VERSION}</h2><span class="mut">Chromium ${process.versions.chrome} · Electron ${process.versions.electron}</span></div>
+    <h3>Atajos</h3><div class="grid"><div class="li">Ctrl+T <span>Nueva pestaña</span></div><div class="li">Ctrl+W <span>Cerrar</span></div><div class="li">Ctrl+L <span>Barra de dirección</span></div><div class="li">Ctrl+F <span>Buscar</span></div><div class="li">Ctrl+D <span>Favorito</span></div><div class="li">Ctrl+H <span>Historial</span></div><div class="li">Ctrl+J <span>Descargas</span></div></div>
+    `;
+  },
+  juegos(r) {
+    r.innerHTML = '<h2>Nova Snake</h2><canvas width="400" height="400" style="border:2px solid var(--acc);border-radius:var(--r);max-width:100%"></canvas><span class="mut">Flechas o WASD · Puntos: <b id="sp">0</b> · Espacio para reiniciar</span>';
+    const c = r.querySelector('canvas'), x = c.getContext('2d'); let s, d, f, pts, dead;
+    const init = () => { s = [{ x: 10, y: 10 }]; d = { x: 1, y: 0 }; f = { x: 5, y: 5 }; pts = 0; dead = false; };
+    init();
+    const tick = () => {
+      if (!r.isConnected || !c.isConnected) return clearInterval(iv); if (!r.classList.contains('on') || dead) return;
+      const h = { x: (s[0].x + d.x + 20) % 20, y: (s[0].y + d.y + 20) % 20 };
+      if (s.some(q => q.x === h.x && q.y === h.y)) { dead = true; return; }
+      s.unshift(h); if (h.x === f.x && h.y === f.y) { pts++; f = { x: Math.random() * 20 | 0, y: Math.random() * 20 | 0 }; r.querySelector('#sp').textContent = pts; } else s.pop();
+      const cs = getComputedStyle(document.body); x.fillStyle = cs.getPropertyValue('--bar'); x.fillRect(0, 0, 400, 400);
+      x.fillStyle = cs.getPropertyValue('--acc2'); x.fillRect(f.x * 20 + 2, f.y * 20 + 2, 16, 16);
+      x.fillStyle = cs.getPropertyValue('--acc'); s.forEach(q => x.fillRect(q.x * 20 + 1, q.y * 20 + 1, 18, 18));
+    };
+    const iv = setInterval(tick, 110);
+    document.addEventListener('keydown', e => {
+      if (!r.isConnected || !c.isConnected || !r.classList.contains('on')) return;
+      const m = { ArrowUp: [0, -1], w: [0, -1], ArrowDown: [0, 1], s: [0, 1], ArrowLeft: [-1, 0], a: [-1, 0], ArrowRight: [1, 0], d: [1, 0] }[e.key];
+      if (m && (m[0] !== -d.x || m[1] !== -d.y)) { d = { x: m[0], y: m[1] }; e.preventDefault(); }
+      if (e.key === ' ' && dead) { init(); r.querySelector('#sp').textContent = 0; }
+    });
+  }
+};
+
+/* ---------- primer uso: configuración + guía paso a paso ---------- */
+function onboard() {
+  const ov = document.createElement('div'); ov.className = 'ov ob'; document.body.appendChild(ov); let n = 0, tour = -1;
+  const LGN = () => (window.NOVA && NOVA.LG) || { classic: 'Clásico' }, lsrc = id => id === 'classic' ? '../assets/icon.png' : '../assets/logos/' + id + '.png';
+  const steps = [
+    () => `<div class="card" style="padding:16px"><b style="font-size:22px;color:var(--acc)">Bienvenido a Nova</b></div><span class="mut obc">Nova Air es la experiencia limpia por defecto. Puedes cambiar entre Air, Claro y Oscuro en Ajustes.</span><input class="fld" id="ob" placeholder="¿Cómo quieres que te llamemos? (opcional)" value="${esc(S.name || '')}">`,
+    () => `<h3>Elige tu experiencia</h3><span class="mut">Puedes cambiarla después en Ajustes › Apariencia.</span><div class="grid"><button class="btn ${S.theme==='air'?'on':''}" data-mode="air">✦ Nova Air<br><span class="mut">Ligero y limpio</span></button><button class="btn ${S.theme==='light'?'on':''}" data-mode="light">☀ Claro<br><span class="mut">Luminoso</span></button><button class="btn ${S.theme==='nova'?'on':''}" data-mode="nova">◐ Oscuro<br><span class="mut">Nocturno</span></button></div>`,
+    () => `<h3>Organiza sin ruido</h3><span class="mut">Nova usa Spaces para contextos, Islands para proyectos y pestañas para páginas.</span><div class="nova25-card"><b>🏝 Islands</b><span class="mut">Agrupa las pestañas relacionadas y contráelas cuando no las necesites.</span></div><div class="nova25-card"><b>⌘ Command Center</b><span class="mut">Pulsa Ctrl/Cmd + K para buscar acciones, pestañas, páginas y herramientas.</span></div>`,
+    () => `<h3>Concentración y creación</h3><span class="mut">Activa lo que necesites sin llenar la interfaz.</span><div class="grid"><button class="btn" data-mode2="focus">✦ Focus</button><button class="btn" data-mode2="reader">Aa Reader+</button><button class="btn" data-mode2="writer">✎ Writer + Word</button><button class="btn" data-mode2="improvements">↑ Mejoras</button></div><div class="row"><span>Bloquear anuncios y rastreadores</span>${sw2('adblock', S.adblock)}</div><div class="row"><span>Animaciones de la interfaz</span>${sw2('anim', S.anim)}</div>`,
+    () => `<div class="okc"><svg viewBox="0 0 52 52" width="72"><circle cx="26" cy="26" r="24" fill="none" stroke="var(--acc)" stroke-width="3"/><path d="M15 27l8 8 15-17" fill="none" stroke="var(--acc2)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h2 class="obh">Todo listo${S.name ? ', ' + esc(S.name) : ''}</h2><span class="mut obc">Ahora verás una guía breve para conocer las partes importantes de Nova. Todo lo demás queda oculto hasta que lo necesites.</span>`
+  ];
+  const TOUR = [
+    ['#tabs', 'Pestañas +', 'El botón + siempre está junto a la última pestaña y se mueve con ella. Ctrl+T también abre una nueva.'],
+    ['#addr', 'Barra de direcciones', 'Escribe una web o una búsqueda. Ctrl/Cmd + clic y clic central abren enlaces en otra pestaña.'],
+    ['#side', 'Dock discreto', 'La barra lateral contiene IA, favoritos, fondos y herramientas. En Air puedes mantenerla mínima.'],
+    ['#nt', 'Nueva pestaña', 'Nova Tab prioriza la búsqueda. Las funciones avanzadas viven en Más y en Command Center.'],
+    ['#mn', 'Command Center', 'Pulsa Ctrl+K para abrir acciones, Islands, Focus, Writer, Privacy, Performance y mucho más.']
+  ];
+  const end = () => {
+    S.done = 1; S.welcomed = 1; S.tour = 1; save(); ov.remove(); document.querySelectorAll('.cm,.cmh').forEach(e => e.remove()); refreshNT();
+  };
+  const coach = () => { // marca sobre la interfaz real
+    const [sel, t, d] = TOUR[tour], el = document.querySelector(sel); ov.className = 'cmh'; ov.style.pointerEvents = 'none'; ov.innerHTML = '';
+    document.querySelectorAll('.cm').forEach(e => e.remove());
+    const b = el ? el.getBoundingClientRect() : { left: innerWidth / 2 - 30, top: 80, width: 60, height: 30, right: innerWidth / 2 + 30, bottom: 110 };
+    const hole = document.createElement('div'); hole.className = 'cm hole'; Object.assign(hole.style, { left: b.left - 6 + 'px', top: b.top - 6 + 'px', width: b.width + 12 + 'px', height: b.height + 12 + 'px' });
+    const tip = document.createElement('div'); tip.className = 'cm tip';
+    tip.innerHTML = `<span class="mut">Paso ${tour + 1} de ${TOUR.length}</span><b>${t}</b><p>${d}</p><div class="row"><button class="btn" id="cs">Omitir guía</button><button class="btn on" id="cn">${tour < TOUR.length - 1 ? 'Siguiente' : 'Empezar a navegar'}</button></div>`;
+    document.body.append(hole, tip);
+    const tw = 320, left = Math.max(12, Math.min(innerWidth - tw - 12, b.left)), below = b.bottom + 16 + 170 < innerHeight;
+    Object.assign(tip.style, { width: tw + 'px', left: left + 'px', top: (below ? b.bottom + 16 : Math.max(12, b.top - 190)) + 'px' });
+    tip.querySelector('#cs').onclick = end; tip.querySelector('#cn').onclick = () => { if (tour < TOUR.length - 1) { tour++; coach(); } else end(); };
+  };
+  const r = () => {
+    ov.innerHTML = `<div class="card obcard"><div class="dots">${steps.map((_, i) => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</div><div class="obb">${steps[n]()}</div><div class="row"><button class="btn" id="sk">${n === 0 ? 'Omitir todo' : 'Atrás'}</button><button class="btn on" id="nx">${n === 0 ? 'Comenzar' : n < steps.length - 1 ? 'Siguiente' : 'Ver la guía'}</button></div></div>`;
+    const q = s => ov.querySelector(s);
+    if (q('#se2')) { q('#se2').value = S.search; q('#se2').onchange = e => { S.search = e.target.value; save(); }; }
+    if (q('#obd')) q('#obd').onclick = () => ipc.invoke('default-browser', true).then(() => toast('Pulsa «Establecer como predeterminado» en Windows'));
+    ov.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { S.theme = b.dataset.t; save(); applyTheme(); r(); });
+    ov.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { S.theme = b.dataset.mode; save(); applyTheme(); r(); });
+    ov.querySelectorAll('[data-mode2]').forEach(b => b.onclick = () => { const m=b.dataset.mode2; if(m==='focus') newTab('nova://focus'); else if(m==='reader') newTab('nova://reader'); else if(m==='writer') newTab('nova://writer'); else if(m==='improvements') newTab('nova://mejoras'); });
+    ov.querySelectorAll('[data-lg]').forEach(b => b.onclick = () => { if (window.NOVA && NOVA.setLogo) NOVA.setLogo(b.dataset.lg); r(); });
+    ov.querySelectorAll('.sw').forEach(s => s.onclick = () => { S[s.dataset.k] = !S[s.dataset.k]; save(); applyTheme(); r(); });
+    q('#sk').onclick = () => { if (n === 0) { S.done = 1; S.welcomed = 1; save(); ov.remove(); refreshNT(); } else { n--; r(); } };
+    q('#nx').onclick = () => { if (q('#ob')) { S.name = q('#ob').value.trim(); save(); } if (n < steps.length - 1) { n++; r(); } else { tour = 0; coach(); } };
+  };
+  r();
+}
+window.NOVA = { PG, MENU, internalTab, sw2, themeGrid, toURL, fmt, refreshPages, activeWebTab, save, tour: () => onboard() };
+applyTheme();
+if (!S.done) setTimeout(onboard, 700);
+})();

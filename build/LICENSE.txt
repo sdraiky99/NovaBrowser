@@ -1,0 +1,10 @@
+NOVA - Navegador 2.0 (actualizacion 1.1.0)
+
+Nova se ofrece tal cual, sin garantias. Esta basado en Chromium y Electron,
+que conservan sus propias licencias de codigo abierto.
+
+Nova no recopila datos: el historial, los favoritos y los ajustes se guardan
+solo en tu equipo. Nova IA envia tus mensajes a Anthropic unicamente cuando
+tu la usas, con tu propia clave API.
+
+Al continuar aceptas estas condiciones.
