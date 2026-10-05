@@ -1,8 +1,18 @@
-## Nova 4.0.0 · Ultimate Workspace
+## Nova 4.1.0 · Evolution Update
 
-Nova 4.0.0 añade una capa nueva encima de Nova 3.1.0 sin sustituir los módulos que ya funcionan. Incluye un Hub y Launcher unificados, Page Brain, Talk to Page, Research Mode, Vault, Timeline, Continue Anywhere, Web Superpowers, Visual Search, Magic Translate, Workspaces+, Islands 2.0, Spaces 2.0, Nova Studio, Nova Flows, Extensions 2.0, Nova Companion, Nova Sync y Desktop Mode.
+Nova 4.1.0 actualiza la base de Nova 4.0.0 sin sustituir sus módulos. Añade una nueva experiencia de inicio, privacidad reforzada, sincronización preparada para Windows + Android, Extensions Store, Game Hub, Perfil Gaming, Magic Translate y acceso centralizado a DevTools.
 
-La filosofía de esta versión es simple: **más potencia, menos menús y cambios aditivos**.
+### Qué cambia
+- **Nueva pestaña:** búsqueda central, noticias personalizadas y fondo dinámico.
+- **Privacidad:** bloqueador de anuncios + protección inteligente + controles de rastreo.
+- **Sync:** favoritos, pestañas, historial y configuración dentro de un modelo de sincronización cifrada.
+- **Extensiones:** tienda destacada, permisos visibles y compatibilidad amplia como objetivo.
+- **Gaming:** Game Hub, favoritos, noticias, tiempo jugado y récords personales.
+- **Perfil Gaming:** apariencia, configuración, extensiones, privacidad y sincronización independientes.
+- **Web Power:** Magic Translate y acceso directo a DevTools.
+
+### Nota sobre plataformas
+La aplicación de escritorio de este repositorio sigue siendo Electron/Chromium. La actualización prepara la experiencia y el modelo de sincronización para Windows + Android; este paquete no contiene un APK Android.
 
 ### Arranque
 
@@ -17,4 +27,4 @@ npm start
 npm run check
 ```
 
-La validación local de esta entrega pasa 49 pruebas de runtime, 86 rutas y 0 errores de arranque en el harness incluido. También se comprueban todos los controles de la capa Ultimate, búsqueda del launcher y estados persistentes. El entorno de construcción actual no dispone de Electron instalado para ejecutar una ventana GUI real.
+El arnés heredado de Nova 4.0.0 sigue pasando 49/49 pruebas en esta copia; la comprobación de proyecto se ha actualizado para validar Nova 4.1.0 y el nuevo módulo.

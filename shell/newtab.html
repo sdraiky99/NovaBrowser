@@ -1,126 +1,28 @@
-<!doctype html><html><head><meta charset="utf-8"><title>Nova</title>
-<link rel="stylesheet" href="themes.css"><link rel="icon" href="../assets/icon.png">
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Nova — Nueva pestaña</title>
 <style>
-body{display:flex;justify-content:center;align-items:safe center;overflow:auto;background:var(--bg)}
-#bg{position:fixed;inset:-5%;background:center/cover no-repeat;transition:transform .25s ease-out;z-index:-1}
-body.hasbg::before{content:"";position:fixed;inset:0;background:linear-gradient(#0005,#000a);z-index:-1}
-main{display:flex;flex-direction:column;align-items:center;gap:18px;width:min(720px,92vw);padding:30px 0}
-main>*{animation:up .6s cubic-bezier(.2,.8,.2,1) both}main>*:nth-child(2){animation-delay:.06s}main>*:nth-child(3){animation-delay:.12s}main>*:nth-child(4){animation-delay:.18s}main>*:nth-child(5){animation-delay:.24s}main>*:nth-child(6){animation-delay:.3s}
-.logo{width:76px}h1{margin:0;font-size:56px;font-weight:200;letter-spacing:.06em}.sub{color:var(--mut);font-size:16px}#clock{opacity:.85}
-form{width:100%}input{width:100%;padding:14px 18px;background:var(--bar);border:1px solid var(--bd);border-radius:var(--r);color:var(--fg);outline:none;font-size:16px}
-input:focus{border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 30%,transparent)}
-.q{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
-a.c{padding:8px 16px;background:var(--bar);border:1px solid var(--bd);border-radius:var(--r);color:var(--fg);text-decoration:none;transition:transform .15s,border-color .15s}a.c:hover{border-color:var(--acc);color:var(--acc);transform:translateY(-2px)}
-a.c.acc{background:var(--acc);border-color:var(--acc);color:#fff}
-.box{width:100%;background:var(--bar);border:1px solid var(--bd);border-radius:var(--r);padding:12px 16px;display:flex;flex-direction:column;gap:6px}.box b{font-size:13px;color:var(--mut);font-weight:600}
-.box a{color:var(--fg);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.box a:hover{color:var(--acc)}
-body.hasbg .sub,body.hasbg #clock{color:#fff}
-body.t-code h1::before{content:"> ";color:var(--acc)}body.t-win95 h1,body.t-undertale h1,body.t-code h1{font-weight:700;letter-spacing:0}
-body.t-win95 input,body.t-win95 a.c,body.t-win95 .box{box-shadow:inset 1px 1px #808080,inset -1px -1px #fff;border:0}
-body.t-undertale input,body.t-undertale a.c,body.t-undertale .box{border-width:3px}
-body.t-aero{background-image:radial-gradient(ellipse at 18% 0,#bfe6ff,transparent 55%),radial-gradient(ellipse at 90% 100%,#8fd0c4,transparent 55%),linear-gradient(160deg,#6fa8e0,#cfe6f8 60%,#a9d8b8)}
-body.t-aero input,body.t-aero a.c,body.t-aero .box{background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.85);box-shadow:0 2px 12px rgba(0,40,90,.28),inset 0 1px rgba(255,255,255,.8);backdrop-filter:blur(10px);color:#0b1f33}
-body.t-aero h1{font-weight:300;color:#fff;text-shadow:0 0 14px #1d5a9e,0 1px 2px #1d5a9e}body.t-aero .sub,body.t-aero #clock{color:#0b2a4d;text-shadow:0 0 6px #fff}
-body.t-nova44{background:#fff;font-family:"Segoe UI","Noto Sans",Arial,sans-serif}
-body.t-nova44 h1{font:400 66px Arial,"Segoe UI",sans-serif;letter-spacing:-2px;color:#4285f4}
-body.t-nova44 .sub,body.t-nova44 #clock{color:#777}
-body.t-nova44 input{background:#fff;border:1px solid #d9d9d9;border-top-color:#c0c0c0;border-radius:2px;box-shadow:inset 0 1px 2px rgba(0,0,0,.1);font-size:16px}
-body.t-nova44 input:focus{border-color:#4d90fe}
-body.t-nova44 a.c,body.t-nova44 .box{background:#fff;border:1px solid #e5e5e5;border-radius:2px;box-shadow:0 1px 2px rgba(0,0,0,.12);color:#333}
-body.t-nova44 a.c:hover{box-shadow:0 2px 6px rgba(0,0,0,.22);border-color:#d0d0d0}
-body.t-nova44 *::-webkit-scrollbar{width:15px;background:#f1f1f1}body.t-nova44 *::-webkit-scrollbar-thumb{background:#c1c1c1}body.t-nova44 *::-webkit-scrollbar-thumb:hover{background:#a8a8a8}
-body.t-air{background:radial-gradient(ellipse at 12% 0,#ffffffcc,transparent 48%),radial-gradient(ellipse at 90% 100%,#d9e5f0cc,transparent 52%),linear-gradient(160deg,#eef2f7,#e6ebf2 60%,#f2f4f1)}
-body.t-air::after{content:"";position:fixed;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.22),transparent 35%,rgba(80,100,130,.04));pointer-events:none}
-body.t-air h1{font-weight:300;letter-spacing:.01em;color:#273246;text-shadow:0 8px 34px rgba(60,80,110,.16)}
-body.t-air .sub,body.t-air #clock{color:#687386}
-body.t-air input{background:rgba(255,255,255,.66);border:1px solid rgba(70,86,110,.12);border-radius:18px;box-shadow:0 10px 28px rgba(60,80,110,.08),inset 0 1px rgba(255,255,255,.72);backdrop-filter:blur(18px);padding-left:20px}
-body.t-air input:focus{background:rgba(255,255,255,.84);border-color:rgba(91,124,250,.35);box-shadow:0 0 0 4px rgba(91,124,250,.10),0 12px 32px rgba(60,80,110,.10)}
-body.t-air a.c,body.t-air .box{background:rgba(255,255,255,.52);border:1px solid rgba(70,86,110,.10);border-radius:14px;box-shadow:0 8px 24px rgba(60,80,110,.06),inset 0 1px rgba(255,255,255,.6);backdrop-filter:blur(14px)}
-body.t-air a.c:hover{border-color:rgba(91,124,250,.25);color:var(--acc);transform:translateY(-1px);box-shadow:0 12px 28px rgba(60,80,110,.09)}
-body.t-air a.c.acc{background:rgba(91,124,250,.14);border-color:rgba(91,124,250,.22);color:#3f5cc7}
-@media(prefers-color-scheme:dark){body.t-air{background:radial-gradient(ellipse at 12% 0,#303744,transparent 48%),radial-gradient(ellipse at 90% 100%,#24332f,transparent 52%),linear-gradient(160deg,#171a20,#12151b 60%,#191d1c)}body.t-air h1{color:#eef2f8;text-shadow:0 8px 34px rgba(0,0,0,.3)}body.t-air .sub,body.t-air #clock{color:#aab2c0}body.t-air input{background:rgba(29,33,40,.66);border-color:rgba(255,255,255,.10);box-shadow:0 10px 28px rgba(0,0,0,.18),inset 0 1px rgba(255,255,255,.05)}body.t-air input:focus{background:rgba(34,39,48,.88)}body.t-air a.c,body.t-air .box{background:rgba(29,33,40,.58);border-color:rgba(255,255,255,.08);box-shadow:0 8px 24px rgba(0,0,0,.16),inset 0 1px rgba(255,255,255,.04)}body.t-air a.c.acc{background:rgba(142,166,255,.16);color:#b9c7ff}}
-body.t-safari{background:#f5f5f7}body.t-safari h1{font-weight:300;letter-spacing:.02em}
-body.t-safari input{border-radius:12px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.08)}
-body.t-safari a.c,body.t-safari .box{background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.06)}
-body.t-safari a.c.acc{background:var(--acc);color:#fff}
-
-main[hidden]{display:none}
-#home{min-height:60vh;justify-content:center}
-#home form{animation:up .5s cubic-bezier(.2,.8,.2,1) both}
-#home input{padding:16px 22px;font-size:17px}
-#tabmas{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);padding:7px 22px 8px;background:var(--bar);border:1px solid var(--bd);border-bottom:0;border-radius:var(--r) var(--r) 0 0;color:var(--mut);cursor:pointer;font-size:13px;letter-spacing:.04em;transition:color .15s,border-color .15s,background .15s;bottom:0}
-#tabmas:hover,#tabmas[aria-expanded=true]{color:var(--acc);border-color:var(--acc)}
-#tabmas::before{content:"\25B2  ";font-size:9px;vertical-align:1px}#tabmas[aria-expanded=true]::before{content:"\25BC  "}
-body.hasbg #tabmas{background:#121021cc;color:#fff}
-#more{padding-bottom:60px}
-
-body.t-cyberpunk{background:radial-gradient(ellipse at 85% 0,#ff003c18,transparent 45%),radial-gradient(ellipse at 10% 100%,#00f0ff14,transparent 45%),linear-gradient(#fcee0a07 1px,transparent 1px) 0 0/100% 4px,linear-gradient(90deg,#fcee0a06 1px,transparent 1px) 0 0/48px 100%,#050507;font-family:"Rajdhani","Bahnschrift","Eurostile","Segoe UI Semibold","Arial Narrow",sans-serif}
-body.t-cyberpunk h1{font-weight:700;text-transform:uppercase;letter-spacing:.22em;color:var(--acc);text-shadow:3px 0 #ff003c,-3px 0 #00f0ff;animation:cpg 5s infinite}
-body.t-cyberpunk .sub,body.t-cyberpunk #clock{color:var(--acc2);text-transform:uppercase;letter-spacing:.14em;font-size:13px}
-body.t-cyberpunk input{background:#0b0b10;border:1px solid var(--acc);border-radius:0;color:var(--acc2);font-family:"Cascadia Code",Consolas,monospace;font-size:16px;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px))}
-body.t-cyberpunk input::placeholder{color:var(--mut)}
-body.t-cyberpunk input:focus{border-color:var(--acc2);box-shadow:0 0 18px #00f0ff55;color:#fff}
-body.t-cyberpunk #home form{position:relative;filter:drop-shadow(0 0 10px #fcee0a44)}
-body.t-cyberpunk a.c,body.t-cyberpunk .box,body.t-cyberpunk #nova21 .n21box{background:#0d0d12;border:1px solid var(--bd);border-radius:0;color:var(--fg);text-transform:uppercase;letter-spacing:.06em;font-size:13px;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px))}
-body.t-cyberpunk a.c:hover{border-color:var(--acc);background:var(--acc);color:#050507;transform:none;box-shadow:0 0 14px #fcee0a66}
-body.t-cyberpunk a.c.acc,body.t-cyberpunk #nova21 .n21hot{background:var(--acc);border-color:var(--acc);color:#050507;font-weight:700}
-body.t-cyberpunk a.c.acc:hover,body.t-cyberpunk #nova21 .n21hot:hover{background:var(--acc2);border-color:var(--acc2)}
-body.t-cyberpunk #nova21 .n21title{color:var(--acc);text-transform:uppercase;letter-spacing:.12em}
-body.t-cyberpunk .box b{color:var(--acc);text-transform:uppercase;letter-spacing:.1em}
-body.t-cyberpunk #tabmas{background:#12110a;border:1px solid var(--acc);border-bottom:0;border-radius:0;color:var(--acc);text-transform:uppercase;letter-spacing:.18em;font-weight:700;clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 100%,0 100%)}
-body.t-cyberpunk #tabmas:hover,body.t-cyberpunk #tabmas[aria-expanded=true]{background:var(--acc);color:#050507}
-body.t-cyberpunk *::-webkit-scrollbar{width:9px;background:#07070a}body.t-cyberpunk *::-webkit-scrollbar-thumb{background:#5b5416;border:1px solid var(--acc)}
-@keyframes cpg{0%,92%,100%{text-shadow:3px 0 #ff003c,-3px 0 #00f0ff;transform:none}94%{text-shadow:-4px 0 #ff003c,4px 0 #00f0ff;transform:translateX(2px) skewX(-8deg)}96%{text-shadow:4px 0 #ff003c,-4px 0 #00f0ff;transform:translateX(-2px)}}
-@keyframes up{from{opacity:0;transform:translateY(16px)}}@media(prefers-reduced-motion:reduce){*{animation:none!important}}
-
-#nova21{width:100%;display:flex;flex-direction:column;gap:10px;margin-top:2px}
-#nova21 .n21head{display:flex;align-items:center;justify-content:space-between;gap:10px}
-#nova21 .n21title{font-size:15px;font-weight:700;color:var(--acc)}
-#nova21 .n21grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px}
-#nova21 a.c{min-height:42px;display:grid;place-items:center;text-align:center}
-#nova21 .n21hot{background:linear-gradient(135deg,var(--acc),color-mix(in srgb,var(--acc2) 45%,var(--acc)));border-color:transparent;color:#fff}
-#nova21 .n21more{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
-#nova21 .n21box{padding:10px 12px;background:color-mix(in srgb,var(--bar) 92%,transparent);border:1px solid var(--bd);border-radius:var(--r);min-height:66px}
-#nova21 .n21box b{display:block;margin-bottom:3px}
-body.hasbg #nova21 .n21box{background:#121021b8}
-@media(max-width:600px){#nova21{gap:8px}#nova21 .n21more{grid-template-columns:1fr 1fr}}
-</style></head><body><div id="bg"></div>
-<main id="home"><form id="f"><input id="s" placeholder="Busca o escribe una dirección" autofocus></form></main>
-<main id="more" hidden><div id="clock"></div><img class="logo" src="../assets/icon.png"><h1>Nova</h1><div class="sub">¿Qué quieres hacer?</div>
-<div class="q" id="quick"></div><div class="q" id="tools"></div>
-<section id="nova21" aria-label="Centro rápido de Nova">
-  <div class="n21head"><span class="n21title">Nova 3.0 · Centro rápido</span><span class="sub">Todo desde Nova Tab</span></div>
-  <div class="n21grid">
-    <a class="c n21hot" href="#nova/study3">🎓 Study</a><a class="c" href="#nova/islands">🏝 Islands</a><a class="c" href="#nova/focus">✦ Focus</a><a class="c" href="#nova/writer">✎ Writer</a><a class="c" href="#nova/reader">Aa Reader+</a><a class="c" href="#nova/collections">▦ Colecciones</a><a class="c" href="#nova/reading">📖 Reading List</a><a class="c" href="#nova/workspaces">🗂 Spaces</a><a class="c" href="#nova/pestanas">⌘ Pestañas</a>
-  </div>
-  <div class="n21more"><div class="n21box"><b>⚡ Sistema</b><span class="sub">Privacy, Performance, Downloads, Apps y Backup.</span><br><a class="c" href="#nova/privacidad2">Privacidad</a> <a class="c" href="#nova/rendimiento2">Rendimiento</a> <a class="c" href="#nova/descargas2">Descargas</a></div><div class="n21box"><b>📤 Compartir</b><span class="sub">QR y Nova Send.</span><br><a class="c" href="#nova/qr">QR</a> <a class="c" href="#nova/send">Nova Send</a></div>
-    <div class="n21box"><b>⌘ Command Center</b><span class="sub">Busca cualquier acción, pestaña o herramienta.</span><br><a class="c" href="#nova/acciones">Abrir Command Center</a></div>
-    <div class="n21box"><b>📝 Crear</b><span class="sub">Escribe, exporta a Word y guarda tus documentos.</span><br><a class="c" href="#nova/writer">Abrir Writer</a></div>
-    <div class="n21box"><b>🛡 Control</b><span class="sub">Privacidad y rendimiento en centros dedicados.</span><br><a class="c" href="#nova/privacidad2">Abrir centros</a></div>
-    <div class="n21box"><b>↑ Mejoras</b><span class="sub">Propón ideas y vota mejoras para Nova.</span><br><a class="c" href="#nova/mejoras">Abrir Mejoras</a></div>
-  </div>
-</section><div class="box" id="recent" hidden></div></main>
-<button id="tabmas" type="button" aria-controls="more" aria-expanded="false">Más</button>
+:root{--bg:#08080d;--fg:#f6f3ff;--mut:#9d98aa;--bar:#11111a;--bd:#292532;--acc:#9b5cff;--acc2:#c89eff;--r:18px}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;color:var(--fg);font:14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg)}
+body{position:relative;overflow-x:hidden;background:radial-gradient(900px 480px at 88% -8%,rgba(155,92,255,.22),transparent 62%),radial-gradient(650px 420px at 4% 72%,rgba(77,50,120,.12),transparent 68%),#08080d}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.16;background-image:linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px);background-size:54px 54px;mask-image:linear-gradient(to bottom,#000,transparent 80%)}
+#bg{position:fixed;inset:-7%;background-position:center;background-size:cover;filter:saturate(.8) brightness(.38);opacity:.28;pointer-events:none;transition:transform .25s ease}body.hasbg:after{content:"";position:fixed;inset:0;background:radial-gradient(circle at 50% 10%,transparent 15%,#08080dcc 72%);pointer-events:none}
+main{position:relative;z-index:1;width:min(1140px,92vw);margin:0 auto;padding:48px 0 55px}.head{display:flex;align-items:center;justify-content:space-between;gap:14px}.brand{display:flex;align-items:center;gap:12px}.logo{width:42px;height:42px;border-radius:14px}.brand b{font-size:22px;letter-spacing:.1em}.brand small{display:block;color:var(--mut);margin-top:2px}.clock{color:var(--mut);font-size:12px}
+.hero{text-align:center;padding:54px 0 25px}.hero h1{font-size:16px;font-weight:500;color:#c7c2d1;margin:0 0 22px}.search{width:min(780px,100%);margin:auto;height:62px;display:flex;align-items:center;gap:12px;padding:0 18px;background:rgba(17,16,24,.86);border:1px solid #3b3348;border-radius:21px;box-shadow:0 20px 70px #0006,0 0 34px rgba(155,92,255,.10);backdrop-filter:blur(14px)}.search span{font-size:23px;color:#8f899a}.search input{flex:1;border:0;outline:0;background:none;color:var(--fg);font-size:16px}.search input::placeholder{color:#7d7788}.search button{border:0;border-radius:12px;padding:10px 16px;background:linear-gradient(135deg,#9b5cff,#6d39d2);color:#fff;font-weight:700;cursor:pointer}.hint{margin-top:11px;color:#6e6876;font-size:11px}
+.section{margin-top:30px}.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.section-head h2{margin:0;font-size:15px}.section-head button{background:none;border:0;color:var(--acc2);cursor:pointer;font-size:12px}.news{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}.card{min-height:155px;padding:16px;border:1px solid var(--bd);border-radius:18px;background:rgba(17,16,23,.84);backdrop-filter:blur(10px);transition:.18s transform,.18s border-color,.18s box-shadow}.card:hover{transform:translateY(-2px);border-color:#4b3a5e;box-shadow:0 18px 40px #0004}.tag{font-size:10px;text-transform:uppercase;letter-spacing:.13em;color:var(--acc);font-weight:800}.card h3{font-size:16px;line-height:1.35;margin:8px 0}.card p{margin:0;color:var(--mut);font-size:12px;line-height:1.55}.meta{margin-top:12px;color:#6f6979;font-size:10px}
+.quick{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}.pill{padding:8px 11px;border:1px solid var(--bd);border-radius:999px;background:rgba(17,16,23,.7);color:#aca6b6;font-size:11px}
+@media(max-width:780px){.news{grid-template-columns:1fr}.head{align-items:flex-start;flex-direction:column}.clock{align-self:flex-start}.hero{padding-top:38px}.search button{padding:9px 12px}}
+</style></head><body><div id="bg"></div><main><div class="head"><div class="brand"><img class="logo" src="../assets/icon.png" alt="Nova"><div><b>Nova</b><small>Libre · Premium · Gaming</small></div></div><div class="clock" id="clock"></div></div>
+<section class="hero"><h1>Busca, descubre y sigue navegando.</h1><form class="search" id="f"><span>⌕</span><input id="s" placeholder="Busca en la web o escribe una dirección" autocomplete="off"><button>Buscar</button></form><div class="hint">Privacidad activa · sincronización cifrada · extensiones seguras</div></section>
+<section class="section"><div class="section-head"><h2>Noticias para ti</h2><button id="refresh">Actualizar</button></div><div class="news" id="news"></div></section>
+<div class="quick"><span class="pill">🛡 Protección inteligente</span><span class="pill">🚫 Bloqueador de anuncios</span><span class="pill">☁️ Sync</span><span class="pill">🎮 Perfil Gaming</span><span class="pill">🌍 Traducción</span><span class="pill">🧑‍💻 DevTools</span></div>
+</main>
 <script>
 const p=new URLSearchParams(location.search),J=(k,d)=>{try{return JSON.parse(p.get(k)||'')}catch{return d}};
-let th=p.get('t')||'air';if(th==='system')th='air';
-document.body.classList.add('t-'+th);{const l=p.get('l');if(l&&/^[a-z]+$/.test(l)&&l!=='classic')document.querySelector('.logo').src='../assets/logos/'+l+'.png'}
-if(p.get('a'))document.body.style.setProperty('--acc',p.get('a'));
-const D=Object.assign({clock:true,search:true,quick:true,recent:true,dl:true,ai:true},J('d',{})),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-if(p.get('wp')){document.body.classList.add('hasbg');const b=document.getElementById('bg');b.style.backgroundImage=`url("${p.get('wp')}")`;document.addEventListener('mousemove',e=>{b.style.transform=`translate(${(.5-e.clientX/innerWidth)*24}px,${(.5-e.clientY/innerHeight)*16}px)`})}
-const clock=document.getElementById('clock');
-if(D.clock){const t=()=>clock.textContent=(p.get('n')?'Hola, '+p.get('n')+' · ':'')+new Date().toLocaleString('es',{weekday:'long',hour:'2-digit',minute:'2-digit',day:'numeric',month:'long'});t();setInterval(t,3e4)}else clock.remove();
-if(!D.search)document.getElementById('f').remove();
-const search=p.get('s')||'https://duckduckgo.com/?q=';
-document.getElementById('f').onsubmit=e=>{e.preventDefault();const v=s.value.trim();if(!v)return;location.href=/^https?:\/\//.test(v)?v:/^[\w-]+(\.[\w-]+)+(\/.*)?$/.test(v)?'https://'+v:search+encodeURIComponent(v)};
-const custom=J('x',[]),marks=J('b',[]),links=custom.length?custom:marks.length?marks:[{t:'YouTube',u:'https://www.youtube.com'},{t:'GitHub',u:'https://github.com'},{t:'Wikipedia',u:'https://www.wikipedia.org'}];
-const quick=document.getElementById('quick');if(D.quick)quick.innerHTML=links.slice(0,12).map(m=>`<a class="c" href="${esc(m.u)}">${esc((m.t||m.u).slice(0,22))}</a>`).join('');else quick.remove();
-const tools=document.getElementById('tools');let h='<a class="c" href="#nova/marcadores">Marcadores</a><a class="c" href="#nova/historial">Historial</a>';
-if(D.dl)h+=`<a class="c" href="#nova/descargas">Descargas${+p.get('nd')?' ('+p.get('nd')+')':''}</a>`;if(D.ai)h+='<a class="c acc" href="#nova/ia">Preguntar a Nova IA</a>';tools.innerHTML=h;
-const rec=J('r',[]),rb=document.getElementById('recent');if(D.recent&&rec.length){rb.hidden=false;rb.innerHTML='<b>Recientes</b>'+rec.map(m=>`<a href="${esc(m.u)}">${esc(m.t||m.u)}</a>`).join('')}
-
-{const tab=document.getElementById('tabmas'),home=document.getElementById('home'),more=document.getElementById('more');
-const show=m=>{more.hidden=!m;home.hidden=m;tab.setAttribute('aria-expanded',m?'true':'false');tab.textContent='Buscar';if(!m){tab.textContent='Más';const i=document.getElementById('s');if(i)i.focus()}};
-tab.onclick=()=>show(more.hidden);
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!more.hidden)show(false)});}
+let theme=p.get('t')||'air';const a=p.get('a');if(a&&/^#[0-9a-f]{3,8}$/i.test(a))document.documentElement.style.setProperty('--acc',a);
+const themes={air:'#9b5cff',nova:'#8b5cf6',win95:'#008080',code:'#39ff88',undertale:'#ff3030',aero:'#5db4ff'};if(!a&&themes[theme])document.documentElement.style.setProperty('--acc',themes[theme]);
+const n=document.querySelector('.logo');const l=p.get('l');if(l&&/^[a-z0-9_-]+$/i.test(l)&&l!=='classic')n.src='../assets/logos/'+l+'.png';
+const wp=p.get('wp');if(wp){document.body.classList.add('hasbg');document.getElementById('bg').style.backgroundImage=`url("${wp}")`;document.addEventListener('mousemove',e=>document.getElementById('bg').style.transform=`translate(${(.5-e.clientX/innerWidth)*18}px,${(.5-e.clientY/innerHeight)*12}px)`)}
+const clock=document.getElementById('clock');const name=p.get('n');function tick(){clock.textContent=(name?'Hola, '+name+' · ':'')+new Date().toLocaleString('es-ES',{weekday:'long',hour:'2-digit',minute:'2-digit',day:'numeric',month:'long'})}tick();setInterval(tick,30000);
+const search=p.get('s')||'https://duckduckgo.com/?q=';document.getElementById('f').onsubmit=e=>{e.preventDefault();const v=document.getElementById('s').value.trim();if(!v)return;location.href=/^https?:\/\//i.test(v)?v:/^[\w-]+(\.[\w-]+)+(\/.*)?$/.test(v)?'https://'+v:search+encodeURIComponent(v)};
+const topic=p.get('sec')||'videojuegos';const sets={videojuegos:[['GAMING','El mundo del PC gaming sigue evolucionando','Hardware, juegos y experiencias que merecen un hueco en tu próxima sesión.'],['LANZAMIENTOS','Novedades para tu biblioteca','Descubre tendencias y lanzamientos sin salir de tu nueva pestaña.'],['TECNOLOGÍA','Herramientas para jugar y crear','Rendimiento, periféricos y software para usuarios avanzados.']],codigo:[['DEVELOPMENT','Herramientas para desarrolladores','Atajos, rendimiento web y nuevas posibilidades del navegador.'],['WEB','La web cambia rápido','Estándares, APIs y experiencias modernas para construir mejor.'],['OPEN SOURCE','Proyectos que inspiran','Ideas y herramientas de comunidades abiertas.']],coches:[['MOTOR','Tecnología sobre ruedas','Diseño, innovación y novedades del mundo del automóvil.'],['MOVILIDAD','Nuevas formas de moverse','Tendencias que mezclan software, hardware y movilidad.'],['DISEÑO','Diseño que se mueve','Conceptos, materiales y experiencias.']]};
+function render(){const arr=sets[topic]||sets.videojuegos;document.getElementById('news').innerHTML=arr.map(x=>`<article class="card"><div class="tag">${x[0]}</div><h3>${x[1]}</h3><p>${x[2]}</p><div class="meta">Recomendado para ti · Nova</div></article>`).join('')}render();document.getElementById('refresh').onclick=()=>{const box=document.getElementById('news');box.animate([{opacity:.35},{opacity:1}],{duration:350});render()};
 </script></body></html>

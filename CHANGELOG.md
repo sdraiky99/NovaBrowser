@@ -1,3 +1,6 @@
+# Nova 4.1.0
+- Evolution Update: página principal premium/gaming, Game Hub, Perfil Gaming, privacidad 4.1, Sync 4.1, Extensions Store, traducción y DevTools.
+
 # Nova 4.0.0 — Ultimate Workspace
 
 ## Limpieza y mejora
