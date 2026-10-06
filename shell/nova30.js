@@ -67,8 +67,8 @@
     const enabled = !!on;
     S.novaNext = S.novaNext || {}; S.nova25 = S.nova25 || {};
     const was = !!S.novaNext.safari;
-    if(enabled && !was){ const prev=S.nova25?.safari ? (S.novaNext.prevTheme||S.nova25.prevTheme||'system') : S.theme; S.novaNext.prevTheme=prev; S.nova25.prevTheme=prev; if(!S.nova25?.safari) S.theme='dark'; }
-    if(!enabled && was){ const prev=S.novaNext.prevTheme||S.nova25.prevTheme; S.theme=(prev&&prev!=='safari')?prev:'system'; delete S.novaNext.prevTheme; delete S.nova25.prevTheme; }
+    if(enabled && !was){ const prev=S.theme==='safari' ? (S.novaNext.prevTheme||S.nova25.prevTheme||'air') : S.theme; S.novaNext.prevTheme=prev; S.nova25.prevTheme=prev; if(S.theme!=='safari') S.theme='safari'; }
+    if(!enabled && was){ const prev=S.novaNext.prevTheme||S.nova25.prevTheme; S.theme=(prev&&prev!=='safari')?prev:'air'; delete S.novaNext.prevTheme; delete S.nova25.prevTheme; }
     S.novaNext.safari=enabled; S.nova25.safari=enabled;
     document.body.classList.toggle('nova30-safari', enabled);
     document.body.classList.toggle('nova25-safari', enabled);
@@ -205,6 +205,6 @@
   N.extraActs=Array.isArray(N.extraActs)?N.extraActs:[];
   const pushAct=(label,fn)=>{const i=N.extraActs.findIndex(a=>a[0]===label);if(i<0)N.extraActs.push([label,fn]);};
   baseActions().forEach(([label,fn])=>pushAct(label,fn));
-  if(S.novaNext.verticalTabs) document.body.classList.add('nova30-vertical'); if(S.novaNext.safari&&!S.nova25?.safari)applySafari(true);
+  if(S.novaNext.verticalTabs) document.body.classList.add('nova30-vertical'); if(!S.novaNext.safari&&S.theme==='safari')applySafari(true);
   window.Nova30={open,palette,applySafari,startFocus,createIsland:N.createIsland};
 })();

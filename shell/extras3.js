@@ -11,7 +11,7 @@ st.textContent = `
 body,#top,#bar,.tab,.btn,.fld,#addr{transition:background-color .35s,border-color .35s,color .35s}
 .btn,.li,.th{position:relative;overflow:hidden}
 .rp{position:absolute;width:10px;height:10px;margin:-5px;border-radius:50%;background:currentColor;opacity:.25;pointer-events:none;animation:rpl .55s ease-out forwards}
-@keyframes rpl{to{transform:scale(28);opacity:0}}
+@keyframes rpl{to{transform:scale(28);opacity:0}}.t-win95 .rp,.t-undertale .rp{display:none}
 @keyframes up{from{opacity:0;transform:translateY(12px)}}@keyframes pgin{from{opacity:0;transform:translateY(10px) scale(.99)}}
 #pin.fresh>*{animation:up .38s cubic-bezier(.2,.8,.2,1) both}${stag}
 .ipage.on{animation:pgin .35s cubic-bezier(.2,.8,.2,1)}

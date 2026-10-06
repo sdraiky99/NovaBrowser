@@ -1,6 +1,6 @@
 /* Nova 1.2.0 - ajustes como página, juegos, barra lateral movible, paleta Ctrl+K, novedades */
 (() => {
-const { PG, MENU, sw2, themeGrid, toURL, fmt } = NOVA, VER = NOVA_VER;
+const { PG, MENU, sw2, themeGrid, toURL, fmt } = NOVA, VER = NOVA_VER, os = require('os');
 Object.assign(P, { spark: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z' });
 S.hs = S.hs || {}; S.hide = S.hide || {}; S.closed = S.closed || [];
 if (!S.done) S.seen = VER;
@@ -62,7 +62,7 @@ function palette() {
   const ov = document.createElement('div'); ov.className = 'ov'; ov.id = 'pal'; ov.style.alignItems = 'start';
   ov.innerHTML = '<div class="card" style="margin-top:12vh"><input class="fld" id="pq" placeholder="Nova Command Center · busca una acción, pestaña o cuenta (2+2*5)"><div id="pl" style="display:flex;flex-direction:column;gap:4px"></div></div>';
   document.body.appendChild(ov);
-  const acts = [...MENU.map(m => [m[0].replace(/ \(.*\)/, ''), m[1]]), ['Novedades', () => newTab('nova://novedades')], ['Reabrir pestaña cerrada', reopen], ['Captura de pantalla', () => $('#sh').click()], ...(NOVA.extraActs || []), ['Barra lateral: izquierda', () => setSp('left')], ['Barra lateral: derecha', () => setSp('right')], ['Barra lateral: dock central', () => setSp('dock')]];
+  const acts = [...MENU.map(m => [m[0].replace(/ \(.*\)/, ''), m[1]]), ['Novedades', () => newTab('nova://novedades')], ['Reabrir pestaña cerrada', reopen], ['Captura de pantalla', () => $('#sh').click()], ...(NOVA.extraActs || []), ['Barra lateral: izquierda', () => setSp('left')], ['Barra lateral: derecha', () => setSp('right')], ['Barra lateral: dock central', () => setSp('dock')], ...Object.entries(THEMES).map(([k, n]) => ['Tema: ' + n, () => { S.theme = k; save(); applyTheme(); refreshNT(); }])];
   const pq = $('#pq'), pl = $('#pl'); let items = [], ix = 0;
   const show = () => { pl.innerHTML = items.map((it, i) => `<div class="li ${i === ix ? 'pi' : ''}" data-i="${i}"><span>${esc(it[0])}</span></div>`).join(''); pl.querySelectorAll('.li').forEach(e => e.onclick = () => run(+e.dataset.i)); };
   const run = i => { ov.remove(); items[i] && items[i][1](); };
@@ -106,7 +106,7 @@ const oldAbout = PG.acerca;
 PG.acerca = r => { oldAbout(r); r.insertAdjacentHTML('beforeend', '<button class="btn" id="wn" style="align-self:flex-start">Ver novedades</button>'); r.querySelector('#wn').onclick = () => newTab('nova://novedades'); };
 
 /* ---------- ajustes como página ---------- */
-const SECT = [['apariencia', 'Apariencia', 'palette'], ['barra', 'Barra lateral', 'settings'], ['navegador', 'Navegador', 'globe'], ['fondos', 'Fondos', 'folder'], ['historial', 'Historial', 'history'], ['ia', 'Nova IA', 'brain'], ['datos', 'Privacidad y datos', 'shield']];
+const SECT = [['apariencia', 'Apariencia'], ['barra', 'Barra lateral'], ['navegador', 'Navegador'], ['fondos', 'Fondos'], ['historial', 'Historial'], ['ia', 'Nova IA'], ['datos', 'Privacidad y datos']];
 let curSec = 'apariencia';
 const ap = () => { save(); applyTheme(); };
 const seg = (k, opts) => `<div class="seg">${opts.map(([v, n]) => `<button class="btn ${(S[k] || opts[0][0]) === v ? 'on' : ''}" data-seg="${k}" data-v="${v}">${n}</button>`).join('')}</div>`;
@@ -115,15 +115,15 @@ function bind(root, again) {
   root.querySelectorAll('[data-set]').forEach(e => e.oninput = () => { const k = e.dataset.set; S[k] = e.type === 'range' ? +e.value : e.value; if (k === 'acc' || k === 'name') refreshNT(); ap(); });
   root.querySelectorAll('.sw').forEach(s => s.onclick = () => { S[s.dataset.k] = !S[s.dataset.k]; ap(); again(); });
   root.querySelectorAll('[data-seg]').forEach(b => b.onclick = () => { S[b.dataset.seg] = b.dataset.v; ap(); again(); });
-  const tm = root.querySelector('[data-tm]'); if (tm) tm.onchange = e => { S.theme = e.target.value; ap(); refreshNT(); again(); };
+  root.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { S.theme = b.dataset.t; ap(); refreshNT(); again(); });
   root.querySelectorAll('[data-hide]').forEach(b => b.onclick = () => { S.hide[b.dataset.hide] = !S.hide[b.dataset.hide]; ap(); again(); });
 }
 const SEC = {
   apariencia: (c, again) => {
     c.innerHTML = `<h2>Apariencia</h2><div class="grid">${themeGrid()}</div>` +
       row('Color de acento', `<input type="color" data-set="acc" value="${S.acc || '#8b5cf6'}">`) + row('Bordes redondeados', `<input type="range" data-set="r" min="0" max="22" value="${S.r ?? 10}">`) + row('Tamaño de letra', `<input type="range" data-set="fs" min="11" max="18" value="${S.fs || 13}">`) +
-      row('Tipografía', `<select class="fld" data-set="font" style="width:auto"><option value="">Predeterminada</option><option>Segoe UI</option><option>Consolas</option><option>Georgia</option><option>Trebuchet MS</option><option>Courier New</option></select>`) +
-      row('Animaciones', sw2('anim', S.anim)) + row('Sonidos de interfaz', sw2('sound', S.sound)) + '<button class="btn" id="ra" style="align-self:flex-start">Restablecer apariencia</button>';
+      row('Tipografía', `<select class="fld" data-set="font" style="width:auto"><option value="">Del tema</option><option>Segoe UI</option><option>Consolas</option><option>Georgia</option><option>Trebuchet MS</option><option>Courier New</option></select>`) +
+      row('Animaciones', sw2('anim', S.anim)) + row('Sonidos del tema', sw2('sound', S.sound)) + '<button class="btn" id="ra" style="align-self:flex-start">Restablecer apariencia</button>';
     c.querySelector('[data-set=font]').value = S.font || '';
     c.querySelector('#ra').onclick = () => { delete S.acc; delete S.r; delete S.fs; delete S.font; ap(); refreshNT(); again(); };
   },
@@ -153,14 +153,14 @@ const SEC = {
     c.innerHTML = '<h2>Privacidad y datos</h2><div class="row"><button class="btn" id="d1">Borrar historial</button><button class="btn" id="d2">Borrar cookies y caché</button></div><div class="row"><button class="btn" id="d3">Exportar ajustes</button><label class="btn">Importar ajustes<input type="file" id="d4" accept=".json" hidden></label><button class="btn on" id="dm">Migrar navegador</button></div><button class="btn" id="d5" style="align-self:flex-start">Restablecer todo Nova</button><span class="mut">Exportar guarda nova-ajustes.json en tu carpeta Descargas.</span>';
     c.querySelector('#d1').onclick = () => { S.hist = []; save(); toast('Historial borrado'); };
     c.querySelector('#d2').onclick = async () => { await ipc.invoke('clear'); toast('Cookies y caché borrados'); }; c.querySelector('#dm').onclick = () => newTab('nova://migrar');
-    c.querySelector('#d3').onclick = () => { const data = JSON.stringify(S, null, 2); ipc.invoke('save-text',{name:'nova-ajustes',ext:'json',content:data}).then(f=>f?toast('Guardado en '+f):toast('No se pudo guardar')).catch(e=>toast('Error: '+e.message)); };
+    c.querySelector('#d3').onclick = () => { const f = path.join(os.homedir(), 'Downloads', 'nova-ajustes.json'); try { fs.writeFileSync(f, JSON.stringify(S, null, 2)); toast('Guardado en ' + f); } catch (e) { toast('Error: ' + e.message); } };
     c.querySelector('#d4').onchange = e => { const fr = new FileReader(); fr.onload = () => { try { Object.assign(S, JSON.parse(fr.result)); ap(); refreshNT(); toast('Ajustes importados'); again(); } catch { toast('Archivo no válido'); } }; fr.readAsText(e.target.files[0]); };
     c.querySelector('#d5').onclick = () => { if (confirm('¿Restablecer todo Nova?')) { localStorage.removeItem('nova'); location.reload(); } };
   }
 };
 Object.assign(NOVA, { SECT, SEC, bind, row, seg, reopen });
 PG.ajustes = r => {
-  r.innerHTML = `<div style="display:flex;gap:28px;flex-wrap:wrap"><nav style="display:flex;flex-direction:column;gap:6px;min-width:180px">${SECT.map(([k, n, icon]) => `<button class="btn ${k === curSec ? 'on' : ''}" data-k="${k}" style="text-align:left;display:flex;align-items:center;gap:8px">${NOVA_ICONS.svg(icon,16)}<span>${n}</span></button>`).join('')}</nav><div id="sc" style="flex:1;min-width:280px;max-width:640px;display:flex;flex-direction:column;gap:12px"></div></div>`;
+  r.innerHTML = `<div style="display:flex;gap:28px;flex-wrap:wrap"><nav style="display:flex;flex-direction:column;gap:6px;min-width:180px">${SECT.map(([k, n]) => `<button class="btn ${k === curSec ? 'on' : ''}" data-k="${k}" style="text-align:left">${n}</button>`).join('')}</nav><div id="sc" style="flex:1;min-width:280px;max-width:640px;display:flex;flex-direction:column;gap:12px"></div></div>`;
   r.querySelectorAll('nav .btn').forEach(b => b.onclick = () => { curSec = b.dataset.k; PG.ajustes(r); });
   const c = r.querySelector('#sc'), again = () => PG.ajustes(r);
   SEC[curSec](c, again, r); bind(c, again);

@@ -101,7 +101,7 @@
     islands2:'islands40', 'islands-2':'islands40', spaces2:'spaces40', 'spaces-2':'spaces40',
     studio:'studio40', flows:'flows40', extensions2:'extensions40', companion:'companion40', sync:'sync40', desktop:'desktop40',
     'smart-tab-groups':'smarttabs', smarttabs:'smarttabs', pinboard:'pinboard', memory:'memory31',
-    search:'search31', searchanything:'search31', preview:'preview31', linkpreview:'preview31',
+    search:'search31', searchanything:'search31', preview:'preview31', linkpreview:'preview31', sitethemes:'sitethemes',
     notifications:'notifications31', automations:'automations', mini:'mini31', send:'sendbox', novasend:'sendbox',
     snapshots:'snapshots', snapshot:'snapshots', daily:'daily', permissions:'permissions31', cleanup:'cleanup31'
   };
@@ -296,7 +296,7 @@
       ['🧩 Organize','Pestañas, Islands y Spaces',['workspaces40','islands40','spaces40']],
       ['⚙️ Build','Personaliza y automatiza',['studio40','flows40','extensions40']],
       ['🌍 Ecosystem','Conecta y exporta',['companion40','sync40','desktop40']],
-      ['✨ Nova 3.1','Las novedades que ya tienes',['quick','pinboard','memory31','search31','preview31','notifications31','automations','mini31','sendbox','snapshots','daily','permissions31','cleanup31']]
+      ['✨ Nova 3.1','Las novedades que ya tienes',['quick','pinboard','memory31','search31','preview31','sitethemes','notifications31','automations','mini31','sendbox','snapshots','daily','permissions31','cleanup31']]
     ];
     r.innerHTML=page('NOVA ULTIMATE','Nova Ultimate','Todo lo nuevo, reunido en una sola superficie. Las funciones antiguas no se sustituyen.',
       `<div class="n40-hero"><div class="row"><div><div class="n40-title" style="font-size:24px">${c.url?esc(c.title||c.host):'Tu centro de Nova'}</div><div class="n40-sub" style="margin-top:5px">${c.url?esc(c.host):'Abre una web y usa las acciones contextuales.'}</div></div><span class="n40-chip on">${tabsCount} pestañas</span></div><div class="n40-actions" style="margin-top:12px">${btn('⌕ Buscar todo','id="n40-launch"','on')}${btn('⚡ Acciones rápidas','id="n40-quick"')}${btn('🧠 Analizar página','id="n40-brain"')}${btn('📌 Guardar','id="n40-save"')}${btn('☰ Dock','id="n40-dock"')}</div><div class="n40-actions" style="margin-top:9px"><span class="n40-chip">🗃️ ${vault} guardados/recuerdos</span><span class="n40-chip">⚙️ ${st.flows.length} Flows</span><span class="n40-chip">🧩 ${st.workspaces.length} Workspaces</span></div></div>`+
@@ -310,7 +310,7 @@
   const labels = {
     pagebrain:'🧠 Page Brain',talkpage:'💬 Talk to Page',research40:'📚 Research',vault40:'🗃️ Vault',timeline40:'🕒 Timeline',continue40:'↩️ Continue',
     webpowers40:'⚙️ Web Powers',visual40:'🔎 Visual Search',translate40:'🌍 Translate',snapshots:'📸 Snapshot',workspaces40:'🧩 Workspaces+',islands40:'🏝️ Islands',spaces40:'🪐 Spaces',
-    studio40:'🎨 Studio',flows40:'⚡ Flows',extensions40:'🧩 Extensions',companion40:'📱 Companion',sync40:'☁️ Sync',desktop40:'🖥️ Desktop',quick:'⚡ Quick Actions',pinboard:'📌 Pinboard',memory31:'🧠 Memory',search31:'⌕ Search',preview31:'👀 Preview',notifications31:'🔔 Notifications',automations:'🪄 Automations',mini31:'🪟 Mini Mode',sendbox:'📤 Nova Send',daily:'☀️ Daily',permissions31:'🛡 Permissions',cleanup31:'🧹 Cleanup'
+    studio40:'🎨 Studio',flows40:'⚡ Flows',extensions40:'🧩 Extensions',companion40:'📱 Companion',sync40:'☁️ Sync',desktop40:'🖥️ Desktop',quick:'⚡ Quick Actions',pinboard:'📌 Pinboard',memory31:'🧠 Memory',search31:'⌕ Search',preview31:'👀 Preview',sitethemes:'🎨 Site Themes',notifications31:'🔔 Notifications',automations:'🪄 Automations',mini31:'🪟 Mini Mode',sendbox:'📤 Nova Send',daily:'☀️ Daily',permissions31:'🛡 Permissions',cleanup31:'🧹 Cleanup'
   };
   const labelFor = route => labels[route] || ('Nova · ' + String(route).replace(/([a-z])([A-Z])/g,'$1 $2'));
 

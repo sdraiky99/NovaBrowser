@@ -1,6 +1,7 @@
 /* Nova 1.1.0 - extras: páginas internas, fondos reales, ajustes, onboarding */
 (() => {
-const shell = NOVA_BRIDGE.shell;
+const { shell } = require('electron');
+Object.assign(THEMES, { neon: 'Neón' });
 Object.assign(SECS, { espacio: 'Espacio', naturaleza: 'Naturaleza', ciudad: 'Ciudad' });
 Object.assign(P, {
   menu: 'M4 6h16M4 12h16M4 18h16', shield: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z',
@@ -31,6 +32,10 @@ st.textContent = `
 #bl{display:flex;align-items:center;gap:4px;padding:0 8px;color:var(--acc2);font-size:12px;white-space:nowrap}#bl svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8}
 .chips{display:flex;flex-wrap:wrap;gap:6px}.chips .btn{padding:4px 10px;font-size:12px}
 .pb{height:4px;background:var(--bd);border-radius:4px;overflow:hidden;flex:1}.pb i{display:block;height:100%;background:var(--acc)}
+.t-neon #top,.t-neon #bar{box-shadow:0 0 18px #ff2bd644}.t-neon .tab.on{box-shadow:0 0 12px var(--acc);border-color:var(--acc)}.t-neon #addr:focus{box-shadow:0 0 14px var(--acc)}
+.t-neon #brand,.t-neon h3,.t-neon h2{text-shadow:0 0 10px var(--acc)}.t-neon .ai svg{filter:drop-shadow(0 0 8px #ff2bd6)}
+.t-win95 .ipage h2,.t-undertale .ipage h2,.t-code .ipage h2{font-weight:700}.t-win95 .card,.t-win95 .li{border-radius:0;box-shadow:inset -1px -1px #404040,inset 1px 1px #fff;border:0}
+.t-undertale .card{border:4px solid #fff}
 `;
 document.head.appendChild(st);
 
@@ -38,7 +43,7 @@ document.head.appendChild(st);
 const toURL = v => { v = v.trim(); return /^https?:\/\//.test(v) ? v : /^[\w-]+(\.[\w-]+)+(:\d+)?(\/.*)?$/.test(v) || /^localhost/.test(v) ? 'https://' + v : S.search + encodeURIComponent(v); };
 const fmt = b => b > 1e6 ? (b / 1e6).toFixed(1) + ' MB' : Math.round(b / 1e3) + ' KB';
 const sw2 = (k, on) => `<div class="sw ${on ? 'on' : ''}" data-k="${k}"></div>`;
-const themeGrid = () => `<div class="row"><span>Modo de apariencia</span><select class="fld" data-tm><option value="system">Sistema</option><option value="light">Claro</option><option value="dark">Oscuro</option></select></div>`;
+const themeGrid = () => Object.entries(THEMES).map(([k, n]) => `<div class="th ${S.theme === k ? 'on' : ''}" data-t="${k}" style="background:var(--bg)">${n}</div>`).join('');
 
 /* ---------- estilo personalizado (acento, bordes, letra, sonidos) ---------- */
 const baseAT = applyTheme;
@@ -52,8 +57,8 @@ applyTheme = function () {
 };
 let ac;
 document.addEventListener('click', () => {
-  if (!S.sound) return;
-  try { ac = ac || new AudioContext(); const o = ac.createOscillator(), g = ac.createGain(); o.type = 'triangle'; o.frequency.value = 720; g.gain.value = .025; o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + .035); } catch { }
+  if (!S.sound) return; const f = { undertale: 520, win95: 300, code: 880 }[S.theme]; if (!f) return;
+  try { ac = ac || new AudioContext(); const o = ac.createOscillator(), g = ac.createGain(); o.type = S.theme === 'undertale' ? 'square' : 'triangle'; o.frequency.value = f; g.gain.value = .04; o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + .05); } catch { }
 });
 
 /* ---------- barra: escudo de anuncios + menú ---------- */
@@ -139,10 +144,10 @@ function renderSettings(p) {
   <div class="row"><span>Bloqueador de anuncios</span>${sw2('adblock', S.adblock)}</div>
   <div class="row"><span>Animaciones de la interfaz</span>${sw2('anim', S.anim)}</div>
   <div class="row"><span>Fondo aleatorio en cada pestaña</span>${sw2('rand', S.rand)}</div>
-  <div class="row"><span>Sonidos de interfaz</span>${sw2('sound', S.sound)}</div>
+  <div class="row"><span>Sonidos del tema (Undertale, Win95, Código)</span>${sw2('sound', S.sound)}</div>
   <h3>Nova IA</h3><span class="mut">Clave API de Anthropic</span><input class="fld" id="ak" type="password" placeholder="${S.hasKey ? 'Clave guardada de forma segura' : 'sk-ant-…'}">
   <h3>Privacidad</h3><div class="row"><button class="btn" id="ch">Borrar historial</button><button class="btn" id="cc">Borrar cookies y caché</button></div>
-  <button class="btn" id="rs">Restablecer todo Nova</button><span class="mut">Nova ${VERSION} · basado en Chromium ${NOVA_BRIDGE.versions.chrome}</span>`;
+  <button class="btn" id="rs">Restablecer todo Nova</button><span class="mut">Nova ${VERSION} · basado en Chromium ${process.versions.chrome}</span>`;
   const q = s => p.querySelector(s), ap = () => { save(); applyTheme(); };
   q('#se').value = S.search; q('#se').onchange = e => { S.search = e.target.value; save(); };
   q('#ac').oninput = e => { S.acc = e.target.value; ap(); refreshNT(); };
@@ -152,7 +157,7 @@ function renderSettings(p) {
   q('#ak').onchange = e => NOVA.setKey(e.target.value.trim());
   q('#ch').onclick = () => { S.hist = []; save(); toast('Historial borrado'); }; q('#cc').onclick = async () => { await ipc.invoke('clear'); toast('Cookies y caché borrados'); };
   q('#rs').onclick = () => { if (confirm('¿Restablecer todo Nova?')) { localStorage.removeItem('nova'); location.reload(); } };
-  const tm = p.querySelector('[data-tm]'); if (tm) { tm.value = normalizeTheme(S.theme); tm.onchange = e => { S.theme = e.target.value; ap(); refreshNT(); renderSettings(p); }; }
+  p.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { S.theme = b.dataset.t; ap(); refreshNT(); renderSettings(p); });
   p.querySelectorAll('.sw').forEach(s => s.onclick = () => { S[s.dataset.k] = !S[s.dataset.k]; ap(); renderSettings(p); });
 }
 
@@ -173,10 +178,8 @@ async function wfetch(more) {
 async function pickWp(it) {
   toast('Descargando fondo…');
   try {
-    const b = new Uint8Array(await (await fetch(it.thumburl)).arrayBuffer());
-    const ext = NOVA_BRIDGE.path.extname(new URL(it.thumburl).pathname) || '.jpg';
-    const f = await ipc.invoke('save-wallpaper', { section:S.sec, name:'wiki-' + it.id + ext, data:b });
-    if (f) { setWp(f); toast('Fondo aplicado'); } else toast('No se pudo guardar el fondo');
+    const b = Buffer.from(await (await fetch(it.thumburl)).arrayBuffer()), dir = path.join(ud, 'wallpapers', S.sec); fs.mkdirSync(dir, { recursive: true });
+    const f = path.join(dir, 'wiki-' + it.id + (path.extname(new URL(it.thumburl).pathname) || '.jpg')); fs.writeFileSync(f, b); setWp(f); toast('Fondo aplicado');
   } catch (e) { toast('Error: ' + e.message); }
 }
 function wallsPanel() {
@@ -205,7 +208,7 @@ function wallsPanel() {
 const PG = {
   ajustes(r) { renderSettings(r); },
   acerca(r) {
-    r.innerHTML = `<div style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px"><img src="../assets/icon.png" width="110"><h2>Nova ${VERSION}</h2><span class="mut">Chromium ${NOVA_BRIDGE.versions.chrome} · Electron ${NOVA_BRIDGE.versions.electron}</span></div>
+    r.innerHTML = `<div style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px"><img src="../assets/icon.png" width="110"><h2>Nova ${VERSION}</h2><span class="mut">Chromium ${process.versions.chrome} · Electron ${process.versions.electron}</span></div>
     <h3>Atajos</h3><div class="grid"><div class="li">Ctrl+T <span>Nueva pestaña</span></div><div class="li">Ctrl+W <span>Cerrar</span></div><div class="li">Ctrl+L <span>Barra de dirección</span></div><div class="li">Ctrl+F <span>Buscar</span></div><div class="li">Ctrl+D <span>Favorito</span></div><div class="li">Ctrl+H <span>Historial</span></div><div class="li">Ctrl+J <span>Descargas</span></div></div>
     `;
   },
@@ -238,8 +241,8 @@ function onboard() {
   const ov = document.createElement('div'); ov.className = 'ov ob'; document.body.appendChild(ov); let n = 0, tour = -1;
   const LGN = () => (window.NOVA && NOVA.LG) || { classic: 'Clásico' }, lsrc = id => id === 'classic' ? '../assets/icon.png' : '../assets/logos/' + id + '.png';
   const steps = [
-    () => `<img class="obl" src="../assets/icon.png" width="112" height="112" style="max-width:112px;border-radius:24px" alt="Nova"><h2 class="obh">Bienvenido a Nova 4.3</h2><span class="mut obc">Una interfaz limpia, privada y centrada en el rendimiento. Las funciones avanzadas aparecen solo cuando las necesitas.</span><input class="fld" id="ob" placeholder="¿Cómo quieres que te llamemos? (opcional)" value="${esc(S.name || '')}">`,
-    () => `<h3>Apariencia</h3><span class="mut">Nova mantiene una interfaz limpia. Solo puedes elegir entre Sistema, Claro y Oscuro; no hay paquetes de temas.</span><div class="grid"><button class="btn ${normalizeTheme(S.theme)==='system'?'on':''}" data-theme="system">Sistema<br><span class="mut">Sigue Windows/macOS</span></button><button class="btn ${normalizeTheme(S.theme)==='light'?'on':''}" data-theme="light">Claro<br><span class="mut">Interfaz luminosa</span></button><button class="btn ${normalizeTheme(S.theme)==='dark'?'on':''}" data-theme="dark">Oscuro<br><span class="mut">Interfaz oscura</span></button></div>`,
+    () => `<img class="obl" src="../assets/release/2.5/onboarding.svg" width="100%" style="max-width:520px;border-radius:18px"><h2 class="obh">Bienvenido a Nova 2.5</h2><span class="mut obc">Air por defecto. Safari, Islands, Focus, Writer y herramientas avanzadas cuando las necesitas.</span><input class="fld" id="ob" placeholder="¿Cómo quieres que te llamemos? (opcional)" value="${esc(S.name || '')}">`,
+    () => `<h3>Elige tu experiencia</h3><span class="mut">Puedes cambiarla después en Ajustes › Apariencia.</span><div class="grid"><button class="btn ${(S.theme==='air'||S.theme==='system')?'on':''}" data-mode="air">✦ Nova Air<br><span class="mut">Ligero, suave y limpio</span></button><button class="btn ${S.theme==='safari'?'on':''}" data-mode="safari">⌘ Safari Mode<br><span class="mut">Cristal y navegación compacta</span></button></div>`,
     () => `<h3>Organiza sin ruido</h3><span class="mut">Nova usa Spaces para contextos, Islands para proyectos y pestañas para páginas.</span><div class="nova25-card"><b>🏝 Islands</b><span class="mut">Agrupa las pestañas relacionadas y contráelas cuando no las necesites.</span></div><div class="nova25-card"><b>⌘ Command Center</b><span class="mut">Pulsa Ctrl/Cmd + K para buscar acciones, pestañas, páginas y herramientas.</span></div>`,
     () => `<h3>Concentración y creación</h3><span class="mut">Activa lo que necesites sin llenar la interfaz.</span><div class="grid"><button class="btn" data-mode2="focus">✦ Focus</button><button class="btn" data-mode2="reader">Aa Reader+</button><button class="btn" data-mode2="writer">✎ Writer + Word</button><button class="btn" data-mode2="improvements">↑ Mejoras</button></div><div class="row"><span>Bloquear anuncios y rastreadores</span>${sw2('adblock', S.adblock)}</div><div class="row"><span>Animaciones de la interfaz</span>${sw2('anim', S.anim)}</div>`,
     () => `<div class="okc"><svg viewBox="0 0 52 52" width="72"><circle cx="26" cy="26" r="24" fill="none" stroke="var(--acc)" stroke-width="3"/><path d="M15 27l8 8 15-17" fill="none" stroke="var(--acc2)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h2 class="obh">Todo listo${S.name ? ', ' + esc(S.name) : ''}</h2><span class="mut obc">Ahora verás una guía breve para conocer las partes importantes de Nova. Todo lo demás queda oculto hasta que lo necesites.</span>`
@@ -272,8 +275,9 @@ function onboard() {
     if (q('#se2')) { q('#se2').value = S.search; q('#se2').onchange = e => { S.search = e.target.value; save(); }; }
     if (q('#obd')) q('#obd').onclick = () => ipc.invoke('default-browser', true).then(() => toast('Pulsa «Establecer como predeterminado» en Windows'));
     ov.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { S.theme = b.dataset.t; save(); applyTheme(); r(); });
-    ov.querySelectorAll('[data-theme]').forEach(b => b.onclick = () => { S.theme = normalizeTheme(b.dataset.theme); save(); applyTheme(); r(); });
+    ov.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { const mode=b.dataset.mode; S.theme = mode === 'safari' ? 'safari' : 'air'; save(); applyTheme(); r(); });
     ov.querySelectorAll('[data-mode2]').forEach(b => b.onclick = () => { const m=b.dataset.mode2; if(m==='focus') newTab('nova://focus'); else if(m==='reader') newTab('nova://reader'); else if(m==='writer') newTab('nova://writer'); else if(m==='improvements') newTab('nova://mejoras'); });
+    ov.querySelectorAll('[data-lg]').forEach(b => b.onclick = () => { if (window.NOVA && NOVA.setLogo) NOVA.setLogo(b.dataset.lg); r(); });
     ov.querySelectorAll('.sw').forEach(s => s.onclick = () => { S[s.dataset.k] = !S[s.dataset.k]; save(); applyTheme(); r(); });
     q('#sk').onclick = () => { if (n === 0) { S.done = 1; S.welcomed = 1; save(); ov.remove(); refreshNT(); } else { n--; r(); } };
     q('#nx').onclick = () => { if (q('#ob')) { S.name = q('#ob').value.trim(); save(); } if (n < steps.length - 1) { n++; r(); } else { tour = 0; coach(); } };

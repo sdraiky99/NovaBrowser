@@ -111,7 +111,7 @@
   };
 
   PG.extensiones = r => {
-    const EXT = N.extensions || (typeof require==='function' ? NOVA_BRIDGE.extensions : null);
+    const EXT = N.extensions || (typeof require==='function' ? require('./extensions.js') : null);
     const list=EXT?.CATALOG||[];
     r.innerHTML=`<div class="nova21-panel"><h2>Extensiones</h2><span class="mut">Las ${list.length||0} extensiones actuales permanecen intactas. Desde aquí puedes abrir su gestor completo.</span><div class="nova21-actions"><button class="btn on" id="ex-open">Abrir gestor de extensiones</button></div><div class="nova21-grid">${list.slice(0,18).map(x=>`<div class="nova21-card"><h3>${esc(x.name)}</h3><span class="mut">${esc(x.cat)} · ${esc(x.desc||'')}</span></div>`).join('')}</div></div>`;
     r.querySelector('#ex-open').onclick=()=>{document.querySelector('#side [data-p="mods"]')?.click();};

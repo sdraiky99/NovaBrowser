@@ -1,44 +1,37 @@
-# Nova 4.3.1
+# Nova 4.3.2 · Hotfix Glass Clean
 
-Nova es un navegador Chromium de escritorio con interfaz **Glass Clean**: transparencia moderada, iconos SVG consistentes, sidebar configurable, favoritos fijados con favicons reales, rendimiento y compatibilidad con WebExtensions desempaquetadas.
+Nova 4.3.2 es un hotfix de recuperación y pulido visual construido sobre la base estable de Nova 4.1.0. El `shell/index.html` principal se conserva y las mejoras nuevas se añaden como capas aisladas para reducir el riesgo de regresiones.
 
-### Desarrollo
-- Node 22+
-- `npm install`
-- `npm start`
-- `npm run check`
-- `npm run ui-audit`
-- `npm run dist:win`
+## Experiencia
 
-La configuración y preferencias viven en el directorio de datos de usuario de Electron; el instalador no elimina esos datos al desinstalar.
+- **Glass Clean:** transparencia moderada, blur suave y controles redondeados.
+- **Tipografía:** Inter con fallbacks nativos de Windows.
+- **Animaciones:** breves, discretas y respetuosas con `prefers-reduced-motion`.
+- **Sitios fijados:** favicon real, título y apertura directa desde la barra lateral.
+- **Ahorro de energía:** usa el modo de rendimiento de Nova y reduce trabajo visual en pestañas en segundo plano.
+- **Ajustes:** la capa nueva se añade sin sustituir la estructura existente.
 
-# Nova
-
-Nova es un navegador de escritorio basado en Electron/Chromium, orientado a privacidad, productividad y una experiencia de uso limpia.
-
-## Nova 4.3
-
-- Interfaz visual unificada con iconografía SVG local.
-- Solo tres modos de apariencia: Sistema, Claro y Oscuro.
-- Instalador NSIS simplificado para actualizaciones conservadoras.
-- Configuración y estado guardados fuera de la carpeta de instalación.
-- Respaldo automático de preferencias antes de sobrescribirlas.
-- Renderer principal aislado mediante `contextIsolation` + preload.
-- Extensiones y navegación web siguen ejecutándose en contenido aislado.
-
-## Desarrollo
+## Arranque
 
 ```bash
 npm install
-npm run start
+npm start
 ```
 
-Comprobaciones:
+## Comprobaciones
 
 ```bash
 npm run check
-npm run dist:win
-npm run dist:linux
 ```
 
-La configuración del navegador se guarda en el directorio `userData` de Electron, no dentro del directorio de instalación.
+Para crear los instaladores de Windows en GitHub Actions:
+
+```bash
+npm run dist:win
+```
+
+El instalador conserva `userData` y no borra los datos del perfil al desinstalar.
+
+## Nota de estabilidad
+
+Esta versión no reemplaza el renderer principal ni hace una migración incompleta a `preload.js`. La migración de seguridad completa queda reservada para una actualización separada con pruebas específicas.
