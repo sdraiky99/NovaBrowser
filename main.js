@@ -625,6 +625,56 @@ ipcMain.handle('launch-web-app', async (e, payload) => {
   return { ok:true };
 });
 
+// ---------- Live news for Nova New Tab ----------
+const newsCache = new Map();
+const NEWS_SOURCES = [
+  { name: 'Ars Technica', url: 'https://feeds.arstechnica.com/arstechnica/index', site: 'https://arstechnica.com/' },
+  { name: 'The Guardian', url: 'https://www.theguardian.com/technology/rss', site: 'https://www.theguardian.com/technology' }
+];
+const NEWS_FALLBACK = [
+  { source:'Nova Briefing', title:'Cómo está cambiando la navegación con IA', summary:'Los navegadores están incorporando asistentes, búsqueda contextual y automatizaciones. La prioridad de Nova es mantener esas funciones opcionales, visibles y bajo control del usuario.', url:'https://www.mozilla.org/', date:'', kind:'briefing' },
+  { source:'Nova Briefing', title:'Por qué el rendimiento vuelve a importar', summary:'Más pestañas, aplicaciones web y extensiones elevan el consumo de memoria. Suspender trabajo en segundo plano y ofrecer controles de rendimiento ayuda a mantener una sesión fluida.', url:'https://arstechnica.com/', date:'', kind:'briefing' },
+  { source:'Nova Briefing', title:'Extensiones: más potencia, más responsabilidad', summary:'Una extensión puede acceder a datos de páginas y modificar contenido. Nova debe mostrar permisos, mantener el control de instalación y evitar que una extensión silenciosa se convierta en una caja negra.', url:'https://www.mozilla.org/en-US/firefox/extensions/', date:'', kind:'briefing' }
+];
+const newsStripHtml = v => String(v ?? '').replace(/<script[\s\S]*?<\/script>/gi,' ').replace(/<style[\s\S]*?<\/style>/gi,' ').replace(/<[^>]+>/g,' ').replace(/&nbsp;/gi,' ').replace(/&amp;/gi,'&').replace(/&quot;/gi,'"').replace(/&#39;/gi,"'").replace(/&lt;/gi,'<').replace(/&gt;/gi,'>').replace(/\s+/g,' ').trim();
+const newsXmlField = (item, tag) => { const m = item.match(new RegExp(`<${tag}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${tag}>`, 'i')); return m ? newsStripHtml(m[1]) : ''; };
+const newsLinkField = item => { let m=item.match(/<link[^>]*>([\s\S]*?)<\/link>/i); if(m)return newsStripHtml(m[1]); m=item.match(/<link[^>]+href=["']([^"']+)["'][^>]*\/?>(?:<\/link>)?/i); return m ? m[1] : ''; };
+const newsPick = (items, topic) => {
+  const terms = {
+    tecnologia: /AI|artificial|browser|web|internet|chip|memory|GPU|software|privacy|security|Microsoft|Apple|Google|Mozilla|Firefox|Linux|Windows/i,
+    videojuegos: /game|gaming|Steam|Valve|Nintendo|PlayStation|Xbox|GPU|PC gaming|VR|console|Doom/i,
+    codigo: /developer|programming|code|software|open source|Linux|GitHub|browser|API|AI|security|MCP|web/i
+  };
+  const re=terms[topic]||terms.tecnologia;
+  const ranked=items.map(x=>({...x,score: re.test(`${x.title} ${x.summary}`)?2:0})).filter(x=>x.score>0);
+  return (ranked.length>=4?ranked:items).sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,6);
+};
+async function fetchNewsFeed(url, source) {
+  const r = await fetch(url, { headers:{'user-agent':'NovaBrowser/4.4.1 (+https://github.com/sdraiky99/NovaBrowser)','accept':'application/rss+xml, application/atom+xml, text/xml;q=0.9, */*;q=0.1'}, signal:AbortSignal.timeout(7000) });
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  const xml=await r.text(); const blocks=[...xml.matchAll(/<item\b[\s\S]*?<\/item>/gi)].map(m=>m[0]);
+  return blocks.map(item=>{
+    const title=newsXmlField(item,'title'), url=newsLinkField(item), desc=newsXmlField(item,'description')||newsXmlField(item,'content:encoded');
+    const dateRaw=newsXmlField(item,'pubDate')||newsXmlField(item,'dc:date')||newsXmlField(item,'published');
+    const ts=Date.parse(dateRaw)||0;
+    return title&&/^https?:/i.test(url)?{source:source.name,title,summary:desc.slice(0,360),url,date:ts?new Date(ts).toISOString():'',ts,kind:'live'}:null;
+  }).filter(Boolean);
+}
+ipcMain.handle('news-feed', async (e, payload) => {
+  if (denyUntrusted(e)) return { ok:false, items:NEWS_FALLBACK, live:false, sources:[] };
+  const topic=String(payload?.topic||'tecnologia').toLowerCase();
+  const key=topic;
+  const hit=newsCache.get(key); if(hit && Date.now()-hit.at<5*60*1000) return hit.value;
+  try {
+    const results=await Promise.allSettled(NEWS_SOURCES.map(s=>fetchNewsFeed(s.url,s)));
+    const items=[]; for(const r of results) if(r.status==='fulfilled') items.push(...r.value);
+    const uniq=[...new Map(items.map(x=>[x.url,x])).values()];
+    const picked=newsPick(uniq,topic);
+    if(picked.length){ const value={ok:true,items:picked,live:true,sources:[...new Set(picked.map(x=>x.source))]}; newsCache.set(key,{at:Date.now(),value}); return value; }
+  } catch {}
+  const value={ok:true,items:NEWS_FALLBACK.map(x=>({...x})),live:false,sources:['Nova Briefing']}; newsCache.set(key,{at:Date.now(),value}); return value;
+});
+
 let updateState = { status:'idle', current:app.getVersion(), available:false, version:'', downloaded:false, progress:0, error:'' };
 const updateInfo = info => ({ version:String(info?.version || ''), releaseDate:info?.releaseDate || '', releaseName:String(info?.releaseName || '') });
 const updateReleaseUrl = 'https://github.com/sdraiky99/NovaBrowser/releases';
