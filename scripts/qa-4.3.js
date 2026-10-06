@@ -2,7 +2,7 @@ const fs=require('fs'),path=require('path');
 const root=path.resolve(__dirname,'..'); const fail=m=>{console.error('FAIL:',m);process.exitCode=1}; const ok=m=>console.log('OK:',m);
 for(const f of ['main.js','preload.js','migration.js','shell/index.html','shell/icons.js','shell/ui.css','shell/newtab.html','shell/offline.html','shell/nova43.js','build/installer.nsh','.github/workflows/build.yml','.github/workflows/release.yml']) if(!fs.existsSync(path.join(root,f))) fail('missing '+f);
 const index=fs.readFileSync(path.join(root,'shell/index.html'),'utf8'); const main=fs.readFileSync(path.join(root,'main.js'),'utf8'); const pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
-if(pkg.version!=='4.3.0') fail('version is not 4.3.0'); else ok('version 4.3.0');
+if(pkg.version!=='4.3.1') fail('version is not 4.3.0'); else ok('version 4.3.1');
 if(index.includes('themes.css')) fail('legacy theme stylesheet still referenced'); else ok('no legacy theme stylesheet reference');
 if(index.includes('nova43.js')===false) fail('nova43 not loaded'); else ok('nova43 loaded');
 if(!main.includes("ipcMain.handle('eco-mode'")) fail('eco IPC missing'); else ok('eco IPC present');
@@ -11,4 +11,4 @@ if(main.includes('nodeIntegration: false')===false) fail('main renderer nodeInte
 if(!main.includes('contextIsolation: true')) fail('context isolation missing'); else ok('context isolation enabled');
 if(index.includes('id="pinSite"')===false) fail('pin site button missing'); else ok('pin site button present');
 if(fs.existsSync(path.join(root,'shell','themes.css'))) fail('themes.css still exists'); else ok('themes.css removed');
-console.log('Nova 4.3 QA complete.'); if(process.exitCode) process.exit(1);
+console.log('Nova 4.3.1 QA complete.'); if(process.exitCode) process.exit(1);

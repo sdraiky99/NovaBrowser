@@ -1,4 +1,4 @@
-# Nova 4.3.0
+# Nova 4.3.1
 
 Nova es un navegador Chromium de escritorio con interfaz **Glass Clean**: transparencia moderada, iconos SVG consistentes, sidebar configurable, favoritos fijados con favicons reales, rendimiento y compatibilidad con WebExtensions desempaquetadas.
 

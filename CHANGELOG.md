@@ -1,3 +1,9 @@
+# Nova 4.3.1
+
+- Fix crítico del instalador: `preload.js` ahora forma parte explícita del paquete de Electron.
+- Corrección de arranque/interfaz en instalaciones empaquetadas.
+- Branding del instalador actualizado.
+
 # Changelog
 
 ## 4.3.0 — Glass Clean

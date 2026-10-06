@@ -1,14 +1,14 @@
 {
   "name": "nova-browser",
   "productName": "Nova",
-  "version": "4.3.0",
-  "description": "Navegador moderno basado en Chromium con interfaz Glass Clean, sidebar, favoritos fijados, rendimiento, privacidad y extensiones.",
+  "version": "4.3.1",
+  "description": "Navegador moderno basado en Chromium con interfaz Glass Clean (reparación del instalador), sidebar, favoritos fijados, rendimiento, privacidad y extensiones.",
   "author": "Nova",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "dist": "npm run dist:win",
-    "check": "npm run check:syntax && node scripts/check-project.js && node scripts/qa-4.3.js",
+    "check": "npm run check:syntax && node scripts/check-packaging.js && node scripts/check-project.js && node scripts/qa-4.3.js",
     "dist:win": "electron-builder --win --publish never",
     "dist:linux": "electron-builder --linux rpm AppImage --publish never",
     "qa": "node scripts/qa-4.2.js",
@@ -38,6 +38,7 @@
       "migration.js",
       "shell/**",
       "assets/**",
+      "preload.js",
       "package.json",
       "account-service.js",
       "account-config.json"
