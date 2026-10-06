@@ -1,6 +1,6 @@
 /* Nova 1.6.1 - logotipos, animación de inicio, sonidos, colores de la barra, tienda de extensiones, bienvenida */
 (() => {
-const { PG, MENU, sw2, SEC } = NOVA, EXT = require('./extensions.js');
+const { PG, MENU, sw2, SEC } = NOVA, EXT = NOVA_BRIDGE.extensions;
 const PR = ipc.sendSync('prefs-get') || {};           // preferencias que también lee el proceso principal
 const setPR = p => { Object.assign(PR, p); ipc.send('prefs-set', p); };
 if (PR.logo && !S.logo) S.logo = PR.logo;
@@ -21,16 +21,16 @@ st.textContent = `
 .xc .row .tag{font-size:11px;color:var(--mut)}
 .bcard{display:flex;flex-direction:column;gap:10px;padding:18px;background:var(--bar);border:1px solid var(--bd);border-radius:calc(var(--r) * 1.6)}
 .prev{width:420px;height:420px;border:0;background:transparent}
-body.has-topc:not(.t-win95):not(.t-undertale):not(.t-code) #top{background:linear-gradient(90deg,color-mix(in srgb,var(--topc1) var(--topi),var(--bg)),color-mix(in srgb,var(--topc2) var(--topi),var(--bg)))!important;transition:background .25s}
+body.has-topc #top{background:linear-gradient(90deg,color-mix(in srgb,var(--topc1) var(--topi),var(--bg)),color-mix(in srgb,var(--topc2) var(--topi),var(--bg)))!important;transition:background .25s}
 `;
 document.head.appendChild(st);
 
 /* ---------- logotipos ---------- */
-const LG = { classic: 'Clásico', orbita: 'Órbita', estrella: 'Estrella', cometa: 'Cometa', minimal: 'Minimal' };
-const logoSrc = id => id === 'classic' ? '../assets/icon.png' : '../assets/logos/' + id + '.png';
+const LG = { classic: 'Nova' };
+const logoSrc = () => '../assets/icon.png';
 const syncLogo = () => { const s = logoSrc(S.logo); document.querySelectorAll('img[src$="assets/icon.png"],img[src*="assets/logos/"]').forEach(i => { if (!i.dataset.keep && i.getAttribute('src') !== s) i.setAttribute('src', s); }); };
 let raf = 0; new MutationObserver(() => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; syncLogo(); }); }).observe(document.body, { childList: true, subtree: true });
-const setLogo = id => { if (!LG[id]) return; S.logo = id; save(); setPR({ logo: id }); syncLogo(); try { refreshNT(); } catch { } };
+const setLogo = () => { S.logo = 'classic'; save(); setPR({ logo: 'classic' }); syncLogo(); try { refreshNT(); } catch { } };
 
 /* ---------- colores suaves de la barra superior ---------- */
 const PAL = { ninguno: ['Ninguno'], lavanda: ['Lavanda', '#c4b5fd', '#a5b4fc'], menta: ['Menta', '#a7f3d0', '#99f6e4'], melocoton: ['Melocotón', '#fdba74', '#fda4af'], cielo: ['Cielo', '#93c5fd', '#a5f3fc'], rosa: ['Rosa', '#f9a8d4', '#fbcfe8'], arena: ['Arena', '#fde68a', '#fed7aa'] };
@@ -81,11 +81,9 @@ function preview(logo) {
 const appearanceBlock = (host, again) => {
   const q = s => host.querySelector(s), top = S.topc || 'ninguno';
   host.insertAdjacentHTML('beforeend', `<div class="apx" style="display:flex;flex-direction:column;gap:12px">
-  <h3>Logotipo</h3><span class="mut">Se aplica a la barra, la nueva pestaña, la animación de inicio, la ventana y la barra de tareas de Windows, además de los accesos directos. Si un icono anclado tarda en actualizarse, ciérralo y ábrelo de nuevo.</span>
-  <div class="lgs">${Object.entries(LG).map(([k, n]) => `<div class="lg ${S.logo === k ? 'on' : ''}" data-lg="${k}"><img data-keep="1" src="${logoSrc(k)}"><span>${n}</span></div>`).join('')}</div>
   <h3>Animación de inicio</h3>
   <div class="row"><span>Mostrar animación al abrir Nova</span>${tgl('spl', PR.splash !== false)}</div>
-  <div class="row"><span>Ver la animación de este logotipo</span><button class="btn" id="pv">Reproducir</button></div>
+  <div class="row"><span>Ver la animación de inicio</span><button class="btn" id="pv">Reproducir</button></div>
   <h3>Color de la barra superior</h3><span class="mut">Un tono suave sobre el tema que uses.</span>
   <div class="pal">${Object.entries(PAL).map(([k, [n, a, b]]) => `<div class="pw ${top === k ? 'on' : ''}" data-tc="${k}" title="${n}" style="${a ? `background:linear-gradient(90deg,${a},${b})` : 'background:var(--bar)'}">${a ? '' : '—'}</div>`).join('')}
     <input type="color" id="tcc" value="${S.topcc || '#c4b5fd'}" title="Color propio"></div>
@@ -94,9 +92,8 @@ const appearanceBlock = (host, again) => {
   <div class="chips">${Object.entries(PK).map(([k, n]) => chip(S.snd.pack === k, `data-pk="${k}"`, n)).join('')}</div>
   <div class="row"><span>Volumen</span><input type="range" id="vol" min="5" max="100" value="${S.snd.v}"></div>
   <div class="row"><span>Sonido al iniciar</span>${tgl('sst', S.snd.start !== false)}</div></div>`);
-  host.querySelectorAll('.apx [data-lg]').forEach(e => e.onclick = () => { setLogo(e.dataset.lg); again(); });
   q('#spl').onclick = () => { setPR({ splash: PR.splash === false }); again(); };
-  q('#pv').onclick = () => preview(S.logo);
+  q('#pv').onclick = () => preview('classic');
   host.querySelectorAll('.apx [data-pk]').forEach(e => e.onclick = () => { S.snd.pack = e.dataset.pk; save(); snd('new', true); again(); });
   q('#vol').onchange = e => { S.snd.v = +e.target.value; save(); snd('dl', true); };
   q('#sst').onclick = () => { S.snd.start = S.snd.start === false; save(); again(); };
@@ -105,7 +102,7 @@ const appearanceBlock = (host, again) => {
   q('#tcc').onchange = again;
   q('#ti').oninput = e => { S.topi = +e.target.value; save(); applyTop(); };
 };
-// Ajustes › Apariencia incluye ahora logotipos, animación de inicio, color de barra y sonidos
+// Ajustes › Apariencia incluye animación de inicio, color de barra y sonidos
 const pAj = PG.ajustes;
 PG.ajustes = r => {
   pAj(r); const k = r.querySelector('nav .btn.on')?.dataset.k, c = r.querySelector('#sc');

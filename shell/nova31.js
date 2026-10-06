@@ -29,7 +29,7 @@
   };
   const ensure = () => {
     S.nova31 = Object.assign({
-      memory: [], pinboard: [], snapshots: [], sendbox: [], automations: [], siteThemes: {},
+      memory: [], pinboard: [], snapshots: [], sendbox: [], automations: [],
       permissions: {}, mini: false, smartGroups: { enabled: true }, dailyDismissed: {}, linkPreview: true
     }, S.nova31 || {});
     for (const k of ['memory','pinboard','snapshots','sendbox','automations']) if (!Array.isArray(S.nova31[k])) S.nova31[k] = [];
@@ -67,7 +67,6 @@
       ['🧩','Smart Tab Groups','Detecta grupos naturales entre tus pestañas.','smarttabs'],
       ['⌕','Search Anything','Busca pestañas, historial, favoritos, notas y contenido guardado.','search31'],
       ['👀','Link Preview','Información rápida de un enlace sin abrir otra pestaña.','preview31'],
-      ['🎨','Website Themes','Un estilo distinto por sitio web, guardado localmente.','sitethemes'],
       ['🔔','Smart Notifications','Reglas sencillas por sitio para las notificaciones.','notifications31'],
       ['🪄','Automations','Automatizaciones pequeñas y útiles sin programar.','automations'],
       ['🪟','Mini Mode','Un panel compacto para controlar tu página sin cambiar de contexto.','mini31'],
@@ -180,30 +179,6 @@
     r.innerHTML=page('PREVIEW','Link Preview','Cuando pasas por un enlace, Nova puede mostrar título, dominio y URL sin abrir una pestaña.',`<div class="n31-hero"><div class="n31-title" style="font-size:22px">${S.nova31.linkPreview?'👀 Activo':'⏸ Pausado'}</div><div class="n31-sub" style="margin-top:5px">La vista previa es ligera: no abre la web ni descarga el destino automáticamente.</div><div class="n31-actions" style="margin-top:10px">${btn(S.nova31.linkPreview?'Desactivar':'Activar','id="prev-toggle"','on')} ${btn('Reaplicar en pestañas','id="prev-reapply"')}</div></div>`);
     r.querySelector('#prev-toggle').onclick=()=>{S.nova31.linkPreview=!S.nova31.linkPreview;save();tabs.forEach(t=>{if(S.nova31.linkPreview){t._nova31Preview=false;installPreview(t)}else{try{t.wv.executeJavaScript(`document.getElementById('__nova31-preview-style')?.remove();document.querySelector('.nova31-link-preview')?.remove();delete window.__nova31Preview`)}catch{}}});N.PG.preview31(r)};
     r.querySelector('#prev-reapply').onclick=()=>{tabs.forEach(t=>{t._nova31Preview=false;installPreview(t)});toast31('Link Preview reaplicado');};
-  };
-
-  /* ---------- Website Themes ---------- */
-  const applySiteTheme = t => {
-    if(!t?.wv?.executeJavaScript) return; const u=http(t.wv.getURL?.()||''),h=hostOf(u); if(!h)return;
-    const css=String(S.nova31.siteThemes[h]?.css||'');
-    const code=`(()=>{try{let s=document.getElementById('__nova31-site-theme');if(!${JSON.stringify(!!css)}){s?.remove();return true}if(!s){s=document.createElement('style');s.id='__nova31-site-theme';document.head.appendChild(s)}s.textContent=${JSON.stringify(css)};return true}catch{return false}})()`;
-    t.wv.executeJavaScript(code).catch(()=>{});
-  };
-  const installSiteEditor = r => {
-    const c=current(); if(!c.host)return toast31('Abre una web para editar su tema');
-    const old=String(S.nova31.siteThemes[c.host]?.css||''); const preset=`body{border-top:4px solid var(--nova31-accent, #8b5cf6)!important;} a{border-radius:6px;} `;
-    r.innerHTML+=`<div class="n31-card"><h3>Tema para ${esc(c.host)}</h3><span class="mut">CSS local aplicado solo a este sitio.</span><textarea class="fld" id="site-css" style="min-height:160px;resize:vertical">${esc(old)}</textarea><div class="n31-actions">${btn('Guardar','id="site-save"','on')}${btn('Preset suave','id="site-preset"')}${btn('Quitar tema','id="site-clear"')}</div></div>`;
-    r.querySelector('#site-save').onclick=()=>{const css=r.querySelector('#site-css').value.slice(0,12000);S.nova31.siteThemes[c.host]={css,updatedAt:now()};save();applySiteTheme(c.t);toast31('Tema guardado para '+c.host)};
-    r.querySelector('#site-preset').onclick=()=>{r.querySelector('#site-css').value=preset};
-    r.querySelector('#site-clear').onclick=()=>{delete S.nova31.siteThemes[c.host];save();applySiteTheme(c.t);r.querySelector('#site-css').value='';toast31('Tema quitado')};
-  };
-  N.PG.sitethemes = r => {
-    const hosts=Object.entries(S.nova31.siteThemes).filter(([,v])=>v?.css);
-    r.innerHTML=page('STYLE','Website Themes','Define un pequeño estilo por sitio. Se guarda en tu perfil de Nova.',`<div class="n31-actions">${btn('🎨 Editar sitio actual','id="site-current"','on')}${btn('Quitar todos los temas','id="site-all-clear"')}</div><div class="n31-list">${hosts.map(([h,v])=>`<div class="n31-row"><div class="meta"><b>${esc(h)}</b><span>${String(v.css).length} caracteres CSS · ${new Date(v.updatedAt||now()).toLocaleString('es')}</span></div><div class="n31-actions">${btn('Aplicar ahora',`data-apply="${esc(h)}"`)}${btn('Eliminar',`data-del="${esc(h)}"`)}</div></div>`).join('')||'<div class="n31-empty">Todavía no hay temas por sitio.</div>'}</div><div id="site-editor"></div>`);
-    r.querySelector('#site-current').onclick=()=>installSiteEditor(r);
-    r.querySelector('#site-all-clear').onclick=()=>{if(!confirm('¿Quitar todos los temas de sitios?'))return;S.nova31.siteThemes={};save();r.querySelector('#site-editor').innerHTML='';const c=current();if(c.t)applySiteTheme(c.t);N.PG.sitethemes(r)};
-    r.querySelectorAll('[data-apply]').forEach(b=>b.onclick=()=>{const c=current();if(c.host===b.dataset.apply)applySiteTheme(c.t);else toast31('Abre '+b.dataset.apply+' para aplicarlo')});
-    r.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{delete S.nova31.siteThemes[b.dataset.del];save();N.PG.sitethemes(r)});
   };
 
   /* ---------- Smart Notifications / Permissions ---------- */
@@ -339,8 +314,8 @@
   const bindTab = t => {
     if(!t?.wv?.addEventListener || t._nova31Bound)return t;
     t._nova31Bound=true;
-    const ready=()=>{installPreview(t);applySiteTheme(t);bindPermission(t);};
-    t.wv.addEventListener('dom-ready',ready); t.wv.addEventListener('did-navigate',()=>{ready();runAutomations(t)});t.wv.addEventListener('did-navigate-in-page',()=>{applySiteTheme(t)});
+    const ready=()=>{installPreview(t);bindPermission(t);};
+    t.wv.addEventListener('dom-ready',ready); t.wv.addEventListener('did-navigate',()=>{ready();runAutomations(t)});
     runAutomations(t); bindPermission(t);
     return t;
   };
@@ -356,7 +331,7 @@
     if((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key.toLowerCase()==='s'){e.preventDefault();open('snapshots');}
   });
 
-  const aliases={nova31:'nova31',newthings:'nova31','new-things':'nova31',quick:'quick',pinboard:'pinboard',memory31:'memory31',smarttabs:'smarttabs',searchanything:'search31',search:'search31',preview:'preview31',linkpreview:'preview31',sitethemes:'sitethemes',websitethemes:'sitethemes',notifications31:'notifications31',automations:'automations',automation:'automations',mini:'mini31',minimode:'mini31',sendbox:'sendbox',novasend:'sendbox',snapshots:'snapshots',snapshot:'snapshots',daily:'daily',novadaily:'daily',permissions31:'permissions31',permission:'permissions31',cleanup31:'cleanup31',cleanup:'cleanup31'};
+  const aliases={nova31:'nova31',newthings:'nova31','new-things':'nova31',quick:'quick',pinboard:'pinboard',memory31:'memory31',smarttabs:'smarttabs',searchanything:'search31',search:'search31',preview:'preview31',linkpreview:'preview31',notifications31:'notifications31',automations:'automations',automation:'automations',mini:'mini31',minimode:'mini31',sendbox:'sendbox',novasend:'sendbox',snapshots:'snapshots',snapshot:'snapshots',daily:'daily',novadaily:'daily',permissions31:'permissions31',permission:'permissions31',cleanup31:'cleanup31',cleanup:'cleanup31'};
   const oldResolve=N.resolveFeatureRoute;
   N.resolveFeatureRoute=x=>{const raw=String(x||'').replace(/^nova:\/\//,'').split(/[/?#]/)[0].toLowerCase();return aliases[raw]||(oldResolve?oldResolve(raw):raw)};
   N.openFeature31=open; N.pinCurrent31=pinCurrent; N.saveSnapshot31=saveSnapshot; N.nova31={open,mini,closeMini,saveSnapshot,pinCurrent,addMemory};

@@ -12,16 +12,15 @@ const warn = msg => console.warn('CHECK WARN:', msg);
 
 let pkg;
 try { pkg = JSON.parse(read('package.json')); } catch (e) { fail('package.json is not valid JSON'); process.exit(1); }
-if (pkg.version !== '4.1.0') fail(`version expected 4.1.0, got ${pkg.version}`);
+if (pkg.version !== '4.3.0') fail(`version expected 4.3.0, got ${pkg.version}`);
 
 const required = [
   'main.js','migration.js','account-service.js','account-config.json','account-server/server.js',
-  'shell/index.html','shell/newtab.html','shell/extensions.js','shell/supercat.js','shell/nova25.js','shell/hotfix254.js','shell/nova30.js',
-  'shell/extras.js','shell/extras2.js','shell/extras3.js','shell/extras4.js','shell/extras5.js','shell/extras6.js','shell/extras7.js','shell/extras8.js','shell/extras9.js','shell/extras10.js','shell/extras11.js','shell/extras12.js','shell/nova31.js','shell/nova40.js','shell/nova41.js',
-  'scripts/qa-vm-3.0.1.js','scripts/qa-vm-3.1.js','scripts/qa-vm-4.0.js','build/installer.nsh','.github/workflows/build.yml','.github/workflows/release.yml','.github/workflows/security.yml',
+  'shell/index.html','shell/icons.js','shell/ui.css','shell/newtab.html','shell/offline.html','shell/nova43.js','shell/extensions.js','shell/supercat.js','shell/nova25.js','shell/hotfix254.js','shell/nova30.js',
+  'shell/extras.js','shell/extras2.js','shell/extras3.js','shell/extras4.js','shell/extras5.js','shell/extras6.js','shell/extras7.js','shell/extras8.js','shell/extras9.js','shell/extras10.js','shell/nova31.js','shell/nova40.js','shell/nova41.js',
+  'scripts/qa-4.3.js','scripts/ui-audit.js','build/installer.nsh','.github/workflows/build.yml','.github/workflows/release.yml','.github/workflows/security.yml',
   'assets/release/2.5/safari.svg','assets/release/2.5/islands.svg','assets/release/2.5/glance.svg','assets/release/2.5/focus.svg',
   'assets/release/2.5/writer.svg','assets/release/2.5/docs.svg','assets/release/2.5/study.svg','assets/release/2.5/improvements.svg',
-  'TUTORIAL-NOVA-3.0.0.md','RELEASE_NOTES_3.0.0.md','VERIFICATION-3.0.1.md','RELEASE_NOTES_3.1.0.md','VERIFICATION-3.1.0.md'
 ];
 for (const f of required) if (!exists(f)) fail(`missing ${f}`);
 
@@ -80,7 +79,7 @@ for (const x of ['N.PG.gaming41','N.PG.gamingprofile41','N.PG.extensions41','N.P
 if (!index.includes('nova41.js')) fail('Nova 4.1 script is not loaded');
 if (index.includes('Nova 2.2') || index.includes('Nova 2.3') || index.includes('Nova 2.4')) warn('legacy version strings remain in shell/index.html; review before release');
 if (!exists('package-lock.json') && !exists('npm-shrinkwrap.json') && !exists('yarn.lock') && !exists('pnpm-lock.yaml')) warn('no package lockfile is committed');
-if (main.includes('contextIsolation: false') && main.includes('nodeIntegration: true')) warn('main renderer still uses Node integration; migrate to preload/contextBridge for production hardening');
+if (!main.includes('contextIsolation: true') || !main.includes("preload: path.join(__dirname, 'preload.js')") || !main.includes('nodeIntegration: false')) fail('main renderer is not using preload/context isolation');
 
-if (failed) { console.error(`Nova 4.1.0 project checks failed: ${failed}`); process.exit(1); }
-console.log(`Nova 4.1.0 project checks OK · ${ids.length} extensions · ${invoked.size} IPC invoke channels verified`);
+if (failed) { console.error(`Nova 4.3.0 project checks failed: ${failed}`); process.exit(1); }
+console.log(`Nova 4.3.0 project checks OK · ${ids.length} extensions · ${invoked.size} IPC invoke channels verified`);

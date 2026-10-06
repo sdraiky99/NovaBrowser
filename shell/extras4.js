@@ -1,8 +1,8 @@
 /* Nova 1.5 - IA 2.0, grupos de pestañas, marcadores, historial, descargas, notas, privacidad, actualizaciones */
 (() => {
 const N = NOVA, { PG, SECT, SEC, row, toURL, fmt, refreshPages, reopen } = N, VER = NOVA_VER, REPO = 'sdraiky99/NovaBrowser';
-const { shell } = require('electron'), os = require('os');
-Object.assign(THEMES, { light: 'Claro', system: 'Sistema', safari: 'Safari' });
+const shell = NOVA_BRIDGE.shell;
+Object.assign(THEMES, { light: 'Claro', system: 'Sistema', dark: 'Oscuro' });
 
 /* ---------- datos por defecto y migraciones ---------- */
 S.convs = S.convs || [];
@@ -205,7 +205,7 @@ PG.marcadores = r => {
   r.querySelector('#mq').oninput = L;
   r.querySelector('#mnf').onclick = () => dlg('Nueva carpeta', [{ k: 'n', label: 'Nombre (usa Trabajo/Docs para una subcarpeta)' }], v => { if (v.n) { S.folders.push(v.n.replace(/^\/+|\/+$/g, '')); save(); L(); } });
   r.querySelector('#mbb').onclick = () => { toggleBar(); PG.marcadores(r); };
-  r.querySelector('#mex').onclick = () => { const f = path.join(os.homedir(), 'Downloads', 'nova-marcadores.json'); try { fs.writeFileSync(f, JSON.stringify({ marks: S.marks, folders: S.folders }, null, 2)); toast('Exportado a ' + f); } catch (e) { toast('Error: ' + e.message); } };
+  r.querySelector('#mex').onclick = () => { const data = JSON.stringify({ marks: S.marks, folders: S.folders }, null, 2); ipc.invoke('save-text',{name:'nova-marcadores',ext:'json',content:data}).then(f=>f?toast('Exportado a '+f):toast('No se pudo exportar')).catch(e=>toast('Error: '+e.message)); };
   r.querySelector('#mim').onchange = e => {
     const file = e.target.files[0]; if (!file) return; const fr = new FileReader();
     fr.onload = () => { try {
@@ -295,12 +295,12 @@ PG.privacidad = r => {
 const nrm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 const md = s => esc(s).replace(/```([\s\S]*?)```/g, '<pre class="cb">$1</pre>').replace(/`([^`\n]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
 const sys = () => 'Eres Nova IA, el asistente integrado del navegador Nova. Responde en el idioma del usuario, breve y claro. ' + (S.persona || '');
-const TH = { 'windows 95': 'win95', win95: 'win95', 95: 'win95', codigo: 'code', code: 'code', undertale: 'undertale', aero: 'aero', neon: 'neon', nova: 'nova', claro: 'light', oscuro: 'nova', safari: 'safari', cyberpunk: 'cyberpunk', cyber: 'cyberpunk' };
+const TH = { claro: 'light', oscuro: 'dark', sistema: 'system' };
 const HELP = 'Puedo ejecutar órdenes:\n• "cambia el tema a neón / claro / oscuro"\n• "barra a la derecha / izquierda / dock"\n• "abre historial / descargas / marcadores / privacidad / juegos / ajustes / notas"\n• "busca gatos graciosos" · "abre youtube.com"\n• "2+2*5" · "qué hora es"\n• "activa modo oscuro" / "desactiva modo oscuro"\n• "captura" · "borra historial"\nPara todo lo demás, charla conmigo.';
 function intent(raw) {
   const q = nrm(raw.trim()); let m;
   if (/^(ayuda|comandos|que puedes hacer)/.test(q)) return HELP;
-  if ((m = q.match(/tema.*?(windows 95|win95|95|codigo|code|undertale|aero|neon|safari|cyberpunk|cyber|nova|claro|oscuro)\b/))) { const k = TH[m[1]]; S.theme = k; save(); applyTheme(); refreshNT(); return 'Tema cambiado a ' + THEMES[k] + '.'; }
+  if ((m = q.match(/tema.*?(claro|oscuro|sistema)\b/))) { const k = ({claro:'light',oscuro:'dark',sistema:'system'})[m[1]]; S.theme=k; save(); applyTheme(); refreshNT(); return 'Apariencia cambiada a ' + THEMES[k] + '.'; }
   if ((m = q.match(/barra.*(izquierda|derecha|dock|centro)/))) { S.sp = { izquierda: 'left', derecha: 'right', dock: 'dock', centro: 'dock' }[m[1]]; save(); applyTheme(); return 'Barra lateral movida.'; }
   if ((m = q.match(/^(?:abre|abrir|ve a|ir a|muestra|muestrame)\s+(?:el |la |los |las )?(historial|descargas|notas|juegos|ajustes|novedades|acerca|marcadores|privacidad)/))) { newTab('nova://' + m[1]); return 'Abriendo ' + m[1] + '.'; }
   if ((m = q.match(/^(?:abre|abrir|ve a|ir a)\s+(\S+\.\S+)/))) { newTab(toURL(m[1])); return 'Abriendo ' + m[1] + '.'; }
@@ -384,7 +384,7 @@ const K = { r: () => { const t=N.activeWebTab?.()||cur; t?.wv?.reload?.(); }, R:
 ipc.on('key', (_, k) => K[k] && K[k]());
 document.addEventListener('keydown', e => { if (!e.ctrlKey) return; const k = e.key === 'Tab' ? (e.shiftKey ? 'shift-tab' : 'tab') : e.key; if (K[k] && k !== 'shot') { e.preventDefault(); K[k](); } });
 NOVA.extraActs = [['Cerrar pestaña', () => closeTab(cur)], ['Reabrir pestaña cerrada', reopen], ['Marcadores', () => newTab('nova://marcadores')], ['Guardar esta página', saveMark], ['Guardar todas las pestañas', bookmarkAll], ['Mostrar/ocultar barra de marcadores', toggleBar],
-  ['Modo oscuro', () => { S.theme = 'nova'; save(); applyTheme(); refreshNT(); }], ['Modo claro', () => { S.theme = 'light'; save(); applyTheme(); refreshNT(); }], ['Tema del sistema', () => { S.theme = 'system'; save(); applyTheme(); refreshNT(); }],
+  ['Modo oscuro', () => { S.theme = 'dark'; save(); applyTheme(); refreshNT(); }], ['Modo claro', () => { S.theme = 'light'; save(); applyTheme(); refreshNT(); }], ['Tema del sistema', () => { S.theme = 'system'; save(); applyTheme(); refreshNT(); }],
   ['Abrir Nova IA', toggleAI], ['Resumir página', () => { panel = 'ai'; draw(); setTimeout(() => $('[data-a=sum]') && $('[data-a=sum]').click(), 60); }], ['Centro de privacidad', () => newTab('nova://privacidad')], ['Limpiar datos de navegación', () => newTab('nova://privacidad')],
   ['Pantalla completa', () => ipc.send('win', 'full')], ['Recargar', K.r], ['Recargar sin caché', K.R], ['Buscar actualizaciones', () => checkUpdate(true)]];
 const SC = [['Ctrl+T', 'Nueva pestaña'], ['Ctrl+W', 'Cerrar pestaña'], ['Ctrl+Shift+T', 'Reabrir pestaña'], ['Ctrl+Tab / Ctrl+Shift+Tab', 'Pestaña siguiente / anterior'], ['Ctrl+L', 'Barra de direcciones'], ['Ctrl+K', 'Command Center'], ['Ctrl+Espacio', 'Nova IA'], ['Ctrl+H', 'Historial'], ['Ctrl+J', 'Descargas'], ['Ctrl+D', 'Guardar marcador'], ['Ctrl+Shift+D', 'Guardar todas las pestañas'], ['Ctrl+Shift+B', 'Barra de marcadores'], ['Ctrl+R', 'Recargar'], ['Ctrl+Shift+R', 'Recargar sin caché'], ['Ctrl+F', 'Buscar en la página']];

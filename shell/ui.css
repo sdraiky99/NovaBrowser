@@ -1,0 +1,22 @@
+/* Nova 4.3 — Glass Clean UI. Appearance only: system / light / dark. */
+:root{
+  --bg:#0f1116; --bg-2:#151820; --bar:rgba(22,25,32,.82); --glass:rgba(255,255,255,.055);
+  --fg:#f4f6f8; --mut:#9ca4b0; --acc:#6f9cff; --acc2:#79d6ff; --bd:rgba(255,255,255,.10);
+  --shadow:0 18px 55px rgba(0,0,0,.28); --r:12px; --font:"Inter","Segoe UI Variable","Segoe UI",system-ui,sans-serif; --fs:13px;
+  color-scheme:dark;
+}
+body.t-light{
+  --bg:#f5f7fa; --bg-2:#eef1f5; --bar:rgba(255,255,255,.78); --glass:rgba(255,255,255,.58);
+  --fg:#1c2026; --mut:#69727e; --acc:#356fe8; --acc2:#2797d4; --bd:rgba(18,25,38,.10);
+  --shadow:0 18px 55px rgba(30,45,70,.13); color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font:var(--fs)/1.45 var(--font);overflow:hidden}
+body{background:
+  radial-gradient(900px 500px at 88% -10%, color-mix(in srgb,var(--acc) 10%,transparent), transparent 64%),
+  radial-gradient(700px 460px at 6% 105%, color-mix(in srgb,var(--acc2) 8%,transparent), transparent 66%), var(--bg);}
+button,input,select,textarea{font:inherit;color:inherit}
+button{appearance:none}
+::selection{background:color-mix(in srgb,var(--acc) 28%,transparent)}
+.noanim *{animation:none!important;transition:none!important}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
