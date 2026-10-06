@@ -1,18 +1,20 @@
 {
   "name": "nova-browser",
   "productName": "Nova",
-  "version": "4.1.0",
-  "description": "Navegador Chromium calmado y potente con Nova 4.1: privacidad, sincronización, extensiones, gaming premium, traducción y herramientas avanzadas",
+  "version": "4.3.0",
+  "description": "Navegador moderno basado en Chromium con interfaz Glass Clean, sidebar, favoritos fijados, rendimiento, privacidad y extensiones.",
   "author": "Nova",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "dist": "npm run dist:win",
-    "check": "node scripts/check-project.js && node scripts/qa-vm-4.0.js",
+    "check": "npm run check:syntax && node scripts/check-project.js && node scripts/qa-4.3.js",
     "dist:win": "electron-builder --win --publish never",
     "dist:linux": "electron-builder --linux rpm AppImage --publish never",
-    "qa": "node scripts/qa-vm-4.0.js",
-    "check:syntax": "node --check main.js && node --check migration.js && node --check account-service.js && node --check account-server/server.js && node --check shell/extensions.js && node --check shell/extras.js && node --check shell/extras2.js && node --check shell/extras3.js && node --check shell/extras4.js && node --check shell/extras5.js && node --check shell/extras6.js && node --check shell/extras7.js && node --check shell/extras8.js && node --check shell/extras9.js && node --check shell/extras10.js && node --check shell/extras11.js && node --check shell/extras12.js && node --check shell/supercat.js && node --check shell/nova25.js && node --check shell/hotfix254.js && node --check shell/nova30.js && node --check shell/nova31.js && node --check shell/nova40.js"
+    "qa": "node scripts/qa-4.2.js",
+    "check:syntax": "node scripts/check-syntax.js",
+    "clean": "node scripts/clean.js",
+    "ui-audit": "node scripts/ui-audit.js"
   },
   "dependencies": {
     "@ghostery/adblocker-electron": "2.18.2",
@@ -59,11 +61,8 @@
       "installerHeaderIcon": "assets/icon.ico",
       "language": "1034",
       "runAfterFinish": true,
-      "installerSidebar": "build/installerSidebar.bmp",
-      "uninstallerSidebar": "build/uninstallerSidebar.bmp",
       "deleteAppDataOnUninstall": false,
       "uninstallDisplayName": "Nova Browser",
-      "installerHeader": "build/installerHeader.bmp",
       "include": "build/installer.nsh"
     },
     "portable": {
@@ -110,5 +109,8 @@
       ]
     }
   },
-  "homepage": "https://github.com/sdraiky99/NovaBrowser"
+  "homepage": "https://github.com/sdraiky99/NovaBrowser",
+  "engines": {
+    "node": ">=22.0.0"
+  }
 }

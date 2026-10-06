@@ -1,3 +1,27 @@
+# Changelog
+
+## 4.3.0 — Glass Clean
+- Rediseño visual limpio y translúcido.
+- Iconografía SVG coherente.
+- Sidebar orientada a tareas diarias.
+- Favicons reales para fijados.
+- Ahorro de energía.
+- Extensiones WebExtension locales + catálogo oficial.
+- Auditoría de UI y limpieza de controles heredados.
+
+# Changelog
+
+## 4.2.0 — Foundation
+
+- Limpieza del árbol raíz y archivado de documentación histórica.
+- Apariencia reducida a Sistema/Claro/Oscuro.
+- Iconografía SVG local coherente.
+- Renderer principal migrado a preload + contextIsolation.
+- Preferencias con versión y respaldo automático.
+- Instalador NSIS simplificado y textos actualizados.
+- Logo único y estable para reducir errores de actualización.
+
+
 # Nova 4.1.0
 - Evolution Update: página principal premium/gaming, Game Hub, Perfil Gaming, privacidad 4.1, Sync 4.1, Extensions Store, traducción y DevTools.
 

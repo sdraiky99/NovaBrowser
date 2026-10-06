@@ -1,30 +1,44 @@
-## Nova 4.1.0 · Evolution Update
+# Nova 4.3.0
 
-Nova 4.1.0 actualiza la base de Nova 4.0.0 sin sustituir sus módulos. Añade una nueva experiencia de inicio, privacidad reforzada, sincronización preparada para Windows + Android, Extensions Store, Game Hub, Perfil Gaming, Magic Translate y acceso centralizado a DevTools.
+Nova es un navegador Chromium de escritorio con interfaz **Glass Clean**: transparencia moderada, iconos SVG consistentes, sidebar configurable, favoritos fijados con favicons reales, rendimiento y compatibilidad con WebExtensions desempaquetadas.
 
-### Qué cambia
-- **Nueva pestaña:** búsqueda central, noticias personalizadas y fondo dinámico.
-- **Privacidad:** bloqueador de anuncios + protección inteligente + controles de rastreo.
-- **Sync:** favoritos, pestañas, historial y configuración dentro de un modelo de sincronización cifrada.
-- **Extensiones:** tienda destacada, permisos visibles y compatibilidad amplia como objetivo.
-- **Gaming:** Game Hub, favoritos, noticias, tiempo jugado y récords personales.
-- **Perfil Gaming:** apariencia, configuración, extensiones, privacidad y sincronización independientes.
-- **Web Power:** Magic Translate y acceso directo a DevTools.
+### Desarrollo
+- Node 22+
+- `npm install`
+- `npm start`
+- `npm run check`
+- `npm run ui-audit`
+- `npm run dist:win`
 
-### Nota sobre plataformas
-La aplicación de escritorio de este repositorio sigue siendo Electron/Chromium. La actualización prepara la experiencia y el modelo de sincronización para Windows + Android; este paquete no contiene un APK Android.
+La configuración y preferencias viven en el directorio de datos de usuario de Electron; el instalador no elimina esos datos al desinstalar.
 
-### Arranque
+# Nova
+
+Nova es un navegador de escritorio basado en Electron/Chromium, orientado a privacidad, productividad y una experiencia de uso limpia.
+
+## Nova 4.3
+
+- Interfaz visual unificada con iconografía SVG local.
+- Solo tres modos de apariencia: Sistema, Claro y Oscuro.
+- Instalador NSIS simplificado para actualizaciones conservadoras.
+- Configuración y estado guardados fuera de la carpeta de instalación.
+- Respaldo automático de preferencias antes de sobrescribirlas.
+- Renderer principal aislado mediante `contextIsolation` + preload.
+- Extensiones y navegación web siguen ejecutándose en contenido aislado.
+
+## Desarrollo
 
 ```bash
 npm install
-npm start
+npm run start
 ```
 
-### QA
+Comprobaciones:
 
 ```bash
 npm run check
+npm run dist:win
+npm run dist:linux
 ```
 
-El arnés heredado de Nova 4.0.0 sigue pasando 49/49 pruebas en esta copia; la comprobación de proyecto se ha actualizado para validar Nova 4.1.0 y el nuevo módulo.
+La configuración del navegador se guarda en el directorio `userData` de Electron, no dentro del directorio de instalación.

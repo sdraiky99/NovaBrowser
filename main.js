@@ -23,21 +23,52 @@ const { createMigrationService } = require('./migration.js');
 const migration = createMigrationService(app);
 const { createAccountService } = require('./account-service.js');
 const accounts = createAccountService({ app, safeStorage, fetch });
-const LOGOS = ['classic', 'orbita', 'estrella', 'cometa', 'minimal', 'retro09'], SPLASH_MS = 1800;
-const logoId = id => (LOGOS.includes(id) ? id : 'classic');
-const logoIco = id => path.join(__dirname, `assets/logos/${logoId(id)}.ico`);      // dentro del paquete (asar)
-const logoImg = id => { const i = nativeImage.createFromPath(process.platform === 'win32' ? logoIco(id) : path.join(__dirname, `assets/logos/${logoId(id)}.png`)); return i.isEmpty() ? nativeImage.createFromPath(path.join(__dirname, 'assets/icon.png')) : i; };
+const SPLASH_MS = 1400;
+const logoId = () => 'classic';
+const logoIco = () => path.join(__dirname, 'assets/icon.ico');
+const logoImg = () => { const i = nativeImage.createFromPath(process.platform === 'win32' ? logoIco() : path.join(__dirname, 'assets/icon.png')); return i.isEmpty() ? nativeImage.createFromPath(path.join(__dirname, 'assets/icon.png')) : i; };
 // preferencias que el proceso principal necesita antes de abrir la interfaz (logo, animación de inicio, extensiones)
-let prefs = { logo: 'classic', splash: true, ext: {}, reg: '' };
+const PREFS_VERSION = 2;
+let prefs = { version: PREFS_VERSION, logo: 'classic', splash: true, ext: {}, reg: '' };
 const prefsFile = () => path.join(app.getPath('userData'), 'prefs.json');
+const backupPrefsFile = () => path.join(app.getPath('userData'), 'prefs.json.bak');
 const atomicWrite = (file, data) => {
   const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(tmp, data);
   fs.renameSync(tmp, file);
 };
-const loadPrefs = () => { try { prefs = Object.assign(prefs, JSON.parse(fs.readFileSync(prefsFile(), 'utf8'))); } catch { } };
-const savePrefs = () => { try { atomicWrite(prefsFile(), JSON.stringify(prefs)); } catch { } };
+const normalizePrefs = raw => {
+  const x = raw && typeof raw === 'object' ? raw : {};
+  if (x.version !== PREFS_VERSION) {
+    x.version = PREFS_VERSION;
+  }
+  x.logo = 'classic';
+  x.splash = x.splash !== false;
+  x.ext = x.ext && typeof x.ext === 'object' ? x.ext : {};
+  x.reg = typeof x.reg === 'string' ? x.reg : '';
+  return Object.assign({}, prefs, x);
+};
+const loadPrefs = () => {
+  const candidates = [prefsFile(), backupPrefsFile()];
+  for (const f of candidates) {
+    try {
+      const raw = JSON.parse(fs.readFileSync(f, 'utf8'));
+      prefs = normalizePrefs(raw);
+      if (f !== prefsFile()) savePrefs();
+      return;
+    } catch { }
+  }
+};
+const savePrefs = () => {
+  try {
+    const f = prefsFile();
+    if (fs.existsSync(f)) {
+      try { fs.copyFileSync(f, backupPrefsFile()); } catch { }
+    }
+    atomicWrite(f, JSON.stringify(normalizePrefs(prefs)));
+  } catch { }
+};
 const { pathToFileURL } = require('url');
 const extUrl = a => { // enlace http(s) o archivo .html/.pdf/.svg... recibido desde Windows (navegador predeterminado)
   for (const x of a || []) {
@@ -136,14 +167,14 @@ async function isWinDefault() {
 }
 // Copia el .ico fuera del paquete (Windows no puede leer dentro de app.asar) y devuelve su ruta
 function iconFile(id) {
-  const dst = userFile('icons', `nova-${logoId(id)}.ico`);
-  try { fs.mkdirSync(path.dirname(dst), { recursive: true }); fs.writeFileSync(dst, fs.readFileSync(logoIco(id))); return dst; } catch { return null; }
+  const dst = userFile('icons', 'nova.ico');
+  try { fs.mkdirSync(path.dirname(dst), { recursive: true }); fs.writeFileSync(dst, fs.readFileSync(logoIco())); return dst; } catch { return null; }
 }
 // Cambia el logotipo: ventana, barra de tareas (abierta y anclada), escritorio y menú Inicio
 function applyLogo(id) {
   try { win && !win.isDestroyed() && win.setIcon(logoImg(id)); } catch { }
   if (process.platform !== 'win32' || !app.isPackaged) return;
-  const f = iconFile(id); if (!f) return;
+  const f = iconFile('classic'); if (!f) return;
   try { win && !win.isDestroyed() && win.setAppDetails({ appId: APP_ID, appIconPath: f, appIconIndex: 0, relaunchCommand: `"${process.execPath}"`, relaunchDisplayName: 'Nova' }); } catch { }
   const dirs = [path.join(app.getPath('desktop')), path.join(process.env.APPDATA || '', 'Microsoft/Windows/Start Menu/Programs'), path.join(process.env.APPDATA || '', 'Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar'), path.join(process.env.APPDATA || '', 'Microsoft/Internet Explorer/Quick Launch')];
   let changed = 0;
@@ -172,7 +203,7 @@ function createMain() {
     frame: false, show: false, title: 'Nova',
     icon: logoImg(prefs.logo),
     backgroundColor: '#0d0b1a',
-    webPreferences: { nodeIntegration: true, contextIsolation: false, webviewTag: true, webSecurity: true, allowRunningInsecureContent: false }
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), nodeIntegration: false, contextIsolation: true, sandbox: false, webviewTag: true, webSecurity: true, allowRunningInsecureContent: false }
   });
   win.loadFile('shell/index.html');
   win.once('ready-to-show', () => {
@@ -192,7 +223,7 @@ function createMain() {
   });
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   if (!gotLock) return;
   loadPrefs(); pendingUrl = extUrl(process.argv.slice(1));
   Menu.setApplicationMenu(null);
@@ -200,17 +231,28 @@ app.whenReady().then(() => {
     .replace(/\s?Electron\/\S+/i, '').replace(/\s?nova-browser\/\S+/i, '').replace(/\s?Nova\/\S+/i, '') + ' Nova/' + app.getVersion();
   web().setUserAgent(ua);
 
+  // Restore user-installed unpacked WebExtensions best-effort. Paths that disappeared are dropped.
+  try {
+    const entries = Array.isArray(prefs.userExtensions) ? prefs.userExtensions : [];
+    const valid = [];
+    for (const x of entries) {
+      if (!x || typeof x.path !== 'string' || !fs.existsSync(path.join(x.path, 'manifest.json'))) continue;
+      try { await web().loadExtension(x.path, { allowFileAccess:false }); valid.push(x); } catch { }
+    }
+    if (valid.length !== entries.length) { prefs.userExtensions = valid; savePrefs(); }
+  } catch { }
+
   if (prefs.splash !== false) { // animación de inicio (se puede quitar en Personalizar)
     splash = new BrowserWindow({
       width: 420, height: 420, frame: false, transparent: true, resizable: false,
       alwaysOnTop: true, skipTaskbar: true, icon: logoImg(prefs.logo)
     });
-    splash.loadFile('shell/splash.html', { query: { logo: logoId(prefs.logo) } });
+    splash.loadFile('shell/splash.html');
     splashAt = Date.now();
   }
   createMain();
   initAutoUpdater();
-  setTimeout(() => { registerBrowser(false).catch(() => { }); if (prefs.logo !== 'classic') applyLogo(prefs.logo); }, 4000);
+  setTimeout(() => { registerBrowser(false).catch(() => { }); applyLogo('classic'); }, 4000);
 
   const dlMap = new Map(), dlSend = new Map();
   web().on('will-download', (e, item) => {
@@ -330,17 +372,6 @@ app.whenReady().then(() => {
 ipcMain.on('fullscreen', e => { if (denyUntrusted(e) || !win || win.isDestroyed()) return; try { win.setFullScreen(!win.isFullScreen()); } catch { } });
 ipcMain.handle('opacity', (e, v) => { if (denyUntrusted(e) || !win || win.isDestroyed() || typeof v !== 'number' || !Number.isFinite(v)) return false; try { win.setOpacity(Math.max(0.35, Math.min(1, v))); return true; } catch { return false; } });
 // Cristal real (Aero): el sistema difumina lo que hay detrás de la ventana. Solo Windows 11 22H2+ (build 22621); en otros sistemas se devuelve ok:false y la interfaz usa un fondo de respaldo.
-ipcMain.handle('window-material', (e, mode) => {
-  if (denyUntrusted(e) || !win || win.isDestroyed()) return { ok: false };
-  mode = mode === 'acrylic' ? 'acrylic' : 'none';
-  try {
-    const build = parseInt(String(require('os').release()).split('.')[2], 10) || 0;
-    if (process.platform !== 'win32' || build < 22621 || typeof win.setBackgroundMaterial !== 'function') return { ok: false, reason: 'unsupported' };
-    win.setBackgroundMaterial(mode);
-    win.setBackgroundColor(mode === 'acrylic' ? '#00000000' : '#0d0b1a');
-    return { ok: mode === 'acrylic', mode };
-  } catch (err) { return { ok: false, reason: String(err && err.message || err) }; }
-});
 ipcMain.on('win', (e, a) => {
   if (denyUntrusted(e)) return;
   if (a === 'min') win.minimize();
@@ -353,7 +384,7 @@ ipcMain.on('prefs-get', e => { if (denyUntrusted(e)) return; e.returnValue = JSO
 ipcMain.on('prefs-set', (e, p) => {
   if (denyUntrusted(e)) return;
   if (!p || typeof p !== 'object') return;
-  if (LOGOS.includes(p.logo)) { prefs.logo = p.logo; applyLogo(p.logo); }
+  if (p.logo === 'classic' || p.logo == null) { prefs.logo = 'classic'; applyLogo('classic'); }
   if (typeof p.splash === 'boolean') prefs.splash = p.splash;
   if (p.ext && typeof p.ext === 'object') { // instalar / activar / quitar extensiones al instante
     const nx = {}; Object.keys(p.ext).forEach(id => { if (EXT.byId(id)) nx[id] = !!p.ext[id]; });
@@ -517,6 +548,18 @@ ipcMain.handle('nova-ai', async (e, data) => {
     return { ok:true, text:String((d.content||[]).map(c=>c?.text||'').join('')), model:d.model||model||'claude-sonnet-4-6' };
   } catch (err) { return { ok:false, error:String(err?.message||err||'Error desconocido') }; }
 });
+ipcMain.handle('save-wallpaper', (e, payload) => {
+  if (denyUntrusted(e) || !payload || typeof payload !== 'object') return null;
+  const sec = String(payload.section || '').replace(/[^a-z0-9_-]/gi, '').slice(0, 40);
+  const name = String(payload.name || 'wallpaper.jpg').replace(/[^a-z0-9._-]/gi, '_').slice(0, 120) || 'wallpaper.jpg';
+  const data = payload.data;
+  if (!sec || !(Buffer.isBuffer(data) || data instanceof Uint8Array) || data.length > 25 * 1024 * 1024) return null;
+  try { const dir = userFile('wallpapers', sec); fs.mkdirSync(dir, { recursive: true }); const f = path.join(dir, name); fs.writeFileSync(f, Buffer.from(data)); return f; } catch { return null; }
+});
+
+const appPaths = () => ({ app: __dirname, userData: app.getPath('userData'), downloads: app.getPath('downloads') });
+ipcMain.handle('app-paths', e => denyUntrusted(e) ? {} : appPaths());
+
 let stateBackupAt = 0;
 ipcMain.handle('state-save', (e, raw) => {
   if (denyUntrusted(e) || typeof raw !== 'string' || raw.length > 8 * 1024 * 1024) return false;
@@ -628,6 +671,24 @@ ipcMain.handle('migration-read', async (e, data) => {
   if (denyUntrusted(e) || !data || typeof data !== 'object' || typeof data.id !== 'string' || data.id.length > 64) return { error: 'Solicitud no válida.' };
   try { return await migration.read(data.id, { bookmarks: data.bookmarks !== false, history: data.history !== false }); } catch (err) { return { error: err.message || 'No se pudo leer el perfil.' }; }
 });
+ipcMain.handle('load-extension-local', async e => {
+  if (denyUntrusted(e)) return { ok:false, error:'Solicitud no válida.' };
+  try {
+    const chosen = await dialog.showOpenDialog(win, { title:'Selecciona una extensión desempaquetada', properties:['openDirectory'] });
+    if (chosen.canceled || !chosen.filePaths[0]) return { ok:false, error:'Cancelado.' };
+    const extPath = path.resolve(chosen.filePaths[0]);
+    const manifestPath = path.join(extPath, 'manifest.json');
+    if (!fs.existsSync(manifestPath)) return { ok:false, error:'La carpeta no contiene manifest.json.' };
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    if (!manifest || typeof manifest !== 'object' || !manifest.name) return { ok:false, error:'Manifest inválido.' };
+    const loaded = await web().loadExtension(extPath, { allowFileAccess: false });
+    prefs.userExtensions = Array.isArray(prefs.userExtensions) ? prefs.userExtensions : [];
+    if (!prefs.userExtensions.some(x => x.path === extPath)) prefs.userExtensions.push({ path: extPath, name: loaded.name || manifest.name, id: loaded.id || '' });
+    savePrefs();
+    return { ok:true, name:loaded.name || manifest.name, id:loaded.id || '' };
+  } catch (err) { return { ok:false, error:String(err?.message || err) }; }
+});
+
 ipcMain.handle('performance-info', async e => {
   if (denyUntrusted(e)) return { ok: false };
   try {
@@ -670,6 +731,23 @@ ipcMain.handle('performance-info', async e => {
     };
   } catch { return { ok: false }; }
 });
+ipcMain.handle('eco-mode', (e, data) => {
+  if (denyUntrusted(e) || !data || typeof data !== 'object' || typeof data.enabled !== 'boolean') return { ok:false };
+  const enabled = data.enabled, activeId = Number(data.activeId) || 0;
+  for (const w of webContents.getAllWebContents()) {
+    if (w.getType() !== 'webview' || w.isDestroyed()) continue;
+    try { w.setBackgroundThrottling(true); } catch { }
+    if (enabled && w.id !== activeId) {
+      try { w.setImageAnimationPolicy?.('animateOnce'); } catch { }
+    } else if (!enabled) {
+      try { w.setImageAnimationPolicy?.('animate'); } catch { }
+    }
+  }
+  prefs.performance = Object.assign(prefs.performance || {}, { eco: enabled });
+  savePrefs();
+  return { ok:true, enabled };
+});
+
 ipcMain.handle('performance-mode', (e, enabled) => {
   if (denyUntrusted(e) || typeof enabled !== 'boolean') return false;
   for (const w of webContents.getAllWebContents()) {
