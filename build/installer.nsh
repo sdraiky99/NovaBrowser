@@ -1,18 +1,18 @@
-; Nova 4.3 — instalador NSIS limpio y estable.
-; No añade páginas animadas ni recursos BMP obligatorios: el objetivo es que actualizar
-; una instalación existente sea lo más conservador posible con los datos del usuario.
+; Nova 4.3.2 · instalador estable
+; No sustituye el contenido del perfil ni borra userData.
 
 !macro customHeader
-  BrandingText "Nova Browser 4.3"
+  BrandingText "Nova Browser 4.3.2"
   !define MUI_WELCOMEPAGE_TITLE "Bienvenido a Nova"
-  !define MUI_WELCOMEPAGE_TEXT "Nova 4.3: una actualización centrada en estabilidad, privacidad y una interfaz más limpia.$\r$\n$\r$\nPuedes instalar Nova encima de una versión existente. Tus marcadores, historial, perfiles y ajustes se guardan fuera de la carpeta de instalación."
-  !define MUI_DIRECTORYPAGE_TEXT_TOP "Elige la carpeta donde se instalará Nova. La instalación es por usuario y no requiere permisos de administrador."
+  !define MUI_WELCOMEPAGE_TEXT "Nova 4.3.2 · Glass Clean, sitios fijados y ahorro de energía.$\r$\n$\r$\nEste asistente instalará o actualizará Nova para tu usuario. Tus datos de navegación y ajustes se conservan."
+  !define MUI_DIRECTORYPAGE_TEXT_TOP "Elige la carpeta donde se instalará Nova. Nova puede actualizarse sobre una instalación existente sin desinstalarla primero."
   !define MUI_FINISHPAGE_TITLE "Nova está listo"
-  !define MUI_FINISHPAGE_TEXT "Nova 4.3 se ha instalado o actualizado correctamente.$\r$\n$\r$\nTus datos de usuario se mantienen para que la actualización no restablezca tu navegador."
-  !define MUI_UNCONFIRMPAGE_TEXT_TOP "Nova se quitará de tu equipo. Los datos personales del navegador no se eliminan automáticamente."
+  !define MUI_FINISHPAGE_TEXT "Nova 4.3.2 se ha instalado o actualizado correctamente. Tus datos de usuario se conservan."
+  !define MUI_UNCONFIRMPAGE_TEXT_TOP "Nova se quitará de tu equipo. Los datos de usuario se conservan."
 !macroend
 
 !macro customInstall
+  ; Registro de Nova como navegador disponible. Windows decide el navegador predeterminado.
   WriteRegStr HKCU "Software\Classes\NovaURL" "" "Nova URL"
   WriteRegStr HKCU "Software\Classes\NovaURL" "URL Protocol" ""
   WriteRegStr HKCU "Software\Classes\NovaURL\DefaultIcon" "" '$INSTDIR\${APP_EXECUTABLE_FILENAME},0'
