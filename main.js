@@ -192,9 +192,57 @@ function createMain() {
   });
 }
 
+
+/* ---------- Real Chromium extensions (unpacked) ---------- */
+const realExtensions = new Map(); // partition -> Map(extensionId, metadata)
+const validPartition = p => typeof p === 'string' && (/^persist:[a-z0-9_-]{1,80}$/i.test(p) || p === 'persist:web');
+const extStoreFile = () => userFile('real-extensions.json');
+const loadRealExtStore = () => { try { const x=JSON.parse(fs.readFileSync(extStoreFile(),'utf8')); return x && typeof x==='object' ? x : {}; } catch { return {}; } };
+const saveRealExtStore = x => { try { atomicWrite(extStoreFile(), JSON.stringify(x)); } catch { } };
+const sessionForPartition = partition => session.fromPartition(partition || 'persist:web');
+const rememberRealExt = (partition, meta) => { const all=loadRealExtStore(); all[partition]=Array.isArray(all[partition])?all[partition]:[]; all[partition]=all[partition].filter(x=>x&&x.id!==meta.id); all[partition].push(meta); saveRealExtStore(all); };
+const forgetRealExt = (partition,id) => { const all=loadRealExtStore(); all[partition]=(all[partition]||[]).filter(x=>x&&x.id!==id); if(!all[partition].length)delete all[partition]; saveRealExtStore(all); };
+async function loadOneRealExtension(partition, extPath, persist=true){
+  if(!validPartition(partition)) throw new Error('Perfil no válido.');
+  if(!path.isAbsolute(extPath)) throw new Error('Ruta no válida.');
+  const manifestFile=path.join(extPath,'manifest.json');
+  if(!fs.existsSync(manifestFile)) throw new Error('La carpeta no contiene manifest.json.');
+  let manifest; try { manifest=JSON.parse(fs.readFileSync(manifestFile,'utf8')); } catch { throw new Error('manifest.json no es válido.'); }
+  if(!manifest || typeof manifest!=='object' || !manifest.name) throw new Error('Manifest inválido: falta el nombre.');
+  const ses=sessionForPartition(partition);
+  const loaded=await ses.loadExtension(extPath,{allowFileAccess:true});
+  const meta={id:loaded.id,name:String(loaded.name||manifest.name).slice(0,160),path:extPath,version:String(loaded.version||manifest.version||'').slice(0,64)};
+  if(!realExtensions.has(partition))realExtensions.set(partition,new Map());
+  realExtensions.get(partition).set(meta.id,meta);
+  if(persist)rememberRealExt(partition,meta);
+  return meta;
+}
+async function restoreRealExtensions(partition){
+  if(!validPartition(partition))return;
+  const all=loadRealExtStore(), list=Array.isArray(all[partition])?all[partition]:[];
+  for(const x of list){try{if(x?.path&&fs.existsSync(path.join(x.path,'manifest.json')))await loadOneRealExtension(partition,x.path,false);}catch(e){console.warn('Nova extension restore failed:',x?.path,e?.message)}}
+}
+ipcMain.handle('extensions-list', async (e,data)=>{
+  if(denyUntrusted(e)||!validPartition(data?.partition))return {ok:false,items:[]};
+  try{await restoreRealExtensions(data.partition);return {ok:true,items:[...(realExtensions.get(data.partition)?.values()||[])]};}catch{return {ok:false,items:[]}}
+});
+ipcMain.handle('extension-pick-load', async (e,data)=>{
+  if(denyUntrusted(e)||!validPartition(data?.partition))return {ok:false,error:'Solicitud no válida.'};
+  try{
+    const picked=await dialog.showOpenDialog(win,{title:'Seleccionar carpeta de extensión Chromium',properties:['openDirectory']});
+    if(picked.canceled||!picked.filePaths?.[0])return {ok:false,error:'Selección cancelada.'};
+    const meta=await loadOneRealExtension(data.partition,picked.filePaths[0],true); return {ok:true,...meta};
+  }catch(err){return {ok:false,error:err?.message||'No se pudo cargar la extensión.'}}
+});
+ipcMain.handle('extension-unload', async (e,data)=>{
+  if(denyUntrusted(e)||!validPartition(data?.partition)||typeof data?.id!=='string')return false;
+  try{const ses=sessionForPartition(data.partition);try{ses.removeExtension(data.id)}catch{} realExtensions.get(data.partition)?.delete(data.id); forgetRealExt(data.partition,data.id); return true;}catch{return false}
+});
+
 app.whenReady().then(() => {
   if (!gotLock) return;
   loadPrefs(); pendingUrl = extUrl(process.argv.slice(1));
+  restoreRealExtensions('persist:web').catch(() => {});
   Menu.setApplicationMenu(null);
   const ua = web().getUserAgent()
     .replace(/\s?Electron\/\S+/i, '').replace(/\s?nova-browser\/\S+/i, '').replace(/\s?Nova\/\S+/i, '') + ' Nova/' + app.getVersion();

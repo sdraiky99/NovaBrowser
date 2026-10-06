@@ -1,0 +1,15 @@
+'use strict';
+const fs=require('fs');const path=require('path');const {spawnSync}=require('child_process');
+const root=path.resolve(__dirname,'..');const read=f=>fs.readFileSync(path.join(root,f),'utf8');const exists=f=>fs.existsSync(path.join(root,f));let failed=0;
+const fail=x=>{console.error('QA FAIL:',x);failed++};const ok=x=>console.log('QA OK:',x);
+const pkg=JSON.parse(read('package.json'));if(pkg.version!=='4.4.0')fail(`package version ${pkg.version}`);else ok('package version 4.4.0');
+const index=read('shell/index.html');for(const m of ['<div id="app">','<div id="top">','<div id="tabs">','<div id="bar">','<input id="addr"','<div id="side">','<div id="view">','<div id="panel">'])if(!index.includes(m))fail(`index marker missing: ${m}`);else ok('main index structure present');
+if(!index.includes('<script src="nova432.js"></script>')||!index.includes('<script src="nova44.js"></script>'))fail('4.3.2/4.4 additive script chain missing');
+const refs=[...index.matchAll(/<script\s+src=["']([^"']+)["']/gi)].map(m=>m[1]);for(const ref of refs)if(!exists(path.join('shell',ref)))fail(`active script missing: ${ref}`);ok(`active shell scripts verified: ${refs.length}`);
+const n44=read('shell/nova44.js');for(const m of ['nova44-style','nova44-workspace-btn','N.PG.workspaces44','N.PG.rendimiento44','N.PG.extensiones44','performance-info','extensions-list','extension-pick-load','resolveFeatureRoute','Ahorro inteligente'])if(!n44.includes(m))fail(`Nova 4.4 marker missing: ${m}`);else ok('Nova 4.4 feature markers present');
+const main=read('main.js');for(const m of ["ipcMain.handle('performance-info'","ipcMain.handle('performance-mode'","ipcMain.handle('performance-cache'"])if(!main.includes(m))fail(`performance IPC missing: ${m}`);
+if(!read('package.json').includes('"shell/**"'))fail('electron-builder shell inclusion missing');
+for(const f of ['main.js','migration.js','account-service.js','account-server/server.js',...fs.readdirSync(path.join(root,'shell')).filter(x=>x.endsWith('.js')).map(x=>'shell/'+x),'scripts/qa-4.4.0.js']){const r=spawnSync(process.execPath,['--check',f],{cwd:root,encoding:'utf8'});if(r.status!==0)fail(`syntax: ${f}\n${r.stderr||''}`)}ok('JavaScript syntax verified');
+const invoke=new Set();for(const f of fs.readdirSync(path.join(root,'shell')).filter(x=>x.endsWith('.js'))){for(const m of read('shell/'+f).matchAll(/ipc\.invoke\(\s*['"]([^'"]+)['"]/g))invoke.add(m[1])}const handled=new Set([...main.matchAll(/ipcMain\.handle\(\s*['"]([^'"]+)['"]/g)].map(m=>m[1]));for(const ch of invoke)if(!handled.has(ch))fail(`renderer invokes unhandled IPC: ${ch}`);else ok(`IPC handled: ${ch}`);
+const oldRelease=fs.readdirSync(root).filter(f=>/^RELEASE_NOTES_.*\.md$/i.test(f)&&f!=='RELEASE_NOTES_4.4.0.md');if(oldRelease.length)fail(`old release notes remain: ${oldRelease.join(', ')}`);else ok('only 4.4.0 release notes remain');
+if(failed){console.error(`Nova 4.4.0 QA failed: ${failed}`);process.exit(1)}console.log('Nova 4.4.0 QA PASSED');
