@@ -3,7 +3,7 @@
 ; una instalación existente sea lo más conservador posible con los datos del usuario.
 
 !macro customHeader
-  BrandingText "Nova Browser 4.2"
+  BrandingText "Nova Browser 4.3"
   !define MUI_WELCOMEPAGE_TITLE "Bienvenido a Nova"
   !define MUI_WELCOMEPAGE_TEXT "Nova 4.3: una actualización centrada en estabilidad, privacidad y una interfaz más limpia.$\r$\n$\r$\nPuedes instalar Nova encima de una versión existente. Tus marcadores, historial, perfiles y ajustes se guardan fuera de la carpeta de instalación."
   !define MUI_DIRECTORYPAGE_TEXT_TOP "Elige la carpeta donde se instalará Nova. La instalación es por usuario y no requiere permisos de administrador."
