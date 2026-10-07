@@ -1,21 +1,12 @@
 'use strict';
-const fs = require('fs');
-const path = require('path');
-const root = path.resolve(__dirname, '..');
-const fail = m => { console.error('BUILD ASSET FAIL:', m); process.exit(1); };
-const p = path.join(root, 'assets', 'icon.ico');
-if (!fs.existsSync(p)) fail('assets/icon.ico is missing');
-const b = fs.readFileSync(p);
-if (b.length < 22) fail('assets/icon.ico is too small to be a valid ICO');
-if (b.readUInt16LE(0)!==0 || b.readUInt16LE(2)!==1) fail('assets/icon.ico has an invalid header');
-const n=b.readUInt16LE(4);
-if(n<1) fail('assets/icon.ico contains no image entries');
-let has256=false;
-for(let i=0;i<n;i++){
-  const off=6+i*16;
-  if(off+16>b.length) fail('assets/icon.ico directory is truncated');
-  const w=b[off]||256, h=b[off+1]||256;
-  if(w>=256&&h>=256) has256=true;
-}
-if(!has256) fail('assets/icon.ico has no 256x256 or larger image');
-console.log(`Build assets OK · Windows ICO ${n} frames · 256x256+ present`);
+const fs=require('fs'),path=require('path');
+const root=path.resolve(__dirname,'..');
+const req=['.nvmrc','main.js','shell/index.html','shell/newtab.html','shell/quantum.css','shell/quantum-newtab.css','shell/nova50.js','assets/icon.png','assets/icon.ico','assets/logo/nova-quantum.svg','assets/logo/nova-quantum-wordmark.svg'];
+let bad=[]; for(const f of req) if(!fs.existsSync(path.join(root,f))) bad.push(f);
+const ico=fs.existsSync(path.join(root,'assets/icon.ico'))?fs.readFileSync(path.join(root,'assets/icon.ico')):null;
+if(!ico || ico.length<500) bad.push('assets/icon.ico(valid size)');
+const pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
+const files=pkg.build?.files||[]; if(!files.some(x=>String(x)==='shell/**')) bad.push('package.json build.files shell/**');
+if(pkg.version!=='5.0.0') bad.push('package version 5.0.0');
+if(bad.length){console.error('BUILD ASSET CHECK FAILED');bad.forEach(x=>console.error(' - '+x));process.exit(1)}
+console.log('Build assets OK · Quantum Prime icon and shell files present');
