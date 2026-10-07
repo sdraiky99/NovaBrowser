@@ -1,0 +1,80 @@
+/* Nova 5 Quantum Prime — calm, compact, browser-first UI. */
+:root{
+  --q-bg:#f6f7f9; --q-surface:rgba(255,255,255,.86); --q-surface-strong:#fff;
+  --q-fg:#202124; --q-muted:#6f737b; --q-border:rgba(32,33,36,.10);
+  --q-accent:#4f63e8; --q-accent-soft:rgba(79,99,232,.11); --q-shadow:0 10px 30px rgba(30,38,55,.08);
+  --q-radius:12px; --q-radius-sm:9px; --q-dur:150ms;
+}
+body.quantum-prime.q-dark{
+  --q-bg:#111318; --q-surface:rgba(28,31,38,.86); --q-surface-strong:#1b1f26;
+  --q-fg:#f2f4f7; --q-muted:#a0a7b3; --q-border:rgba(255,255,255,.10);
+  --q-accent:#8ea0ff; --q-accent-soft:rgba(142,160,255,.14); --q-shadow:0 16px 36px rgba(0,0,0,.25);
+}
+body.quantum-prime{background:var(--q-bg);color:var(--q-fg);font-family:Inter,"Segoe UI Variable","Segoe UI",system-ui,sans-serif;letter-spacing:0}
+body.quantum-prime #top{height:42px;align-items:flex-end;padding-left:7px;background:var(--q-surface);border-bottom:1px solid var(--q-border);backdrop-filter:blur(14px) saturate(120%);box-shadow:none}
+body.quantum-prime #brand{width:112px;gap:8px;padding:0 8px 8px 2px;font-size:13px;font-weight:650;letter-spacing:.08em;color:var(--q-fg)}
+body.quantum-prime #brand img{width:20px;height:20px;border-radius:6px;object-fit:cover}
+body.quantum-prime #brand span{line-height:1}
+body.quantum-prime #tabs{gap:3px;padding:0 4px;align-items:flex-end}
+body.quantum-prime .tab{height:31px;min-width:76px;max-width:230px;flex:0 1 190px;padding:0 10px;background:transparent;border:0;border-radius:10px 10px 0 0;color:var(--q-muted);transition:background var(--q-dur) ease,color var(--q-dur) ease,transform var(--q-dur) ease}
+body.quantum-prime .tab:hover{background:var(--q-accent-soft);color:var(--q-fg)}
+body.quantum-prime .tab.on{background:var(--q-surface-strong);border:1px solid var(--q-border);border-bottom:0;color:var(--q-fg);box-shadow:0 -1px 0 rgba(255,255,255,.25) inset}
+body.quantum-prime .tab img{width:15px;height:15px;border-radius:4px;object-fit:cover}
+body.quantum-prime #tabs #nt{width:30px;height:30px;flex:0 0 30px;margin:0 2px 0 0;border-radius:50%;background:transparent;color:var(--q-muted);transition:background var(--q-dur) ease,color var(--q-dur) ease,transform var(--q-dur) ease}
+body.quantum-prime #tabs #nt:hover{background:var(--q-accent-soft);color:var(--q-accent);transform:scale(1.04)}
+body.quantum-prime #tabs #nt:active{transform:scale(.96)}
+body.quantum-prime #nova22-top-tools{display:none!important}
+body.quantum-prime #wc{align-self:stretch}
+body.quantum-prime #wc .ib{width:38px;height:42px;border-radius:0;color:var(--q-muted);transition:background var(--q-dur),color var(--q-dur)}
+body.quantum-prime #wc .ib:hover{background:var(--q-accent-soft);color:var(--q-fg)}
+body.quantum-prime #wc .ib:last-child:hover{background:#d84d5b;color:#fff}
+body.quantum-prime #bar{gap:6px;padding:7px 10px;background:var(--q-bg);border-bottom:1px solid var(--q-border)}
+body.quantum-prime #bar .ib{color:var(--q-muted);width:30px;height:32px;border-radius:10px;transition:background var(--q-dur),color var(--q-dur),transform var(--q-dur)}
+body.quantum-prime #bar .ib:hover{background:var(--q-accent-soft);color:var(--q-fg)}
+body.quantum-prime #bar .ib:active{transform:scale(.96)}
+body.quantum-prime #addr{height:34px;padding:0 15px;background:var(--q-surface);border:1px solid var(--q-border);border-radius:17px;color:var(--q-fg);box-shadow:inset 0 1px rgba(255,255,255,.2);transition:border-color var(--q-dur),box-shadow var(--q-dur),background var(--q-dur)}
+body.quantum-prime #addr:focus{border-color:color-mix(in srgb,var(--q-accent) 50%,var(--q-border));box-shadow:0 0 0 4px var(--q-accent-soft);background:var(--q-surface-strong)}
+body.quantum-prime #sh{display:none!important}
+body.quantum-prime #q-menu-btn{width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--q-muted);cursor:pointer;display:grid;place-items:center;flex:none;transition:background var(--q-dur),color var(--q-dur),transform var(--q-dur)}
+body.quantum-prime #q-menu-btn:hover{background:var(--q-accent-soft);color:var(--q-fg)}
+body.quantum-prime #q-menu-btn:active{transform:scale(.96)}
+body.quantum-prime #mid{background:var(--q-bg)}
+body.quantum-prime #side{width:54px;padding:10px 7px;gap:7px;background:var(--q-surface);border-right:1px solid var(--q-border);backdrop-filter:blur(12px);align-items:center}
+body.quantum-prime #side .q-side-spacer{flex:1}
+body.quantum-prime #side .q-pin-list{display:flex;flex-direction:column;gap:5px;align-items:center;width:100%;}
+body.quantum-prime #side .q-pin{width:34px;height:34px;border:0;border-radius:9px;background:transparent;display:grid;place-items:center;cursor:pointer;transition:background var(--q-dur),transform var(--q-dur);}
+body.quantum-prime #side .q-pin:hover{background:var(--q-accent-soft);transform:scale(1.04)}
+body.quantum-prime #side .q-pin img{width:18px;height:18px;border-radius:5px;object-fit:cover}
+body.quantum-prime #side .q-side-btn{width:38px;height:38px;border:0;border-radius:11px;background:transparent;color:var(--q-muted);cursor:pointer;display:grid;place-items:center;transition:background var(--q-dur),color var(--q-dur),transform var(--q-dur)}
+body.quantum-prime #side .q-side-btn:hover{background:var(--q-accent-soft);color:var(--q-fg)}
+body.quantum-prime #side .q-side-btn.on{background:var(--q-accent-soft);color:var(--q-accent)}
+body.quantum-prime #side .q-side-btn:active{transform:scale(.96)}
+body.quantum-prime #panel{background:var(--q-surface);border-left:1px solid var(--q-border);box-shadow:-18px 0 42px rgba(30,38,55,.08);backdrop-filter:blur(16px)}
+body.quantum-prime #panel.open{width:340px}
+body.quantum-prime #pin{padding:16px}
+body.quantum-prime h3{font-size:16px;letter-spacing:-.015em}
+body.quantum-prime .mut{color:var(--q-muted)}
+body.quantum-prime .btn{background:var(--q-surface-strong);border:1px solid var(--q-border);border-radius:10px;transition:background var(--q-dur),border-color var(--q-dur),transform var(--q-dur)}
+body.quantum-prime .btn:hover{background:var(--q-accent-soft);border-color:color-mix(in srgb,var(--q-accent) 35%,var(--q-border));color:var(--q-accent)}
+body.quantum-prime .btn.on{background:var(--q-accent-soft);border-color:color-mix(in srgb,var(--q-accent) 40%,var(--q-border));color:var(--q-accent)}
+body.quantum-prime .fld{background:var(--q-surface-strong);border:1px solid var(--q-border);border-radius:10px}
+body.quantum-prime .sw{background:var(--q-border)} body.quantum-prime .sw.on{background:var(--q-accent)}
+body.quantum-prime #q-menu{position:fixed;right:10px;top:82px;width:318px;z-index:1200;padding:8px;background:var(--q-surface);border:1px solid var(--q-border);border-radius:16px;box-shadow:0 28px 70px rgba(0,0,0,.20);backdrop-filter:blur(20px) saturate(125%);opacity:0;transform:translateY(-5px) scale(.985);pointer-events:none;transition:opacity var(--q-dur) ease,transform var(--q-dur) ease}
+body.quantum-prime #q-menu.on{opacity:1;transform:none;pointer-events:auto}
+body.quantum-prime .q-menu-head{padding:10px 11px 9px;border-bottom:1px solid var(--q-border);margin-bottom:5px}
+body.quantum-prime .q-menu-title{font-size:14px;font-weight:700}
+body.quantum-prime .q-menu-sub{font-size:11px;color:var(--q-muted);margin-top:2px}
+body.quantum-prime .q-menu-item{width:100%;display:flex;align-items:center;gap:10px;padding:9px 10px;border:0;background:transparent;color:var(--q-fg);border-radius:10px;cursor:pointer;text-align:left}
+body.quantum-prime .q-menu-item:hover{background:var(--q-accent-soft);color:var(--q-accent)}
+body.quantum-prime .q-menu-item svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+body.quantum-prime .q-menu-sep{height:1px;background:var(--q-border);margin:6px 3px}
+body.quantum-prime .q-theme{padding:8px 10px 10px}.q-theme-label{font-size:11px;color:var(--q-muted);margin-bottom:6px}.q-theme-row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.q-theme-row button{border:1px solid var(--q-border);background:var(--q-surface-strong);color:var(--q-muted);border-radius:9px;padding:7px 4px;font-size:11px;cursor:pointer}.q-theme-row button.on{border-color:color-mix(in srgb,var(--q-accent) 45%,var(--q-border));color:var(--q-accent);background:var(--q-accent-soft)}
+body.quantum-prime #q-toast{position:fixed;left:50%;bottom:20px;z-index:1300;transform:translate(-50%,8px);padding:9px 13px;border:1px solid var(--q-border);border-radius:10px;background:var(--q-surface-strong);color:var(--q-fg);box-shadow:var(--q-shadow);opacity:0;pointer-events:none;transition:opacity var(--q-dur),transform var(--q-dur)}
+body.quantum-prime #q-toast.on{opacity:1;transform:translate(-50%,0)}
+body.quantum-prime .q-hidden{display:none!important}
+body.quantum-prime .th{display:none!important}
+body.quantum-prime [data-t]{display:none!important}
+body.quantum-prime .nova22-topbtn{display:none!important}
+body.quantum-prime .n40-dock{display:none!important}
+@media(max-width:850px){body.quantum-prime #brand{width:52px}body.quantum-prime #brand span{display:none}body.quantum-prime #side{width:50px}.q-menu-item{padding:9px 8px}}
+@media(prefers-reduced-motion:reduce){body.quantum-prime *,body.quantum-prime *::before,body.quantum-prime *::after{transition:none!important;animation:none!important}}

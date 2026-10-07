@@ -1,21 +1,12 @@
 # Changelog
 
-## 4.5.1
-- Hotfix de build de Windows: ICO multi-resolución con 256×256+.
-- CI fijado a Node 22.12.0 y `engine-strict`.
-- QA valida los recursos del instalador antes de `electron-builder`.
+## 5.0.0 — Quantum Prime
 
- Nova 4.5.0
-
-## 4.5.0 — Calm UI
-
-Rediseño visual y simplificación de la interfaz de Nova.
-
-- Logo nuevo.
-- Menús más simples.
-- Sidebar reducida.
-- Menos botones visibles.
-- Nueva capa visual Calm.
-- Animaciones discretas.
-- Funciones secundarias trasladadas a un único menú.
-- Sin temas heredados expuestos al usuario.
+- Nueva identidad visual Nova Quantum.
+- Menús y sidebar rediseñados y simplificados.
+- Eliminación de accesos visibles innecesarios y controles duplicados.
+- Nueva apariencia Prime para la barra, pestañas y Nueva pestaña.
+- Tipografía y animaciones refinadas.
+- Mantenimiento de favicons reales, Workspaces, rendimiento, ahorro de energía y extensiones Chromium reales.
+- Instalador y CI preparados para la línea Node 22.12.0 / Electron 44.4.5.
+- Comprobaciones de recursos críticos y QA específico de Quantum Prime.

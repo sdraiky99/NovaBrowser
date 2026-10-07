@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Nova — Nueva pestaña</title>
-<style>
+<link rel="stylesheet" href="quantum-newtab.css"><style>
 :root{--bg:#0c0d11;--surface:rgba(21,23,30,.72);--surface2:rgba(255,255,255,.035);--fg:#f4f6fb;--mut:#9ca3b2;--mut2:#737b8b;--bd:rgba(255,255,255,.10);--acc:#8b72ff;--acc2:#b9adff;--good:#65d6ad;--r:18px}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;color:var(--fg);font:14px/1.45 Inter,"Segoe UI Variable","Segoe UI",system-ui,-apple-system,sans-serif;background:var(--bg)}
 body{position:relative;overflow-x:hidden;background:radial-gradient(900px 520px at 88% -12%,rgba(139,114,255,.17),transparent 62%),radial-gradient(760px 500px at 0 80%,rgba(82,98,160,.10),transparent 66%),#0c0d11}
@@ -17,17 +17,29 @@ main{position:relative;z-index:1;width:min(1180px,92vw);margin:0 auto;padding:34
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style></head>
 <body><div id="bg"></div><main>
-<div class="top"><div class="brand"><img class="logo" src="../assets/nova-logo.svg" alt="Nova"><div><b>NOVA</b><small>Navegación limpia · rápida · controlada</small></div></div><div class="clock" id="clock"></div></div>
+<div class="top"><div class="brand"><img class="logo" src="../assets/logo/nova-quantum.svg" alt="Nova"><div><b>NOVA</b><small>Navegación limpia · rápida · controlada</small></div></div><div class="clock" id="clock"></div></div>
 <section class="hero"><div class="eyebrow">Nova Start</div><h1>Busca. Descubre. Sigue.</h1><p>Una nueva pestaña útil, con noticias actuales y enlaces directos. Sin titulares de relleno y sin esconder qué fuente estás leyendo.</p><form class="search" id="f"><span>⌕</span><input id="s" placeholder="Busca en la web o escribe una dirección" autocomplete="off"><button>Buscar</button></form></section>
+<section class="section shortcuts-section"><div class="section-head"><h2>Accesos rápidos</h2><span class="status">Tus sitios fijados, con icono real cuando la web lo proporciona.</span></div><div class="shortcuts" id="shortcuts"></div></section>
 <section class="section"><div class="section-head"><h2>Noticias</h2><div class="tools"><button class="chip" data-topic="tecnologia">Tecnología</button><button class="chip" data-topic="videojuegos">Gaming</button><button class="chip" data-topic="codigo">Dev</button><button class="refresh" id="refresh">Actualizar</button></div></div><div class="news" id="news"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div><div class="status" id="status">Cargando fuentes…</div></section>
 <div class="bottom"><section class="panel"><h3>Cómo funcionan las noticias</h3><p>Nova consulta fuentes RSS públicas y muestra título, resumen, fecha y enlace al artículo original. Cuando no hay conexión, la página cambia a <b>Nova Briefing</b>, que es contenido interno y está marcado como tal.</p><div class="linkrow"><a class="link" href="https://arstechnica.com/" target="_self">Ars Technica</a><a class="link" href="https://www.theguardian.com/technology" target="_self">The Guardian · Technology</a><a class="link" href="https://blog.mozilla.org/en/latest/" target="_self">Mozilla Blog</a></div></section><section class="panel"><h3>Atajos rápidos</h3><p>Ctrl+T abre una pestaña nueva. La búsqueda admite URLs completas, dominios y consultas normales.</p><div class="linkrow"><span class="link">Ctrl+T · Nueva pestaña</span><span class="link">Ctrl+L · Dirección</span><span class="link">Ctrl+F · Buscar en página</span></div></section></div>
 </main>
 <script>
+const qPrime=(()=>{try{const z=JSON.parse(localStorage.getItem('nova')||'{}');const m=z.quantumAppearance||'system';return m==='dark'||(m==='system'&&matchMedia('(prefers-color-scheme: dark)').matches)?'q-dark':'q-light'}catch{return matchMedia('(prefers-color-scheme: dark)').matches?'q-dark':'q-light'}})();document.body.classList.add(qPrime);
 const p=new URLSearchParams(location.search),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let theme=p.get('t')||'air';const a=p.get('a');if(a&&/^#[0-9a-f]{3,8}$/i.test(a))document.documentElement.style.setProperty('--acc',a);
 const themes={air:'#8b72ff',nova:'#8b72ff'};if(!a&&themes[theme])document.documentElement.style.setProperty('--acc',themes[theme]);
 const wp=p.get('wp');if(wp){document.body.classList.add('hasbg');document.getElementById('bg').style.backgroundImage=`url("${wp}")`;document.addEventListener('mousemove',e=>document.getElementById('bg').style.transform=`translate(${(.5-e.clientX/innerWidth)*12}px,${(.5-e.clientY/innerHeight)*9}px)`)}
 const clock=document.getElementById('clock');const name=p.get('n');function tick(){clock.textContent=(name?'Hola, '+name+' · ':'')+new Date().toLocaleString('es-ES',{weekday:'long',hour:'2-digit',minute:'2-digit',day:'numeric',month:'long'})}tick();setInterval(tick,30000);
+const parseList=k=>{try{const raw=JSON.parse(p.get(k)||'[]');return Array.isArray(raw)?raw:[]}catch{return[]}};
+const shortcutItems=[...parseList('x'),...parseList('b')].filter((x,i,a)=>x&&x.u&&!a.slice(0,i).some(y=>y?.u===x.u)).slice(0,8);
+const shortcutBox=document.getElementById('shortcuts');
+const fallbackIcon='../assets/logo/nova-quantum.svg';
+if(!shortcutItems.length){shortcutBox.innerHTML='<div class="empty shortcuts-empty">Aún no tienes accesos fijados. Usa la estrella de Nova para guardar una web.</div>';}else{
+  shortcutBox.innerHTML=shortcutItems.map((x,i)=>{let host='';try{host=new URL(x.u).hostname.replace(/^www\./,'')}catch{host=x.u||''};return `<button class="shortcut" data-open-shortcut="${esc(x.u)}"><img src="${fallbackIcon}" data-favicon-index="${i}" alt=""><span><b>${esc(x.t||host||'Sitio')}</b><small>${esc(host)}</small></span></button>`}).join('');
+  shortcutItems.forEach((x,i)=>{try{const u=new URL(x.u);const img=shortcutBox.querySelector(`[data-favicon-index="${i}"]`);if(img){img.src=u.origin+'/favicon.ico';img.onerror=()=>{img.onerror=null;img.src=fallbackIcon;}}}catch{}});
+  shortcutBox.querySelectorAll('[data-open-shortcut]').forEach(b=>b.onclick=()=>{const u=b.dataset.openShortcut;if(/^https?:/i.test(u))location.href=u});
+}
+
 const search=p.get('s')||'https://duckduckgo.com/?q=';document.getElementById('f').onsubmit=e=>{e.preventDefault();const v=document.getElementById('s').value.trim();if(!v)return;location.href=/^https?:\/\//i.test(v)?v:/^[\w-]+(\.[\w-]+)+(\/.*)?$/.test(v)?'https://'+v:search+encodeURIComponent(v)};
 let currentTopic=(p.get('sec')||'videojuegos').toLowerCase();
 const fallback=[

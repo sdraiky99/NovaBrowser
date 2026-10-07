@@ -1,21 +1,41 @@
-# Nova 4.5.1
+# Nova Browser 5.0.0 — Quantum Prime
 
-Nova es un navegador de escritorio basado en Electron/Chromium, orientado a una experiencia limpia, productiva y controlable.
+Nova es un navegador basado en Chromium con una interfaz propia, limpia y orientada a productividad.
 
-## 4.5.0 Calm UI
+## Quantum Prime
 
-Esta versión rediseña la interfaz sin reemplazar el shell estable. La navegación principal queda reducida a controles esenciales y las herramientas secundarias se concentran en un menú compacto.
+La versión 5.0.0 introduce la identidad Nova Quantum y una filosofía de interfaz más tranquila:
 
-### Desarrollo
+- Menos botones y menos duplicación.
+- Menús compactos y fáciles de entender.
+- Sidebar centrada en acciones útiles.
+- Transparencia y blur moderados.
+- Animaciones rápidas y accesibles.
+- Favicons reales para sitios fijados.
+- Workspaces, rendimiento, ahorro de energía y extensiones Chromium reales.
+- Nueva pestaña con noticias con fuentes identificables y fallback editorial marcado.
+
+## Desarrollo
+
+Requisitos recomendados:
+
+- Node.js 22.12.0 o superior (versión fijada en `.nvmrc`).
+- npm.
+- Windows para el instalador `.exe`.
+
+Comandos principales:
 
 ```bash
 npm install
 npm run check
-npm start
-```
-
-### Build Windows
-
-```bash
+npm run check:build-assets
 npm run dist:win
 ```
+
+## Filosofía de estabilidad
+
+Quantum Prime se implementa como una capa aislada sobre la base estable de Nova 4.4.1. Los cambios de interfaz no sustituyen masivamente `shell/index.html` y el pipeline comprueba recursos críticos antes del empaquetado.
+
+## Licencia
+
+Consulta `LICENSE.txt`.

@@ -23,12 +23,12 @@ const { createMigrationService } = require('./migration.js');
 const migration = createMigrationService(app);
 const { createAccountService } = require('./account-service.js');
 const accounts = createAccountService({ app, safeStorage, fetch });
-const LOGOS = ['classic', 'orbita', 'estrella', 'cometa', 'minimal', 'retro09'], SPLASH_MS = 1800;
-const logoId = id => (LOGOS.includes(id) ? id : 'classic');
+const LOGOS = ['quantum'], SPLASH_MS = 1400;
+const logoId = id => (LOGOS.includes(id) ? id : 'quantum');
 const logoIco = id => path.join(__dirname, `assets/logos/${logoId(id)}.ico`);      // dentro del paquete (asar)
 const logoImg = id => { const i = nativeImage.createFromPath(process.platform === 'win32' ? logoIco(id) : path.join(__dirname, `assets/logos/${logoId(id)}.png`)); return i.isEmpty() ? nativeImage.createFromPath(path.join(__dirname, 'assets/icon.png')) : i; };
 // preferencias que el proceso principal necesita antes de abrir la interfaz (logo, animación de inicio, extensiones)
-let prefs = { logo: 'classic', splash: true, ext: {}, reg: '' };
+let prefs = { logo: 'quantum', splash: true, ext: {}, reg: '' };
 const prefsFile = () => path.join(app.getPath('userData'), 'prefs.json');
 const atomicWrite = (file, data) => {
   const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
@@ -36,7 +36,7 @@ const atomicWrite = (file, data) => {
   fs.writeFileSync(tmp, data);
   fs.renameSync(tmp, file);
 };
-const loadPrefs = () => { try { prefs = Object.assign(prefs, JSON.parse(fs.readFileSync(prefsFile(), 'utf8'))); } catch { } };
+const loadPrefs = () => { try { prefs = Object.assign(prefs, JSON.parse(fs.readFileSync(prefsFile(), 'utf8'))); } catch { } prefs.logo = 'quantum'; savePrefs(); };
 const savePrefs = () => { try { atomicWrite(prefsFile(), JSON.stringify(prefs)); } catch { } };
 const { pathToFileURL } = require('url');
 const extUrl = a => { // enlace http(s) o archivo .html/.pdf/.svg... recibido desde Windows (navegador predeterminado)
@@ -650,7 +650,7 @@ const newsPick = (items, topic) => {
   return (ranked.length>=4?ranked:items).sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,6);
 };
 async function fetchNewsFeed(url, source) {
-  const r = await fetch(url, { headers:{'user-agent':'NovaBrowser/4.4.1 (+https://github.com/sdraiky99/NovaBrowser)','accept':'application/rss+xml, application/atom+xml, text/xml;q=0.9, */*;q=0.1'}, signal:AbortSignal.timeout(7000) });
+  const r = await fetch(url, { headers:{'user-agent':'NovaBrowser/5.0.0 (+https://github.com/sdraiky99/NovaBrowser)','accept':'application/rss+xml, application/atom+xml, text/xml;q=0.9, */*;q=0.1'}, signal:AbortSignal.timeout(7000) });
   if(!r.ok) throw new Error('HTTP '+r.status);
   const xml=await r.text(); const blocks=[...xml.matchAll(/<item\b[\s\S]*?<\/item>/gi)].map(m=>m[0]);
   return blocks.map(item=>{
