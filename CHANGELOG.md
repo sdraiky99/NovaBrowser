@@ -1,5 +1,14 @@
-# Nova 4.4.1
+# Changelog — Nova 4.5.0
 
-## News & New Tab Fix — 2026-10-06
+## 4.5.0 — Calm UI
 
-Nueva página de inicio profesional con noticias en vivo, fuente y fecha visibles, fallback editorial marcado y reparación del botón Nueva pestaña.
+Rediseño visual y simplificación de la interfaz de Nova.
+
+- Logo nuevo.
+- Menús más simples.
+- Sidebar reducida.
+- Menos botones visibles.
+- Nueva capa visual Calm.
+- Animaciones discretas.
+- Funciones secundarias trasladadas a un único menú.
+- Sin temas heredados expuestos al usuario.
