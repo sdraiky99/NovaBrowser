@@ -1,4 +1,11 @@
-# Changelog — Nova 4.5.0
+# Changelog
+
+## 4.5.1
+- Hotfix de build de Windows: ICO multi-resolución con 256×256+.
+- CI fijado a Node 22.12.0 y `engine-strict`.
+- QA valida los recursos del instalador antes de `electron-builder`.
+
+ Nova 4.5.0
 
 ## 4.5.0 — Calm UI
 

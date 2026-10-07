@@ -12,7 +12,7 @@ const warn = msg => console.warn('CHECK WARN:', msg);
 
 let pkg;
 try { pkg = JSON.parse(read('package.json')); } catch (e) { fail('package.json is not valid JSON'); process.exit(1); }
-if (pkg.version !== '4.5.0') fail(`version expected 4.5.0, got ${pkg.version}`);
+if (pkg.version !== '4.5.1') fail(`version expected 4.5.1, got ${pkg.version}`);
 
 const required = [
   'main.js','migration.js','account-service.js','account-config.json','account-server/server.js',
@@ -80,7 +80,8 @@ for (const x of ['N.PG.gaming41','N.PG.gamingprofile41','N.PG.extensions41','N.P
 if (!index.includes('nova41.js')) fail('Nova 4.1 script is not loaded');
 if (index.includes('Nova 2.2') || index.includes('Nova 2.3') || index.includes('Nova 2.4')) warn('legacy version strings remain in shell/index.html; review before release');
 if (!exists('package-lock.json') && !exists('npm-shrinkwrap.json') && !exists('yarn.lock') && !exists('pnpm-lock.yaml')) warn('no package lockfile is committed');
+if (!pkg.engines?.node || !pkg.engines.node.includes('22.12.0')) warn('Node engine is not pinned to Electron-compatible baseline >=22.12.0');
 if (main.includes('contextIsolation: false') && main.includes('nodeIntegration: true')) warn('main renderer still uses Node integration; migrate to preload/contextBridge for production hardening');
 
 if (failed) { console.error(`Nova 4.5.0 project checks failed: ${failed}`); process.exit(1); }
-console.log(`Nova 4.5.0 project checks OK · ${ids.length} extensions · ${invoked.size} IPC invoke channels verified`);
+console.log(`Nova 4.5.1 project checks OK · ${ids.length} extensions · ${invoked.size} IPC invoke channels verified`);

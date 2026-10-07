@@ -1,4 +1,4 @@
-# Nova 4.5.0
+# Nova 4.5.1
 
 Nova es un navegador de escritorio basado en Electron/Chromium, orientado a una experiencia limpia, productiva y controlable.
 
