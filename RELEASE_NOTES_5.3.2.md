@@ -1,21 +1,33 @@
-# Nova 5.3.2 — Core & Repository Cleanup
+# Nova 5.3.2
 
-## Objetivo
+## UI y estabilidad
 
-Consolidar la base de Nova para reducir deuda técnica y facilitar una subida completa a GitHub sin superar la regla de 100 archivos.
+- Renovación de la interfaz principal con controles compactos y consistentes.
+- Botones de navegación con superficies ovaladas suaves para mejorar la separación visual.
+- Sidebar simplificada a funciones útiles: Inicio, Favoritos, Historial, Descargas, Workspaces, Extensiones, Rendimiento y Ajustes.
+- Eliminadas de la interfaz las entradas heredadas de «General» y «Estudio».
+- Eliminados del flujo visible los sistemas antiguos de temas, mods y fondos.
+- El logo de Nova usa un recurso transparente y coherente en escritorio, barra de tareas y aplicación.
+- Se mantiene el nombre del sitio en las pestañas sin anteponer «Nova» para no desperdiciar espacio.
 
-## Cambios
+## Nueva pestaña y noticias
 
-- El runtime del renderer pasa a `shell/nova-runtime.js`, conservando el orden de ejecución de los módulos existentes.
-- Corregido el error de sintaxis de las rutas 5.3.
-- Se mantienen funciones familiares de Chromium/Electron: atrás, adelante, recargar, barra de dirección/búsqueda, pestañas, favoritos y atajos.
-- Se eliminan scripts de QA y documentación histórica que ya no son necesarios para la versión activa.
-- Se conservan referencias históricas compactas de Nova 3.0, 3.1 y 5.3.0.
-- Se eliminan wallpapers y helpers de Fedora del paquete activo para reducir el tamaño del repositorio sin tocar el núcleo de navegación.
-- Installer NSIS actualizado completamente a 5.3.2.
-- Se regeneran los materiales gráficos del instalador con la identidad actual.
-- La QA comprueba que el repositorio tenga menos de 100 archivos.
+- Modo claro y oscuro corregidos para que el shell mantenga una paleta coherente.
+- Las categorías de noticias se pueden cambiar y volver a seleccionar sin quedarse bloqueadas.
+- Gaming utiliza una fuente real de la sección de gaming de Ars Technica; no se generan noticias sintéticas.
+- Las noticias pueden mostrar la imagen proporcionada por el feed cuando existe.
+- Las imágenes fallidas se eliminan de la tarjeta en lugar de dejar un bloque gris.
+- Los artículos siguen mostrando fuente, fecha, resumen y enlace original.
 
-## Compatibilidad
+## Ajustes
 
-Nova sigue usando Chromium/Electron como base y conserva las funciones esenciales de navegación existentes. No se realiza una migración parcial del modelo de ventanas ni del renderer en esta versión.
+- Nuevo panel de Ajustes 5.3.2 con opciones agrupadas por Apariencia, Navegación, Privacidad, Experiencia, Herramientas y Ayuda.
+- Sistema / Claro / Oscuro.
+- Colores de acento profesionales sin recuperar los temas completos antiguos.
+- Acceso permanente a la guía de inicio y a What's New.
+
+## Instalador
+
+- Toda la información visible del instalador se actualiza a Nova 5.3.2.
+- Nuevo branding en cabecera y lateral del instalador.
+- La actualización conserva los datos de usuario.

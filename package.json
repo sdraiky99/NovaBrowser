@@ -2,7 +2,7 @@
   "name": "nova-browser",
   "productName": "Nova",
   "version": "5.3.2",
-  "description": "Nova Quantum 5.3.2: navegador basado en Chromium con funciones esenciales de navegación, extensiones, Workspaces y rendimiento.",
+  "description": "Nova Quantum 5.3.2: navegador basado en Chromium con UI renovada, extensiones, Workspaces y herramientas de rendimiento.",
   "author": "Nova",
   "main": "main.js",
   "scripts": {
@@ -11,7 +11,7 @@
     "check": "npm run check:project && npm run check:syntax && npm run qa:5.3.2 && npm run check:build-assets",
     "dist:win": "electron-builder --win --publish never",
     "dist:linux": "electron-builder --linux rpm AppImage --publish never",
-    "check:syntax": "node --check main.js && node --check migration.js && node --check account-service.js && node --check account-server/server.js && node --check shell/extensions.js && node --check shell/nova-runtime.js",
+    "check:syntax": "node --check main.js && node --check migration.js && node --check account-service.js && node --check account-server/server.js && node --check shell/extensions.js && node --check shell/nova-runtime.js && node --check shell/nova532-ui.js",
     "check:project": "node scripts/check-project.js",
     "qa:5.3.2": "node scripts/qa-5.3.2.js",
     "check:build-assets": "node scripts/check-build-assets.js"

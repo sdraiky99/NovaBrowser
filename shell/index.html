@@ -79,7 +79,7 @@ const AI=`<svg viewBox="0 0 32 32"><defs><linearGradient id="ng" x1="0" y1="0" x
 document.querySelectorAll('[data-w]').forEach(b=>{b.innerHTML=ic({min:'min',max:'max',close:'x'}[b.dataset.w]);b.onclick=()=>ipc.send('win',b.dataset.w)});
 
 const ud=ipc.sendSync('userdata'),NOVA_VER=ipc.sendSync('app-version');
-let STORED={};try{STORED=JSON.parse(localStorage.nova||'{}')||{}}catch{try{localStorage.removeItem('nova')}catch{}};const S=Object.assign({theme:'nova',search:'https://duckduckgo.com/?q=',adblock:true,anim:true,sec:'videojuegos',wp:'',marks:[],key:'',mods:{},memSave:false,bmbar:false,newTabLinks:false},STORED);
+let STORED={};try{STORED=JSON.parse(localStorage.nova||'{}')||{}}catch{try{localStorage.removeItem('nova')}catch{}};const S=Object.assign({theme:'nova',quantumAppearance:'system',quantumAccent:'#4f63e8',search:'https://duckduckgo.com/?q=',adblock:true,anim:true,sec:'videojuegos',wp:'',marks:[],key:'',mods:{},memSave:false,bmbar:false,newTabLinks:false},STORED);
 let __saveTimer=0; const save=()=>{ try { const raw=JSON.stringify(S); localStorage.nova=raw; clearTimeout(__saveTimer); __saveTimer=setTimeout(()=>{ try { ipc.invoke('state-save',raw).catch?.(()=>{}); } catch {} },350); } catch {} };
 (async()=>{ try { if(!localStorage.nova){ const backup=await ipc.invoke('state-load'); if(backup){ localStorage.nova=backup; location.reload(); return; } } } catch {} })();
 window.save = save;
@@ -98,7 +98,7 @@ function applyTheme(){S.theme='nova';document.body.className='t-nova'+(S.anim?''
 let tabs=[],cur=null;
 const TAB_ADD=tabAdd;
 const profilePartition=()=>window.NOVA_PROFILE_PARTITION?window.NOVA_PROFILE_PARTITION():`persist:nova-profile-${String(S.activeProfile||'default').replace(/[^a-z0-9_-]/gi,'').slice(0,32)||'default'}`;
-const NT=()=>pathToFileURL(path.join(__dirname,'newtab.html')).href+'?l='+encodeURIComponent(S.logo||'quantum')+'&t='+S.theme+'&s='+encodeURIComponent(S.search)+'&n='+encodeURIComponent(S.name||'')+'&a='+encodeURIComponent(S.acc||'')+'&b='+encodeURIComponent(JSON.stringify((S.marks||[]).slice(0,8)))+'&d='+encodeURIComponent(JSON.stringify(S.dash||{}))+'&r='+encodeURIComponent(JSON.stringify((S.hist||[]).slice(0,6).map(x=>({u:x.u,t:x.t}))))+'&x='+encodeURIComponent(JSON.stringify(S.quick||[]))+'&nd='+((S.dls||[]).length)+'&sec='+encodeURIComponent(S.sec||'videojuegos')+(S.wp?'&wp='+encodeURIComponent(pathToFileURL(S.wp).href):'');
+const NT=()=>pathToFileURL(path.join(__dirname,'newtab.html')).href+'?l='+encodeURIComponent(S.logo||'quantum')+'&t='+S.theme+'&s='+encodeURIComponent(S.search)+'&n='+encodeURIComponent(S.name||'')+'&a='+encodeURIComponent(S.quantumAccent||'')+'&b='+encodeURIComponent(JSON.stringify((S.marks||[]).slice(0,8)))+'&d='+encodeURIComponent(JSON.stringify(S.dash||{}))+'&r='+encodeURIComponent(JSON.stringify((S.hist||[]).slice(0,6).map(x=>({u:x.u,t:x.t}))))+'&x='+encodeURIComponent(JSON.stringify(S.quick||[]))+'&nd='+((S.dls||[]).length)+'&sec='+encodeURIComponent(S.sec||'videojuegos')+(S.wp?'&wp='+encodeURIComponent(pathToFileURL(S.wp).href):'');
 const isNT=u=>u&&u.includes('newtab.html');
 function newTab(u){
   const wv=document.createElement('webview');wv.setAttribute('partition',profilePartition());wv.src=u||NT();$('#view').appendChild(wv);
@@ -169,4 +169,4 @@ async function ask(text,shown){if(!String(text||'').trim())return;if(!S.hasKey&&
   if(panel==='ai')draw()}
 
 (async()=>{try{if(!localStorage.nova){const c=await ipc.invoke('install-cfg').catch(()=>({}));if(c?.theme)S.theme=c.theme;if(c?.adblock===false)S.adblock=false;save()}}catch{} applyTheme();newTab()})();
-</script><script src="nova-runtime.js"></script></body></html>
+</script><script src="nova-runtime.js"></script><script src="nova532-ui.js"></script></body></html>

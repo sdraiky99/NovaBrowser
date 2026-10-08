@@ -629,8 +629,9 @@ ipcMain.handle('launch-web-app', async (e, payload) => {
 // ---------- Live news for Nova New Tab ----------
 const newsCache = new Map();
 const NEWS_SOURCES = [
-  { name: 'Ars Technica', url: 'https://feeds.arstechnica.com/arstechnica/index', site: 'https://arstechnica.com/' },
-  { name: 'The Guardian', url: 'https://www.theguardian.com/technology/rss', site: 'https://www.theguardian.com/technology' }
+  { name: 'Ars Technica', url: 'https://feeds.arstechnica.com/arstechnica/index', site: 'https://arstechnica.com/', topics:['tecnologia','codigo'] },
+  { name: 'Ars Technica Gaming', url: 'https://feeds.arstechnica.com/arstechnica/gaming', site: 'https://arstechnica.com/gaming/', topics:['videojuegos'] },
+  { name: 'The Guardian Technology', url: 'https://www.theguardian.com/technology/rss', site: 'https://www.theguardian.com/technology', topics:['tecnologia','codigo'] }
 ];
 const NEWS_FALLBACK = [
   { source:'Nova Briefing', title:'Cómo está cambiando la navegación con IA', summary:'Los navegadores están incorporando asistentes, búsqueda contextual y automatizaciones. La prioridad de Nova es mantener esas funciones opcionales, visibles y bajo control del usuario.', url:'https://www.mozilla.org/', date:'', kind:'briefing' },
@@ -643,22 +644,35 @@ const newsLinkField = item => { let m=item.match(/<link[^>]*>([\s\S]*?)<\/link>/
 const newsPick = (items, topic) => {
   const terms = {
     tecnologia: /AI|artificial|browser|web|internet|chip|memory|GPU|software|privacy|security|Microsoft|Apple|Google|Mozilla|Firefox|Linux|Windows/i,
-    videojuegos: /game|gaming|Steam|Valve|Nintendo|PlayStation|Xbox|GPU|PC gaming|VR|console|Doom/i,
+    videojuegos: /game|gaming|Steam|Valve|Nintendo|PlayStation|Xbox|GPU|VR|console|Doom|Minecraft|Fortnite/i,
     codigo: /developer|programming|code|software|open source|Linux|GitHub|browser|API|AI|security|MCP|web/i
   };
+  const srcFiltered=items.filter(x=>Array.isArray(x.topics)&&x.topics.includes(topic));
+  const pool=srcFiltered.length?srcFiltered:items;
   const re=terms[topic]||terms.tecnologia;
-  const ranked=items.map(x=>({...x,score: re.test(`${x.title} ${x.summary}`)?2:0})).filter(x=>x.score>0);
-  return (ranked.length>=4?ranked:items).sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,6);
+  const ranked=pool.map(x=>({...x,score:re.test(`${x.title} ${x.summary}`)?2:0})).filter(x=>x.score>0);
+  return (ranked.length>=4?ranked:pool).sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,6);
 };
 async function fetchNewsFeed(url, source) {
-  const r = await fetch(url, { headers:{'user-agent':'NovaBrowser/5.0.0 (+https://github.com/sdraiky99/NovaBrowser)','accept':'application/rss+xml, application/atom+xml, text/xml;q=0.9, */*;q=0.1'}, signal:AbortSignal.timeout(7000) });
+  const r = await fetch(url, { headers:{'user-agent':'NovaBrowser/5.3.2 (+https://github.com/sdraiky99/NovaBrowser)','accept':'application/rss+xml, application/atom+xml, text/xml;q=0.9, */*;q=0.1'}, signal:AbortSignal.timeout(7000) });
   if(!r.ok) throw new Error('HTTP '+r.status);
-  const xml=await r.text(); const blocks=[...xml.matchAll(/<item\b[\s\S]*?<\/item>/gi)].map(m=>m[0]);
+  const xml=await r.text();
+  const rss=[...xml.matchAll(/<item\b[\s\S]*?<\/item>/gi)].map(m=>m[0]);
+  const atom=[...xml.matchAll(/<entry\b[\s\S]*?<\/entry>/gi)].map(m=>m[0]);
+  const blocks=rss.length?rss:atom;
   return blocks.map(item=>{
-    const title=newsXmlField(item,'title'), url=newsLinkField(item), desc=newsXmlField(item,'description')||newsXmlField(item,'content:encoded');
-    const dateRaw=newsXmlField(item,'pubDate')||newsXmlField(item,'dc:date')||newsXmlField(item,'published');
+    const title=newsXmlField(item,'title');
+    let link=newsLinkField(item);
+    if(!link){ const m=item.match(/<link[^>]+href=["']([^"']+)["'][^>]*>/i); link=m?m[1]:''; }
+    const desc=newsXmlField(item,'description')||newsXmlField(item,'content:encoded')||newsXmlField(item,'summary')||newsXmlField(item,'content');
+    const dateRaw=newsXmlField(item,'pubDate')||newsXmlField(item,'dc:date')||newsXmlField(item,'published')||newsXmlField(item,'updated');
     const ts=Date.parse(dateRaw)||0;
-    return title&&/^https?:/i.test(url)?{source:source.name,title,summary:desc.slice(0,360),url,date:ts?new Date(ts).toISOString():'',ts,kind:'live'}:null;
+    let image='';
+    let m=item.match(/<(?:media:content|media:thumbnail)[^>]+url=["']([^"']+)["'][^>]*>/i);
+    if(!m)m=item.match(/<enclosure[^>]+url=["']([^"']+)["'][^>]*>/i);
+    if(m)image=m[1];
+    if(!image){m=String(item).match(/<img[^>]+src=["']([^"']+)["']/i);if(m)image=m[1];}
+    return title&&/^https?:/i.test(link)?{source:source.name,title,summary:desc.slice(0,360),url:link,image:/^https?:/i.test(image)?image:'',date:ts?new Date(ts).toISOString():'',ts,kind:'live',topics:source.topics||[]}:null;
   }).filter(Boolean);
 }
 ipcMain.handle('news-feed', async (e, payload) => {
