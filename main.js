@@ -36,44 +36,8 @@ const atomicWrite = (file, data) => {
   fs.writeFileSync(tmp, data);
   fs.renameSync(tmp, file);
 };
-const PREFS_SCHEMA = 2;
-const log = (...a) => { try { console.warn('[nova]', ...a); } catch { /* sin consola disponible: nada que registrar */ } };
-const isPlainObject = o => !!o && typeof o === 'object' && !Array.isArray(o);
-// Normaliza prefs.json de cualquier versión anterior al esquema actual conservando lo importante.
-const migratePrefs = raw => {
-  const out = { logo: 'quantum', splash: true, ext: {}, reg: '' };
-  if (!isPlainObject(raw)) { out.schemaVersion = PREFS_SCHEMA; return out; }
-  Object.assign(out, raw);
-  if (typeof out.splash !== 'boolean') out.splash = true;
-  if (!isPlainObject(out.ext)) out.ext = {};
-  if (typeof out.reg !== 'string') out.reg = '';
-  for (const k of ['theme', 'customTheme', 'wallpaper', 'oldLogo', 'mods']) delete out[k]; // claves heredadas sin consumidor
-  out.logo = 'quantum';
-  out.schemaVersion = PREFS_SCHEMA;
-  return out;
-};
-const readPrefsFile = f => { const x = JSON.parse(fs.readFileSync(f, 'utf8')); if (!isPlainObject(x)) throw new Error('prefs no es un objeto'); return x; };
-// Orden: prefs.json → prefs.json.bak → valores por defecto. Un archivo roto se aparta (no se borra) para diagnóstico.
-const loadPrefs = () => {
-  const f = prefsFile(), bak = f + '.bak';
-  let raw = null;
-  if (fs.existsSync(f)) {
-    try { raw = readPrefsFile(f); }
-    catch (err) {
-      log('prefs.json inválido, se aparta y se intenta restaurar:', err.message);
-      try { fs.renameSync(f, `${f}.corrupt-${Date.now()}`); } catch (e2) { log('no se pudo apartar prefs.json:', e2.message); }
-      try { raw = readPrefsFile(bak); log('prefs restauradas desde prefs.json.bak'); } catch (e3) { log('sin copia válida, se usan valores por defecto:', e3.message); }
-    }
-  }
-  prefs = migratePrefs(raw); savePrefs();
-};
-const savePrefs = () => {
-  try {
-    const f = prefsFile();
-    if (fs.existsSync(f)) { try { readPrefsFile(f); fs.copyFileSync(f, f + '.bak'); } catch { /* el actual ya está dañado: no se sobrescribe una copia buena */ } }
-    atomicWrite(f, JSON.stringify(prefs));
-  } catch (err) { log('no se pudo guardar prefs.json:', err.message); }
-};
+const loadPrefs = () => { try { prefs = Object.assign(prefs, JSON.parse(fs.readFileSync(prefsFile(), 'utf8'))); } catch { } prefs.logo = 'quantum'; savePrefs(); };
+const savePrefs = () => { try { atomicWrite(prefsFile(), JSON.stringify(prefs)); } catch { } };
 const { pathToFileURL } = require('url');
 const extUrl = a => { // enlace http(s) o archivo .html/.pdf/.svg... recibido desde Windows (navegador predeterminado)
   for (const x of a || []) {
@@ -411,6 +375,8 @@ app.whenReady().then(() => {
   });
 });
 
+ipcMain.on('fullscreen', e => { if (denyUntrusted(e) || !win || win.isDestroyed()) return; try { win.setFullScreen(!win.isFullScreen()); } catch { } });
+ipcMain.handle('opacity', (e, v) => { if (denyUntrusted(e) || !win || win.isDestroyed() || typeof v !== 'number' || !Number.isFinite(v)) return false; try { win.setOpacity(Math.max(0.35, Math.min(1, v))); return true; } catch { return false; } });
 // Cristal real (Aero): el sistema difumina lo que hay detrás de la ventana. Solo Windows 11 22H2+ (build 22621); en otros sistemas se devuelve ok:false y la interfaz usa un fondo de respaldo.
 ipcMain.handle('window-material', (e, mode) => {
   if (denyUntrusted(e) || !win || win.isDestroyed()) return { ok: false };

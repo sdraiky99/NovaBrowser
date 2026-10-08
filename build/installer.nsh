@@ -1,14 +1,14 @@
-; Nova 5.3.1 · Identity installer
-; No elimina ni sustituye userData durante una actualización.
+; Nova 5.3.2 — Quantum installer
+; No elimina userData durante la instalación o actualización.
 
 !macro customHeader
-  BrandingText "Nova Browser 5.3.1"
-  !define MUI_WELCOMEPAGE_TITLE "Bienvenido a Nova"
-  !define MUI_WELCOMEPAGE_TEXT "Nova 5.3.1 · Quantum Identity, una interfaz serena, coherente y preparada para durar.$\r$\n$\r$\nEste asistente instalará o actualizará Nova para tu usuario. Tus datos de navegación y ajustes se conservan."
-  !define MUI_DIRECTORYPAGE_TEXT_TOP "Elige la carpeta donde se instalará Nova. Puedes actualizar una instalación existente sin desinstalarla primero."
-  !define MUI_FINISHPAGE_TITLE "Nova está listo"
-  !define MUI_FINISHPAGE_TEXT "Nova 5.3.1 se ha instalado o actualizado correctamente. Tus datos de usuario se conservan."
-  !define MUI_UNCONFIRMPAGE_TEXT_TOP "Nova se quitará de tu equipo. Los datos de usuario se conservan."
+  BrandingText "Nova Browser 5.3.2"
+  !define MUI_WELCOMEPAGE_TITLE "Bienvenido a Nova 5.3.2"
+  !define MUI_WELCOMEPAGE_TEXT "Nova Quantum 5.3.2 · un navegador basado en Chromium, limpio y estable.$\r$\n$\r$\nEste asistente instalará o actualizará Nova para tu usuario. Los datos de usuario, favoritos, historial y ajustes se conservan."
+  !define MUI_DIRECTORYPAGE_TEXT_TOP "Elige la carpeta donde se instalará Nova. Para actualizar una instalación existente no necesitas desinstalarla primero."
+  !define MUI_FINISHPAGE_TITLE "Nova 5.3.2 está listo"
+  !define MUI_FINISHPAGE_TEXT "Nova 5.3.2 se ha instalado o actualizado correctamente. Tus datos de usuario se conservan."
+  !define MUI_UNCONFIRMPAGE_TEXT_TOP "Nova se quitará de tu equipo. Los datos de usuario se conservan y no se eliminan automáticamente."
 !macroend
 
 !macro customInstall
@@ -22,9 +22,9 @@
   WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nova" "" "Nova"
   WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nova\DefaultIcon" "" '$INSTDIR\${APP_EXECUTABLE_FILENAME},0'
   WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nova\shell\open\command" "" '"$INSTDIR\${APP_EXECUTABLE_FILENAME}"'
-  WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nova\Capabilities" "ApplicationName" "Nova"
+  WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nova\Capabilities" "ApplicationName" "Nova 5.3.2"
   WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nova\Capabilities" "ApplicationIcon" '$INSTDIR\${APP_EXECUTABLE_FILENAME},0'
-  WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nova\Capabilities" "ApplicationDescription" "Navegador web moderno basado en Chromium"
+  WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nova\Capabilities" "ApplicationDescription" "Navegador web basado en Chromium"
   WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nova\Capabilities\URLAssociations" "http" "NovaURL"
   WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nova\Capabilities\URLAssociations" "https" "NovaURL"
   WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nova\Capabilities\FileAssociations" ".html" "NovaHTML"
