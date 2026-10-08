@@ -1,13 +1,13 @@
-; Nova 5.3.0 · Identity installer
+; Nova 5.3.1 · Identity installer
 ; No elimina ni sustituye userData durante una actualización.
 
 !macro customHeader
-  BrandingText "Nova Browser 5.3.0"
+  BrandingText "Nova Browser 5.3.1"
   !define MUI_WELCOMEPAGE_TITLE "Bienvenido a Nova"
-  !define MUI_WELCOMEPAGE_TEXT "Nova 5.3.0 · Quantum Identity, una interfaz serena, coherente y preparada para durar.$\r$\n$\r$\nEste asistente instalará o actualizará Nova para tu usuario. Tus datos de navegación y ajustes se conservan."
+  !define MUI_WELCOMEPAGE_TEXT "Nova 5.3.1 · Quantum Identity, una interfaz serena, coherente y preparada para durar.$\r$\n$\r$\nEste asistente instalará o actualizará Nova para tu usuario. Tus datos de navegación y ajustes se conservan."
   !define MUI_DIRECTORYPAGE_TEXT_TOP "Elige la carpeta donde se instalará Nova. Puedes actualizar una instalación existente sin desinstalarla primero."
   !define MUI_FINISHPAGE_TITLE "Nova está listo"
-  !define MUI_FINISHPAGE_TEXT "Nova 5.3.0 se ha instalado o actualizado correctamente. Tus datos de usuario se conservan."
+  !define MUI_FINISHPAGE_TEXT "Nova 5.3.1 se ha instalado o actualizado correctamente. Tus datos de usuario se conservan."
   !define MUI_UNCONFIRMPAGE_TEXT_TOP "Nova se quitará de tu equipo. Los datos de usuario se conservan."
 !macroend
 
