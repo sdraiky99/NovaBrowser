@@ -1,5 +1,10 @@
 # Changelog
 
-## 5.2.0 — Quantum Identity
-
-Nova 5.2.0 consolida la identidad visual del navegador sin introducir funciones nuevas de alto riesgo: nuevo sistema de marca, splash e instalador, tipografía y microanimaciones más serenas, y una capa visual separada del núcleo de pestañas.
+## 5.3.0 — Reborn
+- Renderer visual renovado como capa aislada.
+- Extension Center renovado con catálogo curado.
+- What's New animado y materiales visuales nuevos.
+- Selector de color de acento en la barra superior.
+- Tipografía, menús, espaciado e iconografía refinados.
+- Guía de inicio y navegación interna de novedades accesibles de nuevo.
+- No se modifica el núcleo de pestañas.
