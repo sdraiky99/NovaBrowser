@@ -1,0 +1,6 @@
+/* Nova Quantum 5.1 — base UI tokens. Legacy theme system removed. */
+:root{--bg:#f6f7f9;--bar:rgba(255,255,255,.88);--fg:#202124;--mut:#6b7280;--acc:#4f63e8;--acc2:#7182f4;--bd:rgba(32,33,36,.11);--r:12px;--fs:13px;--font:Inter,"Segoe UI Variable","Segoe UI",system-ui,sans-serif}
+body.t-nova{font-family:var(--font);font-size:var(--fs)}
+body.quantum-prime{--bg:#f6f7f9;--bar:rgba(255,255,255,.86);--fg:#202124;--mut:#6b7280;--acc:#4f63e8;--acc2:#7182f4;--bd:rgba(32,33,36,.11)}
+body.quantum-prime.q-dark{--bg:#111318;--bar:rgba(27,30,37,.88);--fg:#f2f4f7;--mut:#9aa2af;--acc:#8ea0ff;--acc2:#aab5ff;--bd:rgba(255,255,255,.10)}
+body.quantum-prime #mn,body.quantum-prime #mnp,body.quantum-prime #nova22-top-tools,body.quantum-prime .nova22-topbtn,body.quantum-prime .n40-dock,body.quantum-prime .th,body.quantum-prime .lg,body.quantum-prime .pal,body.quantum-prime .apx,body.quantum-prime [data-legacy-theme]{display:none!important}

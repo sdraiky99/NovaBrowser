@@ -1,7 +1,7 @@
 /* Nova 1.1.0 - extras: páginas internas, fondos reales, ajustes, onboarding */
 (() => {
 const { shell } = require('electron');
-Object.assign(THEMES, { neon: 'Neón' });
+/* Legacy theme registration disabled in Quantum 5.1. */
 Object.assign(SECS, { espacio: 'Espacio', naturaleza: 'Naturaleza', ciudad: 'Ciudad' });
 Object.assign(P, {
   menu: 'M4 6h16M4 12h16M4 18h16', shield: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z',
@@ -239,10 +239,10 @@ const PG = {
 /* ---------- primer uso: configuración + guía paso a paso ---------- */
 function onboard() {
   const ov = document.createElement('div'); ov.className = 'ov ob'; document.body.appendChild(ov); let n = 0, tour = -1;
-  const LGN = () => (window.NOVA && NOVA.LG) || { classic: 'Clásico' }, lsrc = id => id === 'classic' ? '../assets/icon.png' : '../assets/logos/' + id + '.png';
+  const LGN = () => (window.NOVA && NOVA.LG) || { quantum: 'Nova Quantum' }, lsrc = () => '../assets/icon.png';
   const steps = [
     () => `<img class="obl" src="../assets/release/2.5/onboarding.svg" width="100%" style="max-width:520px;border-radius:18px"><h2 class="obh">Bienvenido a Nova 2.5</h2><span class="mut obc">Air por defecto. Safari, Islands, Focus, Writer y herramientas avanzadas cuando las necesitas.</span><input class="fld" id="ob" placeholder="¿Cómo quieres que te llamemos? (opcional)" value="${esc(S.name || '')}">`,
-    () => `<h3>Elige tu experiencia</h3><span class="mut">Puedes cambiarla después en Ajustes › Apariencia.</span><div class="grid"><button class="btn ${(S.theme==='air'||S.theme==='system')?'on':''}" data-mode="air">✦ Nova Air<br><span class="mut">Ligero, suave y limpio</span></button><button class="btn ${S.theme==='safari'?'on':''}" data-mode="safari">⌘ Safari Mode<br><span class="mut">Cristal y navegación compacta</span></button></div>`,
+    () => `<h3>Elige tu experiencia</h3><span class="mut">Puedes cambiarla después en Ajustes.</span><div class="grid"><button class="btn on" data-mode="system">Sistema<br><span class="mut">Se adapta a Windows</span></button><button class="btn" data-mode="dark">Oscuro<br><span class="mut">Contraste relajado</span></button></div>`,
     () => `<h3>Organiza sin ruido</h3><span class="mut">Nova usa Spaces para contextos, Islands para proyectos y pestañas para páginas.</span><div class="nova25-card"><b>🏝 Islands</b><span class="mut">Agrupa las pestañas relacionadas y contráelas cuando no las necesites.</span></div><div class="nova25-card"><b>⌘ Command Center</b><span class="mut">Pulsa Ctrl/Cmd + K para buscar acciones, pestañas, páginas y herramientas.</span></div>`,
     () => `<h3>Concentración y creación</h3><span class="mut">Activa lo que necesites sin llenar la interfaz.</span><div class="grid"><button class="btn" data-mode2="focus">✦ Focus</button><button class="btn" data-mode2="reader">Aa Reader+</button><button class="btn" data-mode2="writer">✎ Writer + Word</button><button class="btn" data-mode2="improvements">↑ Mejoras</button></div><div class="row"><span>Bloquear anuncios y rastreadores</span>${sw2('adblock', S.adblock)}</div><div class="row"><span>Animaciones de la interfaz</span>${sw2('anim', S.anim)}</div>`,
     () => `<div class="okc"><svg viewBox="0 0 52 52" width="72"><circle cx="26" cy="26" r="24" fill="none" stroke="var(--acc)" stroke-width="3"/><path d="M15 27l8 8 15-17" fill="none" stroke="var(--acc2)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h2 class="obh">Todo listo${S.name ? ', ' + esc(S.name) : ''}</h2><span class="mut obc">Ahora verás una guía breve para conocer las partes importantes de Nova. Todo lo demás queda oculto hasta que lo necesites.</span>`

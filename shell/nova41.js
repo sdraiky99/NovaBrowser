@@ -81,7 +81,7 @@
       <div class="n41-grid"><div class="n41-card"><h3>🎨 Apariencia</h3><p>Usa el acento morado premium del perfil gaming.</p>${btn('Aplicar estilo Gaming','id="gp-style"','on')}</div><div class="n41-card"><h3>⚙️ Configuración</h3><p>Preferencias independientes del perfil personal.</p>${btn('Configurar','id="gp-settings"')}</div><div class="n41-card"><h3>🧩 Extensiones</h3><p>${p.extensions.length} extensiones asociadas.</p>${btn('Gestionar','id="gp-ext"')}</div><div class="n41-card"><h3>🔒 Privacidad</h3><p>Protección independiente para sesiones gaming.</p>${btn('Gestionar','id="gp-privacy"')}</div><div class="n41-card"><h3>🎮 Favoritos</h3><p>${st.gaming.favorites.length} juegos guardados.</p>${btn('Abrir Game Hub','id="gp-games"')}</div><div class="n41-card"><h3>☁️ Sync</h3><p>Perfil preparado para sincronización cifrada.</p>${btn('Abrir Nova Sync','id="gp-sync"')}</div></div></div>
     `);
     r.querySelector('#gp-active').onclick=()=>{p.active=!p.active;save();N.PG.gamingprofile41(r)};
-    r.querySelector('#gp-style').onclick=()=>{S.theme='cyberpunk';save();applyTheme();toast('Perfil Gaming aplicado')};
+    r.querySelector('#gp-style').onclick=()=>{S.quantumAppearance='dark';save();try{window.quantumSetAppearance?.('dark')}catch{};toast('Apariencia oscura aplicada')};
     r.querySelector('#gp-settings').onclick=()=>open('gamingsettings41'); r.querySelector('#gp-ext').onclick=()=>open('extensions41'); r.querySelector('#gp-privacy').onclick=()=>open('privacy41'); r.querySelector('#gp-games').onclick=()=>open('gaming41'); r.querySelector('#gp-sync').onclick=()=>open('sync41');
   };
 

@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'self' file: data: blob:; object-src 'none'; base-uri 'none'; frame-src 'self' file:; img-src 'self' file: data: blob: https:; style-src 'self' 'unsafe-inline' file:; script-src 'self' 'unsafe-inline' file:; connect-src 'self' https://api.anthropic.com https://text.pollinations.ai https://api.openai.com https://api.github.com https://github.com;"><title>Nova</title>
-<link rel="stylesheet" href="themes.css"><link rel="stylesheet" href="quantum.css"><link rel="icon" href="../assets/icon.png">
+<link rel="stylesheet" href="quantum-base.css"><link rel="stylesheet" href="quantum.css"><link rel="icon" href="../assets/icon.png">
 <style>
 #app{display:flex;flex-direction:column;height:100vh}
 #top{height:38px;display:flex;align-items:flex-end;background:var(--bar);border-bottom:1px solid var(--bd);-webkit-app-region:drag;padding-left:8px}
@@ -42,88 +42,6 @@ h3{margin:0;font-size:15px}.mut{color:var(--mut);font-size:12px}
 body.noanim *{animation:none!important;transition:none!important}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
-/* ---------- Windows 95 ---------- */
-.t-win95 #top{background:linear-gradient(90deg,#000080,#1084d0);color:#fff;border:0}
-.t-win95 .tab{border-radius:0;border:0;box-shadow:inset -1px -1px #404040,inset 1px 1px #fff;background:#c0c0c0;color:#000}
-.t-win95 .tab.on{font-weight:700;box-shadow:inset -1px -1px #808080,inset 1px 1px #fff,0 0 0 1px #000}
-.t-win95 #wc .ib{color:#000;background:#c0c0c0;width:22px;height:20px;margin:9px 1px;box-shadow:inset -1px -1px #404040,inset 1px 1px #fff}
-.t-win95 .ib,.t-win95 .btn{box-shadow:inset -1px -1px #404040,inset 1px 1px #fff;background:#c0c0c0;border:0;border-radius:0}
-.t-win95 .ib:active,.t-win95 .btn:active{box-shadow:inset 1px 1px #404040,inset -1px -1px #fff}
-.t-win95 #addr,.t-win95 .fld{background:#fff;border:0;border-radius:0;box-shadow:inset 1px 1px #808080,inset -1px -1px #fff,inset 2px 2px #404040}
-.t-win95 #bar,.t-win95 #side,.t-win95 #panel{border-color:#808080}.t-win95 .m.u{background:#000080}.t-win95 .th{border-radius:0}
-.t-win95 .sw{border-radius:0;background:#808080}.t-win95 .sw::after{border-radius:0;background:#c0c0c0}
-/* ---------- Código ---------- */
-.t-code .tab.on::before{content:"$";color:var(--acc)}.t-code #addr::placeholder{color:var(--mut)}
-.t-code #bar::before{content:"~/nova";color:var(--acc);margin-right:6px}.t-code .tab{border-radius:0}
-.t-code #brand{color:var(--acc)}.t-code .btn,.t-code .fld,.t-code .th,.t-code .wp{border-radius:2px}
-.t-code #top{background-image:repeating-linear-gradient(0deg,#0000 0 2px,#39ff1408 2px 3px)}
-/* ---------- Undertale ---------- */
-.t-undertale #top,.t-undertale #bar,.t-undertale #side,.t-undertale #panel{border-color:#fff;border-width:3px}
-.t-undertale .tab.on{color:var(--acc);border:3px solid #fff;border-bottom:0;background:#000}.t-undertale .tab.on::before{content:"♥";color:#f00}
-.t-undertale .tab{border-radius:0}.t-undertale #addr{border:3px solid #fff;border-radius:0}
-.t-undertale .btn:hover,.t-undertale .ib:hover{color:var(--acc);background:none}.t-undertale .btn:hover::before{content:"♥ ";color:#f00}
-.t-undertale #addr:focus{border-color:var(--acc);box-shadow:none}.t-undertale .m.a{border:3px solid #fff}.t-undertale .m.u{background:#000;color:var(--acc);border:3px solid var(--acc)}
-.t-undertale .sw{border-radius:0}.t-undertale .sw::after{border-radius:0}.t-undertale *{animation-timing-function:steps(6)!important}
-/* ---------- Safari (tema original de Nova) ---------- */
-.t-safari{background:#ececef}
-.t-safari #top{background:rgba(236,236,239,.86);backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--bd)}
-.t-safari #bar{background:rgba(246,246,248,.9);backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--bd);padding:7px 12px}
-.t-safari .tab{border-radius:8px;height:26px;margin-bottom:4px;border:0}
-.t-safari .tab.on{background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.12),0 0 0 .5px rgba(0,0,0,.08)}
-.t-safari .tab:not(.on):hover{background:rgba(0,0,0,.05)}
-.t-safari #addr{height:32px;max-width:640px;margin:0 auto;text-align:center;background:rgba(0,0,0,.055);border:1px solid transparent;border-radius:10px;transition:background .15s,box-shadow .15s}
-.t-safari #addr:focus{text-align:left;background:#fff;border-color:var(--acc);box-shadow:0 0 0 3px rgba(10,132,255,.25)}
-.t-safari .ib:hover,.t-safari .btn:hover{background:rgba(0,0,0,.07)}
-.t-safari .btn{background:#fff;border:1px solid var(--bd);box-shadow:0 1px 1px rgba(0,0,0,.05)}.t-safari .btn.on{background:var(--acc);border-color:var(--acc);color:#fff}
-.t-safari #side,.t-safari #panel{background:rgba(246,246,248,.9);backdrop-filter:saturate(180%) blur(20px);border-color:var(--bd)}
-.t-safari #side .ib.on{background:rgba(10,132,255,.14);color:var(--acc)}
-.t-safari .fld{background:#fff;border:1px solid var(--bd);border-radius:8px}
-.t-safari .m.a{background:#fff}.t-safari .th{border-width:1px}.t-safari .th.on{border-width:2px}
-.t-safari .sw.on{background:#34c759}
-/* ---------- Air: superficie ligera, cristal suave y controles discretos ---------- */
-body.t-air{background:var(--bg);letter-spacing:.005em}
-body.t-air #top{height:44px;padding-left:8px;background:transparent;border-bottom:0}
-body.t-air #brand{width:30px;padding:0 4px 7px 0;font-size:0;justify-content:center;gap:0;color:var(--fg)}
-body.t-air #brand img{width:20px;height:20px;opacity:.9}
-body.t-air #tabs{gap:4px;align-items:center;padding:5px 4px 0 2px}
-body.t-air .tab{height:32px;min-width:72px;max-width:230px;flex:0 1 190px;padding:0 10px;border:1px solid transparent;border-radius:12px;background:transparent;color:var(--mut);box-shadow:none}
-body.t-air .tab.on{background:var(--bar);border-color:var(--bd);color:var(--fg);box-shadow:0 3px 14px rgba(40,50,70,.08),inset 0 1px rgba(255,255,255,.55)}
-body.t-air .tab:not(.on):hover{background:color-mix(in srgb,var(--fg) 6%,transparent);color:var(--fg)}
-body.t-air .tab img{width:15px;height:15px;border-radius:4px}
-body.t-air #tabs #nt{order:999;flex:0 0 30px;width:30px;height:30px;margin:0 2px 0 2px;border-radius:50%;background:color-mix(in srgb,var(--fg) 5%,transparent);color:var(--fg)}
-body.t-air #tabs #nt:hover{background:color-mix(in srgb,var(--acc) 12%,transparent);color:var(--acc)}
-body.t-air #tabs #nt svg{width:16px;height:16px}
-body.t-air #nova22-top-tools{height:44px;gap:3px;margin-left:2px}
-body.t-air #nova22-top-tools>.nova22-topbtn{height:30px;min-width:30px;padding:0 9px;border-radius:12px;color:var(--mut)}
-body.t-air #nova22-top-tools>.nova22-topbtn:hover,body.t-air #nova22-top-tools>.nova22-topbtn.on{background:var(--bar);border-color:var(--bd);color:var(--fg);box-shadow:0 3px 12px rgba(40,50,70,.07)}
-body.t-air #nova22-main-btn{font-size:0;width:32px;padding:0;border-radius:50%}
-body.t-air #nova22-main-btn::before{content:'✦';font-size:15px;color:var(--acc)}
-body.t-air #nova22-zoom-btn{font-size:11px;min-width:48px;color:var(--mut)}
-body.t-air #wc{align-self:center;height:44px}
-body.t-air #wc .ib{width:38px;height:44px;border-radius:0;color:var(--mut)}
-body.t-air #wc .ib:hover{background:color-mix(in srgb,var(--fg) 7%,transparent);color:var(--fg)}
-body.t-air #wc .ib:last-child:hover{background:#e35d6a;color:#fff}
-body.t-air #bar{gap:6px;padding:7px 12px;background:var(--bar);border-top:1px solid var(--bd);border-bottom:1px solid var(--bd);backdrop-filter:blur(18px) saturate(130%);box-shadow:0 6px 18px rgba(40,50,70,.05)}
-body.t-air #addr{height:34px;max-width:760px;margin:0 auto;padding:0 16px;background:color-mix(in srgb,var(--fg) 6%,transparent);border:1px solid transparent;border-radius:17px;color:var(--fg);box-shadow:inset 0 1px 0 rgba(255,255,255,.45)}
-body.t-air #addr:focus{background:color-mix(in srgb,var(--bg) 90%,white);border-color:color-mix(in srgb,var(--acc) 45%,transparent);box-shadow:0 0 0 4px color-mix(in srgb,var(--acc) 14%,transparent),inset 0 1px 0 rgba(255,255,255,.55)}
-body.t-air #side{width:48px;background:transparent;border-right:0;gap:8px;padding:10px 4px}
-body.t-air #side .ib{width:38px;height:38px;border-radius:13px;color:var(--mut)}
-body.t-air #side .ib:hover{background:color-mix(in srgb,var(--fg) 6%,transparent);color:var(--fg)}
-body.t-air #side .ib.on{background:color-mix(in srgb,var(--acc) 12%,transparent);color:var(--acc);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--acc) 10%,transparent)}
-body.t-air #panel{background:color-mix(in srgb,var(--bar) 88%,var(--bg));border-left:1px solid var(--bd);backdrop-filter:blur(20px) saturate(125%);box-shadow:-18px 0 40px rgba(40,50,70,.08)}
-body.t-air #panel.open{width:330px}
-body.t-air .btn{background:color-mix(in srgb,var(--bg) 86%,white);border-color:var(--bd);border-radius:11px;box-shadow:0 2px 10px rgba(40,50,70,.04)}
-body.t-air .btn:hover,body.t-air .btn.on{background:color-mix(in srgb,var(--acc) 10%,var(--bg));border-color:color-mix(in srgb,var(--acc) 45%,var(--bd));color:var(--acc)}
-body.t-air .fld{background:color-mix(in srgb,var(--bg) 90%,white);border-color:var(--bd);border-radius:11px}
-body.t-air .card{background:color-mix(in srgb,var(--bar) 92%,var(--bg));border:1px solid var(--bd);border-radius:18px;box-shadow:0 24px 80px rgba(30,40,60,.18);backdrop-filter:blur(24px) saturate(135%)}
-body.t-air #nova22-top-pop,body.t-air #nova22-zoom-pop,body.t-air #nova22-webctx{background:color-mix(in srgb,var(--bar) 92%,var(--bg));border-color:var(--bd);border-radius:16px;box-shadow:0 24px 80px rgba(30,40,60,.18);backdrop-filter:blur(22px) saturate(130%)}
-body.t-air #nova22-top-pop .nova22-menuitem,body.t-air .nova22-ctxitem{border-radius:11px}
-body.t-air #nova22-top-pop .nova22-menuitem:hover,body.t-air .nova22-ctxitem:hover{background:color-mix(in srgb,var(--acc) 10%,transparent);color:var(--acc)}
-body.t-air #nova22-split{background:var(--bg)}
-body.t-air .nova22-split-head{background:var(--bar);border-bottom:1px solid var(--bd);backdrop-filter:blur(18px)}
-body.t-air #find{top:12px;right:14px}
-body.t-air .selchip{border-radius:999px}
-body.t-air #upd{background:color-mix(in srgb,var(--acc) 8%,var(--bar));border-bottom-color:color-mix(in srgb,var(--acc) 20%,var(--bd))}
 /* ---------- Microanimaciones (100-250 ms) ---------- */
 .ib,.btn,.tab,.fld,#addr{transition:background-color .12s,color .12s,border-color .12s,box-shadow .12s}
 .ib:active,.btn:active{transform:scale(.96)}
@@ -161,26 +79,26 @@ const AI=`<svg viewBox="0 0 32 32"><defs><linearGradient id="ng" x1="0" y1="0" x
 document.querySelectorAll('[data-w]').forEach(b=>{b.innerHTML=ic({min:'min',max:'max',close:'x'}[b.dataset.w]);b.onclick=()=>ipc.send('win',b.dataset.w)});
 
 const ud=ipc.sendSync('userdata'),NOVA_VER=ipc.sendSync('app-version');
-let STORED={};try{STORED=JSON.parse(localStorage.nova||'{}')||{}}catch{try{localStorage.removeItem('nova')}catch{}};const S=Object.assign({theme:'air',search:'https://duckduckgo.com/?q=',adblock:true,anim:true,sec:'videojuegos',wp:'',marks:[],key:'',mods:{},memSave:false,bmbar:false,newTabLinks:false},STORED);
+let STORED={};try{STORED=JSON.parse(localStorage.nova||'{}')||{}}catch{try{localStorage.removeItem('nova')}catch{}};const S=Object.assign({theme:'nova',search:'https://duckduckgo.com/?q=',adblock:true,anim:true,sec:'videojuegos',wp:'',marks:[],key:'',mods:{},memSave:false,bmbar:false,newTabLinks:false},STORED);
 let __saveTimer=0; const save=()=>{ try { const raw=JSON.stringify(S); localStorage.nova=raw; clearTimeout(__saveTimer); __saveTimer=setTimeout(()=>{ try { ipc.invoke('state-save',raw).catch?.(()=>{}); } catch {} },350); } catch {} };
 (async()=>{ try { if(!localStorage.nova){ const backup=await ipc.invoke('state-load'); if(backup){ localStorage.nova=backup; location.reload(); return; } } } catch {} })();
 window.save = save;
 const tabAdd=$('#nt');
 const keepTabAddAtEnd=()=>{if(tabAdd&&tabAdd.parentNode!==$('#tabs'))$('#tabs').appendChild(tabAdd); else if(tabAdd&&$('#tabs').lastElementChild!==tabAdd)$('#tabs').appendChild(tabAdd)};
 keepTabAddAtEnd();
-const THEMES={air:'Air',nova:'Nova',win95:'Windows 95',code:'Código',undertale:'Undertale',aero:'Aero'};
+const THEMES={nova:'Nova'};
 const SECS={coches:'Coches',videojuegos:'Videojuegos',codigo:'Código'};
 const MODS={dark:['Modo oscuro forzado','html{filter:invert(1) hue-rotate(180deg)}img,video,picture{filter:invert(1) hue-rotate(180deg)}'],
 reader:['Modo lectura','header,nav,aside,footer,[class*=ad-],[id*=banner]{display:none!important}body{max-width:720px!important;margin:auto!important;font:18px/1.7 Georgia,serif!important}'],
 noanim:['Sin animaciones web','*{animation:none!important;transition:none!important;scroll-behavior:auto!important}'],
 zoom:['Texto grande','html{zoom:1.2}']};
-function applyTheme(){document.body.className='t-'+S.theme+(S.anim?'':' noanim');ipc.invoke('adblock',S.adblock)}
+function applyTheme(){S.theme='nova';document.body.className='t-nova'+(S.anim?'':' noanim');ipc.invoke('adblock',S.adblock)}
 
 /* ---- Tabs ---- */
 let tabs=[],cur=null;
 const TAB_ADD=tabAdd;
 const profilePartition=()=>window.NOVA_PROFILE_PARTITION?window.NOVA_PROFILE_PARTITION():`persist:nova-profile-${String(S.activeProfile||'default').replace(/[^a-z0-9_-]/gi,'').slice(0,32)||'default'}`;
-const NT=()=>pathToFileURL(path.join(__dirname,'newtab.html')).href+'?l='+encodeURIComponent(S.logo||'classic')+'&t='+S.theme+'&s='+encodeURIComponent(S.search)+'&n='+encodeURIComponent(S.name||'')+'&a='+encodeURIComponent(S.acc||'')+'&b='+encodeURIComponent(JSON.stringify((S.marks||[]).slice(0,8)))+'&d='+encodeURIComponent(JSON.stringify(S.dash||{}))+'&r='+encodeURIComponent(JSON.stringify((S.hist||[]).slice(0,6).map(x=>({u:x.u,t:x.t}))))+'&x='+encodeURIComponent(JSON.stringify(S.quick||[]))+'&nd='+((S.dls||[]).length)+'&sec='+encodeURIComponent(S.sec||'videojuegos')+(S.wp?'&wp='+encodeURIComponent(pathToFileURL(S.wp).href):'');
+const NT=()=>pathToFileURL(path.join(__dirname,'newtab.html')).href+'?l='+encodeURIComponent(S.logo||'quantum')+'&t='+S.theme+'&s='+encodeURIComponent(S.search)+'&n='+encodeURIComponent(S.name||'')+'&a='+encodeURIComponent(S.acc||'')+'&b='+encodeURIComponent(JSON.stringify((S.marks||[]).slice(0,8)))+'&d='+encodeURIComponent(JSON.stringify(S.dash||{}))+'&r='+encodeURIComponent(JSON.stringify((S.hist||[]).slice(0,6).map(x=>({u:x.u,t:x.t}))))+'&x='+encodeURIComponent(JSON.stringify(S.quick||[]))+'&nd='+((S.dls||[]).length)+'&sec='+encodeURIComponent(S.sec||'videojuegos')+(S.wp?'&wp='+encodeURIComponent(pathToFileURL(S.wp).href):'');
 const isNT=u=>u&&u.includes('newtab.html');
 function newTab(u){
   const wv=document.createElement('webview');wv.setAttribute('partition',profilePartition());wv.src=u||NT();$('#view').appendChild(wv);
@@ -251,4 +169,4 @@ async function ask(text,shown){if(!String(text||'').trim())return;if(!S.hasKey&&
   if(panel==='ai')draw()}
 
 (async()=>{try{if(!localStorage.nova){const c=await ipc.invoke('install-cfg').catch(()=>({}));if(c?.theme)S.theme=c.theme;if(c?.adblock===false)S.adblock=false;save()}}catch{} applyTheme();newTab()})();
-</script><script src="extras.js"></script><script src="extras2.js"></script><script src="extras3.js"></script><script src="extras4.js"></script><script src="extras5.js"></script><script src="extras6.js"></script><script src="extras7.js"></script><script src="extras8.js"></script><script src="extras9.js"></script><script src="extras10.js"></script><script src="extras11.js"></script><script src="extras12.js"></script><script src="supercat.js"></script><script src="nova25.js"></script><script src="hotfix254.js"></script><script src="nova30.js"></script><script src="nova31.js"></script><script src="nova40.js"></script><script src="nova41.js"></script><script src="nova432.js"></script><script src="nova44.js"></script><script src="nova441.js"></script><script src="nova50.js"></script></body></html>
+</script><script src="extras.js"></script><script src="extras2.js"></script><script src="extras3.js"></script><script src="extras4.js"></script><script src="extras5.js"></script><script src="extras6.js"></script><script src="extras7.js"></script><script src="extras8.js"></script><script src="extras9.js"></script><script src="extras10.js"></script><script src="extras11.js"></script><script src="extras12.js"></script><script src="supercat.js"></script><script src="nova25.js"></script><script src="hotfix254.js"></script><script src="nova30.js"></script><script src="nova31.js"></script><script src="nova40.js"></script><script src="nova41.js"></script><script src="nova432.js"></script><script src="nova44.js"></script><script src="nova441.js"></script><script src="nova50.js"></script><script src="nova51.js"></script><script src="nova52.js"></script></body></html>

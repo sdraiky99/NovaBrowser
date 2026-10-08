@@ -4,7 +4,7 @@ const { PG, MENU, sw2, SEC } = NOVA, EXT = require('./extensions.js');
 const PR = ipc.sendSync('prefs-get') || {};           // preferencias que también lee el proceso principal
 const setPR = p => { Object.assign(PR, p); ipc.send('prefs-set', p); };
 if (PR.logo && !S.logo) S.logo = PR.logo;
-S.logo = S.logo || 'classic';
+S.logo = 'quantum';
 
 /* ---------- estilos ---------- */
 const st = document.createElement('style');
@@ -26,9 +26,9 @@ body.has-topc:not(.t-win95):not(.t-undertale):not(.t-code) #top{background:linea
 document.head.appendChild(st);
 
 /* ---------- logotipos ---------- */
-const LG = { classic: 'Clásico', orbita: 'Órbita', estrella: 'Estrella', cometa: 'Cometa', minimal: 'Minimal' };
-const logoSrc = id => id === 'classic' ? '../assets/icon.png' : '../assets/logos/' + id + '.png';
-const syncLogo = () => { const s = logoSrc(S.logo); document.querySelectorAll('img[src$="assets/icon.png"],img[src*="assets/logos/"]').forEach(i => { if (!i.dataset.keep && i.getAttribute('src') !== s) i.setAttribute('src', s); }); };
+const LG = { quantum: 'Nova Quantum' };
+const logoSrc = () => '../assets/icon.png';
+const syncLogo = () => { const s = logoSrc(S.logo); document.querySelectorAll('img[src$="assets/icon.png"]').forEach(i => { if (!i.dataset.keep && i.getAttribute('src') !== s) i.setAttribute('src', s); }); };
 let raf = 0; new MutationObserver(() => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; syncLogo(); }); }).observe(document.body, { childList: true, subtree: true });
 const setLogo = id => { if (!LG[id]) return; S.logo = id; save(); setPR({ logo: id }); syncLogo(); try { refreshNT(); } catch { } };
 

@@ -1,19 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="n" x1="120" y1="390" x2="405" y2="105" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#4f63e8"/>
-      <stop offset="0.55" stop-color="#7788ff"/>
-      <stop offset="1" stop-color="#19c7e8"/>
-    </linearGradient>
-    <linearGradient id="ring" x1="100" y1="420" x2="412" y2="92" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#4f63e8"/>
-      <stop offset="1" stop-color="#19c7e8"/>
-    </linearGradient>
-  </defs>
-  <rect x="32" y="32" width="448" height="448" rx="108" fill="#111827"/>
-  <rect x="33" y="33" width="446" height="446" rx="107" fill="none" stroke="#ffffff" stroke-opacity=".07"/>
-  <circle cx="256" cy="256" r="160" fill="none" stroke="url(#ring)" stroke-width="16" stroke-linecap="round" opacity=".92"/>
-  <path d="M138 350 L196 188 L316 350 L374 162" fill="none" stroke="url(#n)" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M205 344 L256 208 L307 286" fill="none" stroke="#eef7ff" stroke-opacity=".92" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="378" cy="128" r="13" fill="#19c7e8"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Nova">
+<defs>
+  <linearGradient id="g" x1="110" y1="430" x2="405" y2="90" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#5167D9"/>
+    <stop offset="0.52" stop-color="#6B7FE8"/>
+    <stop offset="1" stop-color="#24B9D3"/>
+  </linearGradient>
+  <filter id="s" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#0a1020" flood-opacity=".25"/></filter>
+</defs>
+<rect x="24" y="24" width="464" height="464" rx="124" fill="#111827"/>
+<rect x="25" y="25" width="462" height="462" rx="123" fill="none" stroke="#ffffff" stroke-opacity=".08"/>
+<path d="M132 368 L196 166 L316 346 L380 144" fill="none" stroke="url(#g)" stroke-width="44" stroke-linecap="round" stroke-linejoin="round" filter="url(#s)"/>
+<path d="M196 168 L316 346" fill="none" stroke="#F5FAFF" stroke-opacity=".72" stroke-width="9" stroke-linecap="round"/>
+<circle cx="385" cy="130" r="10" fill="#24B9D3"/>
 </svg>
