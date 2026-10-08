@@ -1,33 +1,21 @@
-# Nova Browser — 5.3.2
+# Nova Browser 5.3.3
 
-Nova es un navegador basado en Chromium/Electron, con una interfaz propia y funciones esenciales de navegación diaria.
-
-## 5.3.2
-
-Esta versión prioriza estabilidad y mantenibilidad. Los módulos renderer heredados se consolidan en `shell/nova-runtime.js` sin cambiar el orden de ejecución del navegador. Se conservan funciones base de Chromium/Electron como atrás, adelante, recargar, barra de dirección/búsqueda, pestañas, favoritos y atajos.
-
-### Incluye
-
-- Pestañas y nueva pestaña.
-- Barra de dirección/búsqueda.
-- Favoritos e historial.
-- Workspaces.
-- Extensiones Chromium desde el flujo soportado por el proyecto.
-- Ahorro de energía y herramientas de rendimiento.
-- Bloqueador de contenido.
-- Páginas internas y Nova Tab.
+Nova es un navegador de escritorio basado en Chromium y Electron, centrado en una interfaz limpia, organización de pestañas, Workspaces, extensiones y rendimiento.
 
 ## Desarrollo
 
-Requiere Node.js 22.12.0 o superior.
-
 ```bash
 npm install
-npm run check
 npm start
 ```
 
-Build Windows:
+## Comprobaciones
+
+```bash
+npm run check
+```
+
+## Build Windows
 
 ```bash
 npm run dist:win
@@ -35,8 +23,14 @@ npm run dist:win
 
 ## Estructura
 
-El runtime principal del renderer está consolidado en `shell/nova-runtime.js` para mantener el repositorio por debajo de 100 archivos sin eliminar las funciones que seguían siendo necesarias.
+- `main.js` — proceso principal de Electron y servicios del navegador.
+- `shell/index.html` — shell visual principal.
+- `shell/nova.js` — renderer de Nova.
+- `shell/nova.css` — sistema visual.
+- `shell/newtab.html` — nueva pestaña.
+- `shell/extensions.js` — catálogo e inyección de extensiones internas.
+- `migration.js` — migraciones y compatibilidad de datos.
 
-## Seguridad
+## Filosofía
 
-Consulta `SECURITY.md`. Algunas partes del renderer forman parte de la arquitectura heredada y no se migran parcialmente en esta versión de estabilidad.
+Una función visible debe existir de verdad. Los sistemas antiguos que ya no forman parte de Nova no deben quedarse mezclados con la interfaz actual.

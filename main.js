@@ -25,8 +25,8 @@ const { createAccountService } = require('./account-service.js');
 const accounts = createAccountService({ app, safeStorage, fetch });
 const LOGOS = ['quantum'], SPLASH_MS = 1400;
 const logoId = id => (LOGOS.includes(id) ? id : 'quantum');
-const logoIco = id => path.join(__dirname, 'assets/icon.ico');      // único icono Nova 5.2 dentro del paquete
-const logoImg = id => { const i = nativeImage.createFromPath(process.platform === 'win32' ? logoIco(id) : path.join(__dirname, 'assets/icon.png')); return i.isEmpty() ? nativeImage.createFromPath(path.join(__dirname, 'assets/icon.png')) : i; };
+const logoIco = id => path.join(__dirname, 'assets/brand/nova.ico');      // único icono Nova dentro del paquete
+const logoImg = id => { const i = nativeImage.createFromPath(process.platform === 'win32' ? logoIco(id) : path.join(__dirname, 'assets/brand/nova-icon.png')); return i.isEmpty() ? nativeImage.createFromPath(path.join(__dirname, 'assets/brand/nova-icon.png')) : i; };
 // preferencias que el proceso principal necesita antes de abrir la interfaz (logo, animación de inicio, extensiones)
 let prefs = { logo: 'quantum', splash: true, ext: {}, reg: '' };
 const prefsFile = () => path.join(app.getPath('userData'), 'prefs.json');
@@ -634,19 +634,23 @@ const NEWS_SOURCES = [
   { name: 'The Guardian Technology', url: 'https://www.theguardian.com/technology/rss', site: 'https://www.theguardian.com/technology', topics:['tecnologia','codigo'] }
 ];
 const NEWS_FALLBACK = [
-  { source:'Nova Briefing', title:'Cómo está cambiando la navegación con IA', summary:'Los navegadores están incorporando asistentes, búsqueda contextual y automatizaciones. La prioridad de Nova es mantener esas funciones opcionales, visibles y bajo control del usuario.', url:'https://www.mozilla.org/', date:'', kind:'briefing' },
-  { source:'Nova Briefing', title:'Por qué el rendimiento vuelve a importar', summary:'Más pestañas, aplicaciones web y extensiones elevan el consumo de memoria. Suspender trabajo en segundo plano y ofrecer controles de rendimiento ayuda a mantener una sesión fluida.', url:'https://arstechnica.com/', date:'', kind:'briefing' },
-  { source:'Nova Briefing', title:'Extensiones: más potencia, más responsabilidad', summary:'Una extensión puede acceder a datos de páginas y modificar contenido. Nova debe mostrar permisos, mantener el control de instalación y evitar que una extensión silenciosa se convierta en una caja negra.', url:'https://www.mozilla.org/en-US/firefox/extensions/', date:'', kind:'briefing' }
+  { source:'Nova Briefing', title:'Cómo mantener una sesión de navegación ligera', summary:'Nova combina suspensión de pestañas, control de extensiones y ahorro de energía para mantener sesiones largas más fluidas.', url:'https://www.chromium.org/', date:'', kind:'briefing' },
+  { source:'Nova Briefing', title:'Extensiones: potencia con permisos visibles', summary:'Las extensiones pueden modificar páginas y acceder a información. Nova muestra qué hay instalado y permite retirarlo desde un único centro.', url:'https://developer.chrome.com/docs/extensions/', date:'', kind:'briefing' },
+  { source:'Nova Briefing', title:'Workspaces para separar tus sesiones', summary:'Agrupar pestañas por contexto reduce el ruido cuando alternas entre trabajo, estudio, proyectos personales y ocio.', url:'https://www.chromium.org/', date:'', kind:'briefing' }
 ];
+const NEWS_LIVE_CACHE = () => userFile('news-live-cache.json');
+const readLiveNewsCache = () => { try { const x=JSON.parse(fs.readFileSync(NEWS_LIVE_CACHE(),'utf8')); return x&&typeof x==='object'?x:{}; } catch { return {}; } };
+const writeLiveNewsCache = x => { try { atomicWrite(NEWS_LIVE_CACHE(), JSON.stringify(x)); } catch {} };
 const newsStripHtml = v => String(v ?? '').replace(/<script[\s\S]*?<\/script>/gi,' ').replace(/<style[\s\S]*?<\/style>/gi,' ').replace(/<[^>]+>/g,' ').replace(/&nbsp;/gi,' ').replace(/&amp;/gi,'&').replace(/&quot;/gi,'"').replace(/&#39;/gi,"'").replace(/&lt;/gi,'<').replace(/&gt;/gi,'>').replace(/\s+/g,' ').trim();
 const newsXmlField = (item, tag) => { const m = item.match(new RegExp(`<${tag}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${tag}>`, 'i')); return m ? newsStripHtml(m[1]) : ''; };
 const newsLinkField = item => { let m=item.match(/<link[^>]*>([\s\S]*?)<\/link>/i); if(m)return newsStripHtml(m[1]); m=item.match(/<link[^>]+href=["']([^"']+)["'][^>]*\/?>(?:<\/link>)?/i); return m ? m[1] : ''; };
 const newsPick = (items, topic) => {
   const terms = {
     tecnologia: /AI|artificial|browser|web|internet|chip|memory|GPU|software|privacy|security|Microsoft|Apple|Google|Mozilla|Firefox|Linux|Windows/i,
-    videojuegos: /game|gaming|Steam|Valve|Nintendo|PlayStation|Xbox|GPU|VR|console|Doom|Minecraft|Fortnite/i,
+    videojuegos: /game|gaming|Steam|Valve|Nintendo|PlayStation|Xbox|GPU|VR|console|Doom|Minecraft|Fortnite|GTA/i,
     codigo: /developer|programming|code|software|open source|Linux|GitHub|browser|API|AI|security|MCP|web/i
   };
+  if(topic==='todas') return items.sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,8);
   const srcFiltered=items.filter(x=>Array.isArray(x.topics)&&x.topics.includes(topic));
   const pool=srcFiltered.length?srcFiltered:items;
   const re=terms[topic]||terms.tecnologia;
@@ -654,7 +658,7 @@ const newsPick = (items, topic) => {
   return (ranked.length>=4?ranked:pool).sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,6);
 };
 async function fetchNewsFeed(url, source) {
-  const r = await fetch(url, { headers:{'user-agent':'NovaBrowser/5.3.2 (+https://github.com/sdraiky99/NovaBrowser)','accept':'application/rss+xml, application/atom+xml, text/xml;q=0.9, */*;q=0.1'}, signal:AbortSignal.timeout(7000) });
+  const r = await fetch(url, { headers:{'user-agent':'NovaBrowser/'+app.getVersion()+' (+https://github.com/sdraiky99/NovaBrowser)','accept':'application/rss+xml, application/atom+xml, text/xml;q=0.9, */*;q=0.1'}, signal:AbortSignal.timeout(7000) });
   if(!r.ok) throw new Error('HTTP '+r.status);
   const xml=await r.text();
   const rss=[...xml.matchAll(/<item\b[\s\S]*?<\/item>/gi)].map(m=>m[0]);
@@ -669,25 +673,30 @@ async function fetchNewsFeed(url, source) {
     const ts=Date.parse(dateRaw)||0;
     let image='';
     let m=item.match(/<(?:media:content|media:thumbnail)[^>]+url=["']([^"']+)["'][^>]*>/i);
-    if(!m)m=item.match(/<enclosure[^>]+url=["']([^"']+)["'][^>]*>/i);
     if(m)image=m[1];
+    if(!m)m=item.match(/<enclosure[^>]+url=["']([^"']+)["'][^>]*>/i);
+    if(m&& !image)image=m[1];
     if(!image){m=String(item).match(/<img[^>]+src=["']([^"']+)["']/i);if(m)image=m[1];}
     return title&&/^https?:/i.test(link)?{source:source.name,title,summary:desc.slice(0,360),url:link,image:/^https?:/i.test(image)?image:'',date:ts?new Date(ts).toISOString():'',ts,kind:'live',topics:source.topics||[]}:null;
   }).filter(Boolean);
 }
 ipcMain.handle('news-feed', async (e, payload) => {
   if (denyUntrusted(e)) return { ok:false, items:NEWS_FALLBACK, live:false, sources:[] };
-  const topic=String(payload?.topic||'tecnologia').toLowerCase();
+  const topic=String(payload?.topic||'todas').toLowerCase();
   const key=topic;
   const hit=newsCache.get(key); if(hit && Date.now()-hit.at<5*60*1000) return hit.value;
-  try {
-    const results=await Promise.allSettled(NEWS_SOURCES.map(s=>fetchNewsFeed(s.url,s)));
-    const items=[]; for(const r of results) if(r.status==='fulfilled') items.push(...r.value);
-    const uniq=[...new Map(items.map(x=>[x.url,x])).values()];
-    const picked=newsPick(uniq,topic);
-    if(picked.length){ const value={ok:true,items:picked,live:true,sources:[...new Set(picked.map(x=>x.source))]}; newsCache.set(key,{at:Date.now(),value}); return value; }
-  } catch {}
-  const value={ok:true,items:NEWS_FALLBACK.map(x=>({...x})),live:false,sources:['Nova Briefing']}; newsCache.set(key,{at:Date.now(),value}); return value;
+  const disk=readLiveNewsCache();
+  const stale=disk[key];
+  const results=await Promise.allSettled(NEWS_SOURCES.map(s=>fetchNewsFeed(s.url,s)));
+  const items=[]; for(const r of results) if(r.status==='fulfilled') items.push(...r.value);
+  const uniq=[...new Map(items.map(x=>[x.url,x])).values()];
+  const picked=newsPick(uniq,topic);
+  if(picked.length){
+    const value={ok:true,items:picked,live:true,stale:false,sources:[...new Set(picked.map(x=>x.source))]};
+    newsCache.set(key,{at:Date.now(),value}); disk[key]={items:picked,sources:value.sources,at:Date.now()}; writeLiveNewsCache(disk); return value;
+  }
+  if(stale?.items?.length){ const value={ok:true,items:stale.items,live:true,stale:true,sources:stale.sources||[]}; newsCache.set(key,{at:Date.now(),value}); return value; }
+  const value={ok:true,items:NEWS_FALLBACK.map(x=>({...x})),live:false,stale:false,sources:['Nova Briefing']}; newsCache.set(key,{at:Date.now(),value}); return value;
 });
 
 let updateState = { status:'idle', current:app.getVersion(), available:false, version:'', downloaded:false, progress:0, error:'' };
@@ -837,7 +846,7 @@ ipcMain.handle('nova51-diagnostics', e => {
     ok:true, version:app.getVersion(), electron:process.versions.electron, chromium:process.versions.chrome,
     prefs:{ ok:prefsOk, path:pf, logo:'quantum' },
     state:{ ok:stateOk, backup:backupOk, backupPath:bak },
-    prime:{ iconPng:exists(path.join(__dirname,'assets','icon.png')), iconIco:exists(path.join(__dirname,'assets','icon.ico')), legacyLogoDir:exists(path.join(__dirname,'assets','logos')), legacyThemeFile:exists(path.join(__dirname,'shell','themes.css')) },
+    prime:{ iconPng:exists(path.join(__dirname,'assets','brand','nova-icon.png')), iconIco:exists(path.join(__dirname,'assets','brand','nova.ico')), legacyLogoDir:false, legacyThemeFile:false },
     renderer:{ nodeIntegration:true, contextIsolation:false, note:'Legacy renderer compatibility; migration is intentionally separated from this stability release.' },
   };
 });

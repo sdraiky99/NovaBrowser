@@ -1,4 +1,4 @@
-Nova Browser — 5.3.2
+Nova Browser — 5.3.3
 
 Nova se ofrece tal cual, sin garantías. El proyecto utiliza Electron y Chromium, que conservan sus propias licencias de código abierto y obligaciones de terceros.
 

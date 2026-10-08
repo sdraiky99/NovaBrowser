@@ -1,172 +1,57 @@
-<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'self' file: data: blob:; object-src 'none'; base-uri 'none'; frame-src 'self' file:; img-src 'self' file: data: blob: https:; style-src 'self' 'unsafe-inline' file:; script-src 'self' 'unsafe-inline' file:; connect-src 'self' https://api.anthropic.com https://text.pollinations.ai https://api.openai.com https://api.github.com https://github.com;"><title>Nova</title>
-<link rel="stylesheet" href="quantum-base.css"><link rel="stylesheet" href="quantum.css"><link rel="stylesheet" href="quantum53.css"><link rel="icon" href="../assets/icon.png">
-<style>
-#app{display:flex;flex-direction:column;height:100vh}
-#top{height:38px;display:flex;align-items:flex-end;background:var(--bar);border-bottom:1px solid var(--bd);-webkit-app-region:drag;padding-left:8px}
-#brand{display:flex;align-items:center;gap:6px;padding:0 10px 8px 0;font-weight:600}#brand img{width:18px}
-#tabs{display:flex;gap:2px;flex:1;min-width:0;align-items:flex-end;overflow:hidden}
-#tabs #nt{flex:0 0 30px;width:30px;height:30px;margin:0 2px 0 0;border-radius:var(--r) var(--r) 0 0}
-#tabs #nt:hover{background:color-mix(in srgb,var(--fg) 9%,transparent)}
-.tab{-webkit-app-region:no-drag;display:flex;align-items:center;gap:6px;height:30px;padding:0 8px;min-width:60px;max-width:210px;flex:1;background:transparent;border:1px solid transparent;border-bottom:0;border-radius:var(--r) var(--r) 0 0;cursor:default;position:relative;animation:tin .22s ease-out}
-.tab.on{background:var(--bg);border-color:var(--bd);color:var(--fg)}
-.tab:not(.on){color:var(--mut)}.tab:not(.on):hover{background:color-mix(in srgb,var(--fg) 8%,transparent)}
-.tab img{width:14px;height:14px}.tab span{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.tab.ld::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:40%;background:var(--acc);animation:ld 1s infinite}
-.ib{-webkit-app-region:no-drag;width:30px;height:30px;display:grid;place-items:center;background:none;border:0;border-radius:var(--r);cursor:pointer;color:var(--fg)}
-.ib:hover{background:color-mix(in srgb,var(--fg) 12%,transparent)}.ib svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.ib.sm{width:22px;height:22px}.ib.sm svg{width:11px}
-#wc{display:flex;align-self:stretch}#wc .ib{width:46px;height:38px;border-radius:0}#wc .ib:last-child:hover{background:#e81123;color:#fff}
-#bar{display:flex;align-items:center;gap:4px;padding:6px 8px;background:var(--bg);border-bottom:1px solid var(--bd)}
-#addr{flex:1;height:30px;padding:0 14px;background:var(--bar);border:1px solid var(--bd);border-radius:calc(var(--r) * 2);outline:none}
-#addr:focus{border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 30%,transparent)}
-#mid{flex:1;display:flex;min-height:0}
-#side{width:52px;background:var(--bar);border-right:1px solid var(--bd);display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 0}
-#side .ib{width:38px;height:38px}#side .ib.on{background:color-mix(in srgb,var(--acc) 25%,transparent);color:var(--acc)}
-#side .ai svg{width:28px;height:28px;stroke:none;fill:none;animation:spin 14s linear infinite;filter:drop-shadow(0 0 5px #8b5cf6)}
-#side .ai:hover svg{filter:drop-shadow(0 0 10px #22d3ee)}
-#view{flex:1;position:relative;min-width:0;background:#fff}
-webview{position:absolute;inset:0;width:100%;height:100%;display:none}webview.on{display:flex}
-#panel{width:0;overflow:hidden;background:var(--bar);border-left:1px solid var(--bd);transition:width .25s cubic-bezier(.2,.8,.2,1)}
-#panel.open{width:340px}#pin{width:340px;height:100%;padding:14px;overflow:auto;display:flex;flex-direction:column;gap:12px}
-h3{margin:0;font-size:15px}.mut{color:var(--mut);font-size:12px}
-.btn{padding:7px 12px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);cursor:pointer}.btn:hover,.btn.on{border-color:var(--acc);color:var(--acc)}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.fld{width:100%;padding:8px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);outline:none}
-.th{height:60px;border:2px solid var(--bd);cursor:pointer;display:grid;place-items:center;font-weight:600;border-radius:var(--r)}.th.on{border-color:var(--acc)}
-.wp{aspect-ratio:16/10;background:center/cover;border:2px solid var(--bd);border-radius:var(--r);cursor:pointer}.wp:hover{border-color:var(--acc)}
-#chat{flex:1;display:flex;flex-direction:column;gap:8px;overflow:auto;min-height:120px}
-.m{padding:8px 10px;border-radius:var(--r);white-space:pre-wrap;max-width:92%}.m.u{align-self:flex-end;background:var(--acc);color:#fff}.m.a{background:var(--bg);border:1px solid var(--bd)}
-.sw{width:36px;height:20px;border-radius:20px;background:var(--bd);position:relative;cursor:pointer;flex:none}.sw::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.15s}.sw.on{background:var(--acc)}.sw.on::after{left:18px}
-#find{position:absolute;top:8px;right:14px;z-index:5;display:none;gap:4px}#find.on{display:flex}
-@keyframes tin{from{opacity:0;transform:translateY(8px) scale(.9)}}@keyframes ld{from{left:-40%}to{left:100%}}@keyframes spin{to{transform:rotate(360deg)}}
-body.noanim *{animation:none!important;transition:none!important}
-@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-
-/* ---------- Microanimaciones (100-250 ms) ---------- */
-.ib,.btn,.tab,.fld,#addr{transition:background-color .12s,color .12s,border-color .12s,box-shadow .12s}
-.ib:active,.btn:active{transform:scale(.96)}
-
-#nova22-top-tools{display:flex;align-items:center;gap:2px;height:38px;-webkit-app-region:no-drag;position:relative;z-index:120}
-#nova22-top-tools>.nova22-topbtn{height:30px;padding:0 9px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--fg);cursor:pointer;font-size:12px;white-space:nowrap}
-#nova22-top-tools>.nova22-topbtn:hover,#nova22-top-tools>.nova22-topbtn.on{background:color-mix(in srgb,var(--acc) 14%,transparent);border-color:var(--acc);color:var(--acc)}
-#nova22-top-pop{position:fixed;top:40px;right:72px;z-index:240;display:none;min-width:300px;max-width:430px;padding:10px;background:var(--bar);border:1px solid var(--bd);border-radius:14px;box-shadow:0 25px 80px #000c}
-#nova22-top-pop.on{display:grid;gap:6px}
-#nova22-top-pop .nova22-menuitem{display:flex;align-items:center;gap:9px;width:100%;padding:9px 10px;border:0;border-radius:9px;background:transparent;color:var(--fg);cursor:pointer;text-align:left}
-#nova22-top-pop .nova22-menuitem:hover{background:color-mix(in srgb,var(--acc) 13%,transparent);color:var(--acc)}
-#nova22-zoom-pop{position:fixed;top:40px;right:120px;z-index:241;display:none;min-width:170px;padding:10px;background:var(--bar);border:1px solid var(--bd);border-radius:12px;box-shadow:0 22px 70px #000c}
-#nova22-zoom-pop.on{display:block}.nova22-zoomrow{display:flex;align-items:center;justify-content:space-between;gap:7px}.nova22-zoomrow button{min-width:38px}.nova22-zoompct{min-width:62px;text-align:center;font-weight:700}
-#nova22-webctx{position:fixed;z-index:1000;display:none;min-width:230px;max-width:330px;padding:6px;background:var(--bar);border:1px solid var(--bd);border-radius:12px;box-shadow:0 25px 90px #000c}
-#nova22-webctx.on{display:grid;gap:2px}.nova22-ctxitem{border:0;background:transparent;color:var(--fg);text-align:left;padding:8px 10px;border-radius:8px;cursor:pointer}.nova22-ctxitem:hover{background:color-mix(in srgb,var(--acc) 13%,transparent);color:var(--acc)}.nova22-ctxsep{height:1px;background:var(--bd);border:0;margin:4px 0}
-#nova22-split{position:absolute;inset:0;z-index:30;background:var(--bg);display:none}.nova22-split-pane{position:absolute;top:38px;bottom:0;overflow:hidden;background:#fff}.nova22-split-left{left:0;width:50%;border-right:1px solid var(--bd)}.nova22-split-right{right:0;width:50%}.nova22-split-pane webview{position:absolute!important;inset:0!important;display:flex!important;width:100%!important;height:100%!important}.nova22-split-head{position:absolute;left:0;right:0;top:0;height:38px;background:var(--bar);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:6px;padding:0 7px;z-index:40}.nova22-split-head input{flex:1;height:26px}.nova22-split-close{margin-left:auto}
-#nova22-first{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:800;width:min(590px,92vw);padding:18px;background:var(--bar);border:1px solid var(--acc);border-radius:18px;box-shadow:0 30px 100px #000c;display:none}.nova22-first.on{display:block}.nova22-first-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.nova22-first-card{padding:13px;border:1px solid var(--bd);background:color-mix(in srgb,var(--bg) 80%,transparent);border-radius:12px}.nova22-first-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
-@media(max-width:900px){#nova22-top-tools>.nova22-topbtn{padding:0 6px;font-size:11px}.nova22-split-left,.nova22-split-right{width:100%;position:absolute;left:0;right:0;height:50%}.nova22-split-left{top:38px;bottom:auto;border-right:0;border-bottom:1px solid var(--bd)}.nova22-split-right{top:calc(50% + 19px);bottom:0}.nova22-split-pane{top:38px}}
-</style></head><body class="t-nova"><div id="app">
-<div id="top"><div id="brand"><img src="../assets/icon.png">Nova</div><div id="tabs"><button type="button" class="ib" id="nt" title="Nueva pestaña (Ctrl+T)" aria-label="Nueva pestaña"></button></div>
-<div id="nova22-top-tools"></div>
-<div id="wc"><button class="ib" data-w="min"></button><button class="ib" data-w="max"></button><button class="ib" data-w="close"></button></div></div>
-<div id="bar"><button class="ib" id="bk"></button><button class="ib" id="fw"></button><button class="ib" id="rl"></button>
-<input id="addr" placeholder="Busca o escribe una dirección"><button class="ib" id="st" title="Favorito"></button><button class="ib" id="sh" title="Captura"></button></div>
-<div id="mid"><div id="side"></div><div id="view"><div id="nova22-split"></div><div id="find"><input class="fld" id="fi" placeholder="Buscar en la página"><button class="btn" id="fx">✕</button></div></div><div id="panel"><div id="pin"></div></div></div></div>
-<script>
-const {ipcRenderer:ipc}=require('electron'),fs=require('fs'),path=require('path'),{pathToFileURL}=require('url');
-const $=s=>document.querySelector(s);
-const P={back:'M15 6l-6 6 6 6',fwd:'M9 6l6 6-6 6',rl:'M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5',star:'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z',
-mods:'M4 7h10M18 7h2M4 17h2M10 17h10M16 5v4M8 15v4',walls:'M4 5h16v14H4zM4 16l4-4 4 4 3-3 5 5',marks:'M6 3h12v18l-6-4-6 4z',set:'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2',
-cam:'M4 8h4l2-3h4l2 3h4v11H4zM12 11a3 3 0 1 0 0 6 3 3 0 0 0 0-6',plus:'M12 5v14M5 12h14',x:'M6 6l12 12M18 6L6 18',min:'M5 18h14',max:'M5 5h14v14H5z',hist:'M12 7v5l3 2M4 12a8 8 0 1 0 2.3-5.7M4 4v4h4'};
-const ic=n=>`<svg viewBox="0 0 24 24"><path d="${P[n]}"/></svg>`;
-const AI=`<svg viewBox="0 0 32 32"><defs><linearGradient id="ng" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".5" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f43f5e"/></linearGradient></defs><ellipse cx="16" cy="16" rx="14.5" ry="5.5" fill="none" stroke="url(#ng)" stroke-width="1.2" transform="rotate(-25 16 16)"/><path d="M16 2l3.2 10.8L30 16l-10.8 3.2L16 30l-3.2-10.8L2 16l10.8-3.2z" fill="url(#ng)"/><circle cx="16" cy="16" r="2.6" fill="#fff"/></svg>`;
-[['bk','back'],['fw','fwd'],['rl','rl'],['st','star'],['sh','cam'],['nt','plus']].forEach(([i,n])=>$('#'+i).innerHTML=ic(n));
-document.querySelectorAll('[data-w]').forEach(b=>{b.innerHTML=ic({min:'min',max:'max',close:'x'}[b.dataset.w]);b.onclick=()=>ipc.send('win',b.dataset.w)});
-
-const ud=ipc.sendSync('userdata'),NOVA_VER=ipc.sendSync('app-version');
-let STORED={};try{STORED=JSON.parse(localStorage.nova||'{}')||{}}catch{try{localStorage.removeItem('nova')}catch{}};const S=Object.assign({theme:'nova',quantumAppearance:'system',quantumAccent:'#4f63e8',search:'https://duckduckgo.com/?q=',adblock:true,anim:true,sec:'videojuegos',wp:'',marks:[],key:'',mods:{},memSave:false,bmbar:false,newTabLinks:false},STORED);
-let __saveTimer=0; const save=()=>{ try { const raw=JSON.stringify(S); localStorage.nova=raw; clearTimeout(__saveTimer); __saveTimer=setTimeout(()=>{ try { ipc.invoke('state-save',raw).catch?.(()=>{}); } catch {} },350); } catch {} };
-(async()=>{ try { if(!localStorage.nova){ const backup=await ipc.invoke('state-load'); if(backup){ localStorage.nova=backup; location.reload(); return; } } } catch {} })();
-window.save = save;
-const tabAdd=$('#nt');
-const keepTabAddAtEnd=()=>{if(tabAdd&&tabAdd.parentNode!==$('#tabs'))$('#tabs').appendChild(tabAdd); else if(tabAdd&&$('#tabs').lastElementChild!==tabAdd)$('#tabs').appendChild(tabAdd)};
-keepTabAddAtEnd();
-const THEMES={nova:'Nova'};
-const SECS={coches:'Coches',videojuegos:'Videojuegos',codigo:'Código'};
-const MODS={dark:['Modo oscuro forzado','html{filter:invert(1) hue-rotate(180deg)}img,video,picture{filter:invert(1) hue-rotate(180deg)}'],
-reader:['Modo lectura','header,nav,aside,footer,[class*=ad-],[id*=banner]{display:none!important}body{max-width:720px!important;margin:auto!important;font:18px/1.7 Georgia,serif!important}'],
-noanim:['Sin animaciones web','*{animation:none!important;transition:none!important;scroll-behavior:auto!important}'],
-zoom:['Texto grande','html{zoom:1.2}']};
-function applyTheme(){S.theme='nova';document.body.className='t-nova'+(S.anim?'':' noanim');ipc.invoke('adblock',S.adblock)}
-
-/* ---- Tabs ---- */
-let tabs=[],cur=null;
-const TAB_ADD=tabAdd;
-const profilePartition=()=>window.NOVA_PROFILE_PARTITION?window.NOVA_PROFILE_PARTITION():`persist:nova-profile-${String(S.activeProfile||'default').replace(/[^a-z0-9_-]/gi,'').slice(0,32)||'default'}`;
-const NT=()=>pathToFileURL(path.join(__dirname,'newtab.html')).href+'?l='+encodeURIComponent(S.logo||'quantum')+'&t='+S.theme+'&s='+encodeURIComponent(S.search)+'&n='+encodeURIComponent(S.name||'')+'&a='+encodeURIComponent(S.quantumAccent||'')+'&b='+encodeURIComponent(JSON.stringify((S.marks||[]).slice(0,8)))+'&d='+encodeURIComponent(JSON.stringify(S.dash||{}))+'&r='+encodeURIComponent(JSON.stringify((S.hist||[]).slice(0,6).map(x=>({u:x.u,t:x.t}))))+'&x='+encodeURIComponent(JSON.stringify(S.quick||[]))+'&nd='+((S.dls||[]).length)+'&sec='+encodeURIComponent(S.sec||'videojuegos')+(S.wp?'&wp='+encodeURIComponent(pathToFileURL(S.wp).href):'');
-const isNT=u=>u&&u.includes('newtab.html');
-function newTab(u){
-  const wv=document.createElement('webview');wv.setAttribute('partition',profilePartition());wv.src=u||NT();$('#view').appendChild(wv);
-  const el=document.createElement('div');el.className='tab';el.innerHTML='<img src="../assets/icon.png"><span>Nueva pestaña</span><button class="ib sm">'+ic('x')+'</button>';
-  const t={wv,el};tabs.push(t);$('#tabs').insertBefore(el,TAB_ADD);keepTabAddAtEnd();
-  el.onmousedown=e=>{if(e.button===1)closeTab(t)};el.onclick=e=>{if(e.target.closest('button'))closeTab(t);else sel(t)};
-  const up=()=>{if(cur===t){const x=wv.getURL?.call(wv)||'';$('#addr').value=isNT(x)?'':x;$('#st').style.color=S.marks.some(m=>m.u===x)?'var(--acc)':''}};
-  wv.addEventListener('page-title-updated',e=>el.querySelector('span').textContent=e.title);
-  wv.addEventListener('page-favicon-updated',e=>el.querySelector('img').src=e.favicons[0]);
-  wv.addEventListener('did-start-loading',()=>el.classList.add('ld'));wv.addEventListener('did-stop-loading',()=>{el.classList.remove('ld');up()});
-  wv.addEventListener('did-navigate',()=>{if(isNT(wv.getURL()))el.querySelector('img').src='../assets/icon.png';up()});
-  wv.addEventListener('did-navigate-in-page',up);
-  wv.addEventListener('dom-ready',()=>{Object.keys(S.mods).forEach(k=>S.mods[k]&&mod(wv,k,true))});
-  sel(t);return t;
-}
-function sel(t){cur=t;tabs.forEach(x=>{x.el.classList.toggle('on',x===t);x.wv.classList.toggle('on',x===t)});try{const u=t.wv.getURL();$('#addr').value=isNT(u)?'':u}catch{$('#addr').value=''}}
-function closeTab(t){const i=tabs.indexOf(t);t.wv.remove();t.el.remove();tabs.splice(i,1);if(!tabs.length)return ipc.send('win','close');if(cur===t)sel(tabs[Math.max(0,i-1)])}
-function go(v){v=v.trim();if(!v)return;const u=/^https?:\/\//.test(v)?v:/^[\w-]+(\.[\w-]+)+(:\d+)?(\/.*)?$/.test(v)||/^localhost/.test(v)?'https://'+v:S.search+encodeURIComponent(v);cur.wv.loadURL(u)}
-function mod(wv,k,on){wv.executeJavaScript(`(()=>{let s=document.getElementById('nm-${k}');if(${on}){if(!s){s=document.createElement('style');s.id='nm-${k}';s.textContent=${JSON.stringify(MODS[k][1])};document.head.appendChild(s)}}else if(s)s.remove()})()`).catch(()=>{})}
-$('#addr').onkeydown=e=>{if(e.key==='Enter')go(e.target.value)};$('#addr').onfocus=e=>e.target.select();
-keepTabAddAtEnd();
-$('#bk').onclick=()=>cur.wv.canGoBack()&&cur.wv.goBack();$('#fw').onclick=()=>cur.wv.canGoForward()&&cur.wv.goForward();$('#rl').onclick=()=>cur.wv.reload();$('#nt').onclick=()=>newTab();
-$('#st').onclick=()=>{const u=cur.wv.getURL();if(isNT(u))return;const i=S.marks.findIndex(m=>m.u===u);i>=0?S.marks.splice(i,1):S.marks.push({u,t:cur.el.querySelector('span').textContent});save();$('#st').style.color=i>=0?'':'var(--acc)'};
-$('#sh').onclick=async()=>{const t=NOVA?.activeWebTab?.()||cur;if(!t?.wv?.capturePage)return toast('Abre una página web para capturarla');try{const img=await t.wv.capturePage();const f=await ipc.invoke('save-shot',img.toPNG());toast('Captura guardada en '+f)}catch{toast('No se pudo capturar la página')}};
-function toast(t){const d=document.createElement('div');d.textContent=t;d.style.cssText='position:fixed;bottom:18px;left:50%;transform:translateX(-50%);padding:9px 16px;background:var(--acc);color:#fff;border-radius:var(--r);z-index:9';document.body.appendChild(d);setTimeout(()=>d.remove(),2600)}
-const key=k=>{if(k==='t')newTab();if(k==='w')closeTab(cur);if(k==='l'){$('#addr').focus()}if(k==='f'){$('#find').classList.add('on');$('#fi').focus()}if(k==='d')$('#st').click()};
-ipc.on('key',(_,k)=>key(k));ipc.on('open-tab',(_,u)=>newTab(u));
-document.addEventListener('keydown',e=>{if(e.ctrlKey&&'twlfd'.includes(e.key)){e.preventDefault();key(e.key)}if(e.key==='Escape'){$('#find').classList.remove('on');cur.wv.stopFindInPage('clearSelection')}});
-$('#fi').oninput=e=>e.target.value?cur.wv.findInPage(e.target.value):cur.wv.stopFindInPage('clearSelection');$('#fx').onclick=()=>$('#find').classList.remove('on');
-
-/* ---- Sidebar + panels ---- */
-const SIDE=[['ai','Nova IA'],['mods','Mods'],['walls','Fondos'],['marks','Favoritos'],['set','Ajustes']];
-let panel=null;
-$('#side').innerHTML=SIDE.map(([k,n])=>`<button class="ib ${k==='ai'?'ai':''}" data-p="${k}" title="${n}">${k==='ai'?AI:ic(k)}</button>`).join('');
-$('#side').onclick=e=>{const b=e.target.closest('[data-p]');if(!b)return;panel=panel===b.dataset.p?null:b.dataset.p;draw()};
-const sw=(k,on)=>`<div class="sw ${on?'on':''}" data-k="${k}"></div>`;
-function wallList(sec){const out=[];[path.join(__dirname,'..','assets','wallpapers',sec),path.join(ud,'wallpapers',sec)].forEach(d=>{try{fs.readdirSync(d).forEach(f=>/\.(jpe?g|png|webp|svg)$/i.test(f)&&out.push(path.join(d,f)))}catch{}});return out}
-let chat=[];
-function draw(){
-  document.querySelectorAll('#side .ib').forEach(b=>b.classList.toggle('on',b.dataset.p===panel));
-  $('#panel').classList.toggle('open',!!panel);if(!panel)return;const p=$('#pin');
-  if(panel==='ai'){p.innerHTML=`<div class="row"><h3>Nova IA</h3><span class="mut">${(S.hasKey||S.key)?'conectada':'sin clave API'}</span></div>${(S.hasKey||S.key)?'':'<button class="btn on" id="ai-settings">Configurar Nova IA</button>'}<button class="btn" id="sum">Resumir esta página</button><div id="chat">${chat.map(m=>`<div class="m ${m.role==='user'?'u':'a'}">${esc(m.content)}</div>`).join('')||'<span class="mut">Pregúntame lo que quieras o pídeme que resuma la página abierta.</span>'}</div><div class="row"><input class="fld" id="q" placeholder="Escribe a Nova IA…"><button class="btn" id="go">Enviar</button></div>`;
-    const c=$('#chat');c.scrollTop=1e9;$('#go').onclick=()=>ask($('#q').value);$('#q').onkeydown=e=>e.key==='Enter'&&ask(e.target.value);
-    $('#ai-settings')?.addEventListener('click',()=>{const t=newTab('nova://ajustes');setTimeout(()=>{try{t.wv.querySelector('nav [data-k=\"ia\"]')?.click()}catch{}},80)});
-    $('#sum').onclick=async()=>{const t=await cur.wv.executeJavaScript('document.body.innerText.slice(0,12000)').catch(()=>'');ask('Resume en español, en pocos puntos, esta página:\n\n'+t,'Resume esta página')}}
-  if(panel==='mods'){p.innerHTML='<h3>Mods</h3><span class="mut">Se aplican a todas las páginas.</span>'+Object.entries(MODS).map(([k,[n]])=>`<div class="row"><span>${n}</span>${sw(k,S.mods[k])}</div>`).join('')+'<h3>Herramientas</h3><button class="btn" id="m1">Captura de pantalla</button><button class="btn" id="m2">Buscar en página (Ctrl+F)</button>';
-    p.querySelectorAll('.sw').forEach(s=>s.onclick=()=>{const k=s.dataset.k;S.mods[k]=!S.mods[k];save();tabs.forEach(t=>{try{mod(t.wv,k,S.mods[k])}catch{}});draw()});$('#m1').onclick=()=>$('#sh').click();$('#m2').onclick=()=>key('f')}
-  if(panel==='walls'){const l=wallList(S.sec);p.innerHTML=`<h3>Fondos de pantalla</h3><div class="row">${Object.entries(SECS).map(([k,n])=>`<button class="btn ${S.sec===k?'on':''}" data-s="${k}">${n}</button>`).join('')}</div><div class="grid">${l.map(f=>`<div class="wp" data-f="${f.replace(/"/g,'')}" style="background-image:url('${pathToFileURL(f).href}')"></div>`).join('')}</div><button class="btn" id="add">Añadir mis imágenes</button><button class="btn" id="nowp">Quitar fondo</button>`;
-    p.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{S.sec=b.dataset.s;save();draw()});p.querySelectorAll('.wp').forEach(w=>w.onclick=()=>setWp(w.dataset.f));$('#add').onclick=async()=>{await ipc.invoke('pick-wp',S.sec);draw()};$('#nowp').onclick=()=>setWp('')}
-  if(panel==='marks'){p.innerHTML='<h3>Favoritos</h3>'+(S.marks.map((m,i)=>`<div class="row"><button class="btn" style="flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" data-u="${i}">${esc(m.t||m.u)}</button></div>`).join('')||'<span class="mut">Pulsa la estrella (Ctrl+D) para guardar la página actual.</span>');p.querySelectorAll('[data-u]').forEach(b=>b.onclick=()=>cur.wv.loadURL(S.marks[b.dataset.u].u))}
-  if(panel==='set'){p.innerHTML=`<h3>Ajustes</h3><span class="mut">Tema (cambia toda la interfaz)</span><div class="grid">${Object.entries(THEMES).map(([k,n])=>`<div class="th ${S.theme===k?'on':''}" data-t="${k}" style="background:var(--bg)">${n}</div>`).join('')}</div>
-  <span class="mut">Buscador</span><select class="fld" id="se"><option value="https://duckduckgo.com/?q=">DuckDuckGo</option><option value="https://www.google.com/search?q=">Google</option><option value="https://www.bing.com/search?q=">Bing</option><option value="https://search.brave.com/search?q=">Brave</option></select>
-  <div class="row"><span>Bloqueador de anuncios</span>${sw('adblock',S.adblock)}</div><div class="row"><span>Animaciones de la interfaz</span>${sw('anim',S.anim)}</div><div class="row"><span>Abrir enlaces en nueva pestaña</span>${sw('newTabLinks',S.newTabLinks)}</div><span class="mut">Con Ctrl/Cmd + clic o clic central también puedes abrir un enlace en otra pestaña.</span>
-  <span class="mut">Clave API de Nova IA (Anthropic)</span><input class="fld" id="ak" type="password" placeholder="sk-ant-…" value=""><span class="mut">Se guarda cifrada en el almacén seguro del sistema.</span><span class="mut">Nova 3.0.1 · basado en Chromium</span>`;
-    $('#se').value=S.search;$('#se').onchange=e=>{S.search=e.target.value;save()};$('#ak').onchange=async e=>{const v=e.target.value.trim();if(!v)return;await NOVA.setKey(v);e.target.value='';};
-    p.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{S.theme=b.dataset.t;save();applyTheme();refreshNT();draw()});
-    p.querySelectorAll('.sw').forEach(s=>s.onclick=()=>{S[s.dataset.k]=!S[s.dataset.k];save();applyTheme();if(s.dataset.k==='newTabLinks')tabs.forEach(t=>{try{t.wv.executeJavaScript('window.__novaLinkMode='+JSON.stringify(!!S.newTabLinks))}catch{}});draw()})}
-}
-function setWp(f){S.wp=f;save();refreshNT()}
-function refreshNT(){tabs.forEach(t=>{try{if(isNT(t.wv.getURL()))t.wv.loadURL(NT())}catch{}})}
-const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-async function ask(text,shown){if(!String(text||'').trim())return;if(!S.hasKey&&!S.key){chat.push({role:'assistant',content:'Añade tu clave API en Ajustes → Nova IA para activar Nova IA.'});return draw()}
-  chat.push({role:'user',content:shown||text});const hist=chat.slice(-12).map(m=>({...m}));hist[hist.length-1].content=text;chat.push({role:'assistant',content:'…'});draw();
-  try{const r=await ipc.invoke('nova-ai',{model:S.model||'claude-sonnet-4-6',system:'Eres Nova IA, el asistente integrado del navegador Nova. Responde en el idioma del usuario, breve y claro. '+(S.persona||''),messages:hist.filter(m=>m.content!=='…')});
-    if(r?.error==='NOVA_KEY_MISSING') chat[chat.length-1].content='Añade tu clave API en Ajustes → Nova IA para activar Nova IA.';
-    else chat[chat.length-1].content=r?.text||r?.error||'Error desconocido';
-  }catch(e){chat[chat.length-1].content='Error de Nova IA: '+(e?.message||e)}
-  if(panel==='ai')draw()}
-
-(async()=>{try{if(!localStorage.nova){const c=await ipc.invoke('install-cfg').catch(()=>({}));if(c?.theme)S.theme=c.theme;if(c?.adblock===false)S.adblock=false;save()}}catch{} applyTheme();newTab()})();
-</script><script src="nova-runtime.js"></script><script src="nova532-ui.js"></script></body></html>
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' file: data: blob:; object-src 'none'; base-uri 'none'; frame-src 'self' file:; img-src 'self' file: data: blob: https:; style-src 'self' 'unsafe-inline' file:; script-src 'self' 'unsafe-inline' file:; connect-src 'self' https://api.github.com https://github.com https:;">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nova</title>
+<link rel="icon" href="../assets/brand/nova-icon.png">
+<link rel="stylesheet" href="nova.css">
+</head>
+<body>
+<div id="app">
+  <header id="windowbar">
+    <div id="brand"><img src="../assets/brand/nova-icon.png" alt="Nova"><span>Nova</span></div>
+    <div id="tabs"><button id="newTab" class="icon-btn tab-add" title="Nueva pestaña (Ctrl+T)">+</button></div>
+    <div id="windowActions">
+      <button class="window-btn" data-window="min" title="Minimizar">−</button>
+      <button class="window-btn" data-window="max" title="Maximizar">□</button>
+      <button class="window-btn close" data-window="close" title="Cerrar">×</button>
+    </div>
+  </header>
+  <div id="toolbar">
+    <div class="nav-group">
+      <button class="icon-btn pill" id="back" title="Atrás">←</button>
+      <button class="icon-btn pill" id="forward" title="Adelante">→</button>
+      <button class="icon-btn pill" id="reload" title="Recargar">↻</button>
+    </div>
+    <div id="addressWrap">
+      <span id="secureMark">○</span>
+      <input id="address" autocomplete="off" spellcheck="false" placeholder="Buscar o escribir una dirección">
+      <button id="star" class="icon-btn address-action" title="Añadir a favoritos">☆</button>
+    </div>
+    <div class="toolbar-actions">
+      <button class="icon-btn pill" id="accentButton" title="Color de acento"><span class="accent-dot"></span></button>
+      <button class="icon-btn pill" id="menuButton" title="Menú">⋮</button>
+    </div>
+  </div>
+  <div id="workspace">
+    <aside id="sidebar">
+      <button class="side-item active" data-view="home" title="Inicio"><span class="sicon" data-icon="home"></span><span>Inicio</span></button>
+      <button class="side-item" data-view="favorites" title="Favoritos"><span class="sicon" data-icon="star"></span><span>Favoritos</span></button>
+      <button class="side-item" data-view="workspaces" title="Workspaces"><span class="sicon" data-icon="grid"></span><span>Workspaces</span></button>
+      <button class="side-item" data-view="history" title="Historial"><span class="sicon" data-icon="history"></span><span>Historial</span></button>
+      <button class="side-item" data-view="downloads" title="Descargas"><span class="sicon" data-icon="download"></span><span>Descargas</span></button>
+      <button class="side-item" data-view="extensions" title="Extensiones"><span class="sicon" data-icon="extensions"></span><span>Extensiones</span></button>
+      <button class="side-item" data-view="performance" title="Rendimiento"><span class="sicon" data-icon="bolt"></span><span>Rendimiento</span></button>
+      <div class="side-spacer"></div>
+      <button class="side-item" data-view="settings" title="Ajustes"><span class="sicon" data-icon="settings"></span><span>Ajustes</span></button>
+    </aside>
+    <main id="browserArea"><div id="views"></div></main>
+  </div>
+</div>
+<div id="drawer" aria-hidden="true"></div>
+<div id="toastStack"></div>
+<script src="nova.js"></script>
+</body>
+</html>
