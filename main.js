@@ -25,8 +25,8 @@ const { createAccountService } = require('./account-service.js');
 const accounts = createAccountService({ app, safeStorage, fetch });
 const LOGOS = ['quantum'], SPLASH_MS = 1400;
 const logoId = id => (LOGOS.includes(id) ? id : 'quantum');
-const logoIco = id => path.join(__dirname, `assets/logos/${logoId(id)}.ico`);      // dentro del paquete (asar)
-const logoImg = id => { const i = nativeImage.createFromPath(process.platform === 'win32' ? logoIco(id) : path.join(__dirname, `assets/logos/${logoId(id)}.png`)); return i.isEmpty() ? nativeImage.createFromPath(path.join(__dirname, 'assets/icon.png')) : i; };
+const logoIco = id => path.join(__dirname, 'assets/icon.ico');      // único icono Nova 5.2 dentro del paquete
+const logoImg = id => { const i = nativeImage.createFromPath(process.platform === 'win32' ? logoIco(id) : path.join(__dirname, 'assets/icon.png')); return i.isEmpty() ? nativeImage.createFromPath(path.join(__dirname, 'assets/icon.png')) : i; };
 // preferencias que el proceso principal necesita antes de abrir la interfaz (logo, animación de inicio, extensiones)
 let prefs = { logo: 'quantum', splash: true, ext: {}, reg: '' };
 const prefsFile = () => path.join(app.getPath('userData'), 'prefs.json');
@@ -258,7 +258,7 @@ app.whenReady().then(() => {
   }
   createMain();
   initAutoUpdater();
-  setTimeout(() => { registerBrowser(false).catch(() => { }); if (prefs.logo !== 'classic') applyLogo(prefs.logo); }, 4000);
+  setTimeout(() => { registerBrowser(false).catch(() => { }); applyLogo('quantum'); }, 4000);
 
   const dlMap = new Map(), dlSend = new Map();
   web().on('will-download', (e, item) => {
@@ -574,7 +574,8 @@ ipcMain.handle('state-save', (e, raw) => {
     delete obj.key; // nunca guardar claves API en el backup de estado
     const f = userFile('state-backup.json'), bak = userFile('state-backup.json.bak');
     const data = JSON.stringify(obj);
-    if (fs.existsSync(f) && Date.now() - stateBackupAt > 60 * 1000) { try { fs.copyFileSync(f, bak); stateBackupAt = Date.now(); } catch { } }
+    // Mantén siempre la última versión válida como respaldo: si el siguiente guardado falla, se puede volver atrás.
+    if (fs.existsSync(f)) { try { fs.copyFileSync(f, bak); stateBackupAt = Date.now(); } catch { } }
     atomicWrite(f, data);
     return true;
   } catch { return false; }
@@ -807,4 +808,38 @@ ipcMain.handle('clear-data', async (e, o) => {
 });
 ipcMain.handle('clear', async e => {
   if (denyUntrusted(e)) return false; await web().clearStorageData(); await web().clearCache(); return true; });
+
+/* ---------- Nova 5.1 · diagnóstico y recuperación segura ---------- */
+ipcMain.handle('nova51-diagnostics', e => {
+  if (denyUntrusted(e)) return { ok:false, error:'Solicitud no válida.' };
+  const exists = f => { try { return fs.existsSync(f); } catch { return false; } };
+  const readJson = f => { try { return JSON.parse(fs.readFileSync(f,'utf8')); } catch { return null; } };
+  const pf = prefsFile(), sb = userFile('state-backup.json'), bak = userFile('state-backup.json.bak');
+  let prefsOk=false, stateOk=false, backupOk=false;
+  try { const x=readJson(pf); prefsOk=!!x && typeof x==='object'; } catch {}
+  try { const x=readJson(sb); stateOk=!!x && typeof x==='object'; } catch {}
+  try { const x=readJson(bak); backupOk=!!x && typeof x==='object'; } catch {}
+  return {
+    ok:true, version:app.getVersion(), electron:process.versions.electron, chromium:process.versions.chrome,
+    prefs:{ ok:prefsOk, path:pf, logo:'quantum' },
+    state:{ ok:stateOk, backup:backupOk, backupPath:bak },
+    prime:{ iconPng:exists(path.join(__dirname,'assets','icon.png')), iconIco:exists(path.join(__dirname,'assets','icon.ico')), legacyLogoDir:exists(path.join(__dirname,'assets','logos')), legacyThemeFile:exists(path.join(__dirname,'shell','themes.css')) },
+    renderer:{ nodeIntegration:true, contextIsolation:false, note:'Legacy renderer compatibility; migration is intentionally separated from this stability release.' },
+  };
+});
+ipcMain.handle('nova51-restore-backup', e => {
+  if (denyUntrusted(e)) return {ok:false,error:'Solicitud no válida.'};
+  const backup=userFile('state-backup.json.bak');
+  try {
+    if (!fs.existsSync(backup)) return {ok:false,error:'No hay una copia de seguridad disponible.'};
+    const obj=JSON.parse(fs.readFileSync(backup,'utf8')); if(!obj||typeof obj!=='object'||Array.isArray(obj)) return {ok:false,error:'La copia no es válida.'};
+    delete obj.key; atomicWrite(userFile('state-backup.json'),JSON.stringify(obj));
+    return {ok:true,state:JSON.stringify(obj)};
+  } catch(err){ return {ok:false,error:String(err?.message||err)}; }
+});
+ipcMain.handle('nova51-export-state', e => {
+  if (denyUntrusted(e)) return null;
+  try { const raw=fs.readFileSync(userFile('state-backup.json'),'utf8'); JSON.parse(raw); return raw; } catch { return null; }
+});
+
 app.on('window-all-closed', () => app.quit());

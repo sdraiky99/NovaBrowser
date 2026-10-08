@@ -1,41 +1,29 @@
-# Nova Browser 5.0.0 — Quantum Prime
+# Nova Browser — 5.2.0 Quantum Identity
 
-Nova es un navegador basado en Chromium con una interfaz propia, limpia y orientada a productividad.
+Nova es un navegador Chromium con una experiencia visual tranquila y coherente. Nova 5.2 no añade funciones de relleno: se centra en identidad, tipografía, iconografía, microanimaciones, splash e instalador.
 
-## Quantum Prime
+## Esta versión
 
-La versión 5.0.0 introduce la identidad Nova Quantum y una filosofía de interfaz más tranquila:
-
-- Menos botones y menos duplicación.
-- Menús compactos y fáciles de entender.
-- Sidebar centrada en acciones útiles.
-- Transparencia y blur moderados.
-- Animaciones rápidas y accesibles.
-- Favicons reales para sitios fijados.
-- Workspaces, rendimiento, ahorro de energía y extensiones Chromium reales.
-- Nueva pestaña con noticias con fuentes identificables y fallback editorial marcado.
+**5.2.0 Quantum Identity** consolida la apariencia de Nova: un único sistema de marca, menús más serenos, materiales de instalación renovados y una capa visual aislada para evitar regresiones del núcleo de navegación.
 
 ## Desarrollo
 
-Requisitos recomendados:
-
-- Node.js 22.12.0 o superior (versión fijada en `.nvmrc`).
-- npm.
-- Windows para el instalador `.exe`.
-
-Comandos principales:
+- Node.js `22.12.0` o superior
+- Electron `44.4.5`
 
 ```bash
 npm install
 npm run check
-npm run check:build-assets
-npm run dist:win
+npm start
 ```
 
-## Filosofía de estabilidad
+Para crear los paquetes:
 
-Quantum Prime se implementa como una capa aislada sobre la base estable de Nova 4.4.1. Los cambios de interfaz no sustituyen masivamente `shell/index.html` y el pipeline comprueba recursos críticos antes del empaquetado.
+```bash
+npm run dist:win
+npm run dist:linux
+```
 
-## Licencia
+## Historial
 
-Consulta `LICENSE.txt`.
+La historia de las versiones anteriores se conserva en `docs/history/`. La nota de la versión actual es `RELEASE_NOTES_5.2.0.md`.

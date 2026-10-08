@@ -1,18 +1,17 @@
-; Nova 5.0.0 · instalador estable
-; No sustituye el contenido del perfil ni borra userData.
+; Nova 5.2.0 · Identity installer
+; No elimina ni sustituye userData durante una actualización.
 
 !macro customHeader
-  BrandingText "Nova Browser 5.0.0"
+  BrandingText "Nova Browser 5.2.0"
   !define MUI_WELCOMEPAGE_TITLE "Bienvenido a Nova"
-  !define MUI_WELCOMEPAGE_TEXT "Nova 5.0.0 · Quantum Prime, interfaz limpia, sitios fijados, rendimiento y ahorro de energía.$\r$\n$\r$\nEste asistente instalará o actualizará Nova para tu usuario. Tus datos de navegación y ajustes se conservan."
-  !define MUI_DIRECTORYPAGE_TEXT_TOP "Elige la carpeta donde se instalará Nova. Nova puede actualizarse sobre una instalación existente sin desinstalarla primero."
+  !define MUI_WELCOMEPAGE_TEXT "Nova 5.2.0 · Quantum Identity, una interfaz serena, coherente y preparada para durar.$\r$\n$\r$\nEste asistente instalará o actualizará Nova para tu usuario. Tus datos de navegación y ajustes se conservan."
+  !define MUI_DIRECTORYPAGE_TEXT_TOP "Elige la carpeta donde se instalará Nova. Puedes actualizar una instalación existente sin desinstalarla primero."
   !define MUI_FINISHPAGE_TITLE "Nova está listo"
-  !define MUI_FINISHPAGE_TEXT "Nova 5.0.0 se ha instalado o actualizado correctamente. Tus datos de usuario se conservan."
+  !define MUI_FINISHPAGE_TEXT "Nova 5.2.0 se ha instalado o actualizado correctamente. Tus datos de usuario se conservan."
   !define MUI_UNCONFIRMPAGE_TEXT_TOP "Nova se quitará de tu equipo. Los datos de usuario se conservan."
 !macroend
 
 !macro customInstall
-  ; Registro de Nova como navegador disponible. Windows decide el navegador predeterminado.
   WriteRegStr HKCU "Software\Classes\NovaURL" "" "Nova URL"
   WriteRegStr HKCU "Software\Classes\NovaURL" "URL Protocol" ""
   WriteRegStr HKCU "Software\Classes\NovaURL\DefaultIcon" "" '$INSTDIR\${APP_EXECUTABLE_FILENAME},0'

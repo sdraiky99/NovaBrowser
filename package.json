@@ -1,14 +1,14 @@
 {
   "name": "nova-browser",
   "productName": "Nova",
-  "version": "5.0.0",
-  "description": "Navegador Chromium moderno con Nova Quantum Prime: interfaz limpia, workspaces, rendimiento, energía y extensiones reales.",
+  "version": "5.2.0",
+  "description": "Navegador Chromium moderno con Nova Quantum 5.2: identidad renovada, interfaz serena, instalador refinado y experiencia consistente.",
   "author": "Nova",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "dist": "npm run dist:win",
-    "check": "npm run check:project && npm run qa:5.0.0",
+    "check": "npm run check:project && npm run qa:5.2.0 && npm run check:build-assets",
     "dist:win": "electron-builder --win --publish never",
     "dist:linux": "electron-builder --linux rpm AppImage --publish never",
     "qa": "node scripts/qa-vm-4.0.js",
@@ -18,7 +18,9 @@
     "qa:4.4": "node scripts/qa-4.4.1.js",
     "qa:4.4.1": "node scripts/qa-4.4.1.js",
     "qa:5.0.0": "node scripts/qa-5.0.0.js",
-    "check:build-assets": "node scripts/check-build-assets.js"
+    "check:build-assets": "node scripts/check-build-assets.js",
+    "qa:5.1.0": "node scripts/qa-5.1.0.js",
+    "qa:5.2.0": "node scripts/qa-5.2.0.js"
   },
   "dependencies": {
     "@ghostery/adblocker-electron": "2.18.2",
