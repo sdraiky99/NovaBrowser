@@ -1,4 +1,4 @@
-/* Nova 5.3.0 Reborn — renderer refresh, Extension Center, What's New and visual identity. */
+/* Nova 5.3.1 Reborn — renderer refresh, Extension Center, What's New and visual identity. */
 (() => {
   'use strict';
   const N = window.NOVA || {};
@@ -117,7 +117,7 @@
 
   // ---------- Routing ----------
   const oldResolve=N.resolveFeatureRoute;
-  N.resolveFeatureRoute=x=>{const raw=String(x||'').replace(/^nova:\/\//i,'').split(/[/?#]/)[0].toLowerCase();const map={extensioncenter:'extensioncenter53','extensions-store':'extensioncenter53','extensiones-store':'extensioncenter53','whatsnew:'whatsnew53','novedades53':'whatsnew53','guide:'guide53','bienvenida53':'guide53'};return map[raw]||(oldResolve?oldResolve(x):String(x||''));};
+  N.resolveFeatureRoute=x=>{const raw=String(x||'').replace(/^nova:\/\//i,'').split(/[/?#]/)[0].toLowerCase();const map={extensioncenter:'extensioncenter53','extensions-store':'extensioncenter53','extensiones-store':'extensioncenter53','whatsnew':'whatsnew53','novedades53':'whatsnew53','guide':'guide53','bienvenida53':'guide53'};return map[raw]||(oldResolve?oldResolve(x):String(x||''));};
   if(N.PG){N.PG.extensioncenter53=extensionPage;N.PG.whatsnew53=whatsNew;N.PG.guide53=guide;}
   N.extraActs=Array.isArray(N.extraActs)?N.extraActs:[];
   const addAct=(label,fn)=>{if(!N.extraActs.some(x=>Array.isArray(x)&&x[0]===label))N.extraActs.push([label,fn]);};
@@ -127,7 +127,9 @@
 
   // ---------- Update notice ----------
   const showWelcomeOnVersion = () => {
-    try{const key='nova53_seen_'+String(typeof NOVA_VER!=='undefined'?NOVA_VER:'5.3.0');if(localStorage.getItem(key))return;localStorage.setItem(key,'1');setTimeout(()=>shellLink('whatsnew53','Novedades'),1200);}catch{}
+    try{const key='nova53_seen_'+String(typeof NOVA_VER!=='undefined'?NOVA_VER:'5.3.1');if(localStorage.getItem(key))return;localStorage.setItem(key,'1');setTimeout(()=>shellLink('whatsnew53','Novedades'),1200);}catch(err){console.warn('[nova53] no se pudo comprobar la versión vista:',err);}
   };
-
-
+  // Novedades: una sola vez por versión, cuando la interfaz ya ha cargado (sin temporizadores permanentes)
+  if (document.readyState === 'complete') showWelcomeOnVersion();
+  else window.addEventListener('load', showWelcomeOnVersion, { once: true });
+})();
