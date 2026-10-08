@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' file: data: blob:; object-src 'none'; base-uri 'none'; frame-src 'self' file:; img-src 'self' file: data: blob: https:; style-src 'self' 'unsafe-inline' file:; script-src 'self' 'unsafe-inline' file:; connect-src 'self' https://api.github.com https://github.com https:;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' file: data: blob:; object-src 'none'; base-uri 'none'; frame-src 'self' file:; img-src 'self' file: data: blob: https:; style-src 'self' 'unsafe-inline' file:; script-src 'self' 'unsafe-inline' file:; connect-src 'self' https:">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Nova</title>
 <link rel="icon" href="../assets/brand/nova-icon.png">
@@ -10,33 +10,35 @@
 </head>
 <body>
 <div id="app">
-  <header id="windowbar">
-    <div id="brand"><img src="../assets/brand/nova-icon.png" alt="Nova"><span>Nova</span></div>
-    <div id="tabs"><button id="newTab" class="icon-btn tab-add" title="Nueva pestaña (Ctrl+T)">+</button></div>
-    <div id="windowActions">
-      <button class="window-btn" data-window="min" title="Minimizar">−</button>
-      <button class="window-btn" data-window="max" title="Maximizar">□</button>
-      <button class="window-btn close" data-window="close" title="Cerrar">×</button>
+  <header id="windowbar" aria-label="Barra de pestañas">
+    <div id="brand" title="Nova"><img src="../assets/brand/nova-icon.png" alt="Nova"><span>Nova</span></div>
+    <div id="tabs" aria-label="Pestañas">
+      <button id="newTab" class="icon-btn tab-add" title="Nueva pestaña (Ctrl+T)" aria-label="Nueva pestaña">+</button>
+    </div>
+    <div id="windowActions" aria-label="Ventana">
+      <button class="window-btn" data-window="min" title="Minimizar" aria-label="Minimizar">—</button>
+      <button class="window-btn" data-window="max" title="Maximizar" aria-label="Maximizar">□</button>
+      <button class="window-btn close" data-window="close" title="Cerrar" aria-label="Cerrar">×</button>
     </div>
   </header>
-  <div id="toolbar">
+  <div id="toolbar" aria-label="Navegación">
     <div class="nav-group">
-      <button class="icon-btn pill" id="back" title="Atrás">←</button>
-      <button class="icon-btn pill" id="forward" title="Adelante">→</button>
-      <button class="icon-btn pill" id="reload" title="Recargar">↻</button>
+      <button class="icon-btn nav-btn" id="back" title="Atrás" aria-label="Atrás"></button>
+      <button class="icon-btn nav-btn" id="forward" title="Adelante" aria-label="Adelante"></button>
+      <button class="icon-btn nav-btn" id="reload" title="Recargar" aria-label="Recargar"></button>
     </div>
     <div id="addressWrap">
-      <span id="secureMark">○</span>
-      <input id="address" autocomplete="off" spellcheck="false" placeholder="Buscar o escribir una dirección">
-      <button id="star" class="icon-btn address-action" title="Añadir a favoritos">☆</button>
+      <span id="secureMark" aria-hidden="true">○</span>
+      <input id="address" autocomplete="off" spellcheck="false" placeholder="Buscar o escribir una dirección" aria-label="Dirección o búsqueda"><div id="addressSuggestions" class="address-suggestions" aria-hidden="true"></div>
+      <button id="star" class="icon-btn address-action" title="Añadir a favoritos" aria-label="Añadir a favoritos"></button>
     </div>
     <div class="toolbar-actions">
-      <button class="icon-btn pill" id="accentButton" title="Color de acento"><span class="accent-dot"></span></button>
-      <button class="icon-btn pill" id="menuButton" title="Menú">⋮</button>
+      <button class="icon-btn nav-btn" id="accentButton" title="Color de acento" aria-label="Color de acento"><span class="accent-dot"></span></button>
+      <button class="icon-btn nav-btn" id="menuButton" title="Menú" aria-label="Menú"></button>
     </div>
   </div>
   <div id="workspace">
-    <aside id="sidebar">
+    <aside id="sidebar" aria-label="Navegación de Nova">
       <button class="side-item active" data-view="home" title="Inicio"><span class="sicon" data-icon="home"></span><span>Inicio</span></button>
       <button class="side-item" data-view="favorites" title="Favoritos"><span class="sicon" data-icon="star"></span><span>Favoritos</span></button>
       <button class="side-item" data-view="workspaces" title="Workspaces"><span class="sicon" data-icon="grid"></span><span>Workspaces</span></button>
@@ -51,7 +53,7 @@
   </div>
 </div>
 <div id="drawer" aria-hidden="true"></div>
-<div id="toastStack"></div>
+<div id="toastStack" aria-live="polite"></div>
 <script src="nova.js"></script>
 </body>
 </html>

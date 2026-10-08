@@ -1,6 +1,11 @@
 # Changelog
 
-## 5.3.3
-Deep Cleanup & UI Reset: renderer unificado, ajustes reales, limpieza de legacy, Extension Center unificado, noticias con caché y separación clara entre UI de Nova y contenido web.
+## 5.4.0
+- Daily Driver: pestañas, omnibox, descargas, historial y favoritos pulidos.
+- Menú contextual de pestañas y reapertura de pestañas cerradas.
+- Nueva guía de inicio accesible desde Ayuda y en el primer arranque.
+- Nueva estructura de ajustes para funciones activas.
+- Nueva pestaña y What's New con recursos locales y transiciones suaves.
+- Instalador y metadatos actualizados a 5.4.0.
 
-Las versiones anteriores se conservan en `docs/history/`.
+El historial de versiones anteriores está en `docs/history/`.

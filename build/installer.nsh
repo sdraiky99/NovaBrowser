@@ -1,12 +1,12 @@
-; Nova 5.3.3 — Deep Cleanup & UI Reset
+; Nova 5.4.0 — Deep Cleanup & UI Reset
 ; Conserva los datos del usuario durante la instalación, actualización y desinstalación.
 !macro customHeader
-  BrandingText "Nova Browser 5.3.3"
-  !define MUI_WELCOMEPAGE_TITLE "Bienvenido a Nova 5.3.3"
-  !define MUI_WELCOMEPAGE_TEXT "Nova Quantum 5.3.3 · una interfaz renovada, simple y profesional sobre Chromium.\r$\n\r$\nPuedes instalar o actualizar Nova sin desinstalar la versión anterior. Tus favoritos, historial, Workspaces, ajustes y datos personales se conservan."
+  BrandingText "Nova Browser 5.4.0"
+  !define MUI_WELCOMEPAGE_TITLE "Bienvenido a Nova 5.4.0"
+  !define MUI_WELCOMEPAGE_TEXT "Nova Quantum 5.4.0 · una interfaz renovada, simple y profesional sobre Chromium.\r$\n\r$\nPuedes instalar o actualizar Nova sin desinstalar la versión anterior. Tus favoritos, historial, Workspaces, ajustes y datos personales se conservan."
   !define MUI_DIRECTORYPAGE_TEXT_TOP "Elige la carpeta de instalación. Para actualizar Nova normalmente no necesitas cambiarla."
-  !define MUI_FINISHPAGE_TITLE "Nova 5.3.3 está listo"
-  !define MUI_FINISHPAGE_TEXT "Nova 5.3.3 se ha instalado o actualizado correctamente. Los datos de usuario se conservan."
+  !define MUI_FINISHPAGE_TITLE "Nova 5.4.0 está listo"
+  !define MUI_FINISHPAGE_TEXT "Nova 5.4.0 se ha instalado o actualizado correctamente. Los datos de usuario se conservan."
   !define MUI_UNCONFIRMPAGE_TEXT_TOP "Nova se quitará del equipo. Los datos personales de usuario no se eliminan automáticamente."
 !macroend
 !macro customInstall
@@ -20,7 +20,7 @@
   WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nova" "" "Nova"
   WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nova\DefaultIcon" "" '$INSTDIR\${APP_EXECUTABLE_FILENAME},0'
   WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nova\shell\open\command" "" '"$INSTDIR\${APP_EXECUTABLE_FILENAME}"'
-  WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nova\Capabilities" "ApplicationName" "Nova 5.3.3"
+  WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nova\Capabilities" "ApplicationName" "Nova 5.4.0"
   WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nova\Capabilities" "ApplicationIcon" '$INSTDIR\${APP_EXECUTABLE_FILENAME},0'
   WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nova\Capabilities" "ApplicationDescription" "Navegador web moderno basado en Chromium"
   WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nova\Capabilities\URLAssociations" "http" "NovaURL"

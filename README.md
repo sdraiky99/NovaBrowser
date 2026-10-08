@@ -1,36 +1,26 @@
-# Nova Browser 5.3.3
+# Nova Browser 5.4.0
 
-Nova es un navegador de escritorio basado en Chromium y Electron, centrado en una interfaz limpia, organización de pestañas, Workspaces, extensiones y rendimiento.
+Nova es un navegador basado en Chromium orientado a una experiencia diaria limpia y rápida.
+
+## 5.4.0 Daily Driver
+
+- Pestañas con menú contextual, duplicado, fijado, silencio y reapertura.
+- Omnibox con sugerencias de historial, favoritos y pestañas.
+- Centro de descargas con apertura directa y revelar en carpeta.
+- Historial con búsqueda y limpieza.
+- Workspaces conservados y mejor integrados.
+- Rendimiento y ahorro de energía en un único panel.
+- Guía de inicio accesible siempre desde Ayuda.
+- What's New se muestra una vez por versión y puede abrirse manualmente.
 
 ## Desarrollo
+
+Requiere Node.js 22.12.0 o superior.
 
 ```bash
 npm install
 npm start
-```
-
-## Comprobaciones
-
-```bash
 npm run check
 ```
 
-## Build Windows
-
-```bash
-npm run dist:win
-```
-
-## Estructura
-
-- `main.js` — proceso principal de Electron y servicios del navegador.
-- `shell/index.html` — shell visual principal.
-- `shell/nova.js` — renderer de Nova.
-- `shell/nova.css` — sistema visual.
-- `shell/newtab.html` — nueva pestaña.
-- `shell/extensions.js` — catálogo e inyección de extensiones internas.
-- `migration.js` — migraciones y compatibilidad de datos.
-
-## Filosofía
-
-Una función visible debe existir de verdad. Los sistemas antiguos que ya no forman parte de Nova no deben quedarse mezclados con la interfaz actual.
+Para compilar Windows: `npm run dist:win`.

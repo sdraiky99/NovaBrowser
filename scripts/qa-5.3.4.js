@@ -1,0 +1,17 @@
+const fs=require('fs'),path=require('path');
+const root=path.resolve(__dirname,'..');let fail=0;const err=m=>{console.error('FAIL',m);fail++};
+const html=fs.readFileSync(path.join(root,'shell/index.html'),'utf8');
+const js=fs.readFileSync(path.join(root,'shell/nova.js'),'utf8');
+const css=fs.readFileSync(path.join(root,'shell/nova.css'),'utf8');
+for(const id of ['windowbar','tabs','newTab','toolbar','back','forward','reload','address','star','accentButton','menuButton','sidebar','browserArea','views','drawer','toastStack'])if(!html.includes(`id="${id}"`))err('missing UI id '+id);
+if((html.match(/data-window=/g)||[]).length!==3)err('window controls');
+for(const marker of ['function newTab','function closeTab','function toggleBookmark','function renderSettings','function renderExtensions','function renderPerformance','function showWhatsNew','function showTour','function showCommand'])if(!js.includes(marker))err('missing renderer feature '+marker);
+if(!js.includes("document.querySelectorAll('[data-window]')"))err('window controls are not wired');
+if(!js.includes("ipc.send('win',a)"))err('window ipc bridge is not wired');
+if(!js.includes(`localStorage.getItem(key)==='1'`))err('whats new one-time gate missing');
+if(!css.includes('--surface-2')||!css.includes('border-radius:var(--pill)'))err('chrome-like design tokens missing');
+const legacy=/Cyberpunk 2077|Nova 4\.4|Nova 4\.1|themes\.css|nova-runtime\.js|nova532-ui\.js|General\s*<|Estudio\s*</;
+for(const rel of ['shell/index.html','shell/newtab.html','shell/nova.js','shell/nova.css'])if(legacy.test(fs.readFileSync(path.join(root,rel),'utf8')))err('legacy marker in '+rel);
+const pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json')));if(pkg.version!=='5.3.4')err('package version');
+const count=[];(function walk(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){if(['node_modules','.git','dist'].includes(e.name))continue;const f=path.join(d,e.name);e.isDirectory()?walk(f):count.push(f)}})(root);if(count.length>=100)err('file count '+count.length);
+if(fail)process.exit(1);console.log(JSON.stringify({version:pkg.version,files:count.length,ok:true},null,2));
