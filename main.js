@@ -28,7 +28,7 @@ const logoId = id => (LOGOS.includes(id) ? id : 'quantum');
 const logoIco = id => path.join(__dirname, 'assets/brand/nova.ico');      // único icono Nova dentro del paquete
 const logoImg = id => { const i = nativeImage.createFromPath(process.platform === 'win32' ? logoIco(id) : path.join(__dirname, 'assets/brand/nova-icon.png')); return i.isEmpty() ? nativeImage.createFromPath(path.join(__dirname, 'assets/brand/nova-icon.png')) : i; };
 // preferencias que el proceso principal necesita antes de abrir la interfaz (logo, animación de inicio, extensiones)
-let prefs = { logo: 'quantum', splash: true, ext: {}, reg: '' };
+let prefs = { logo: 'quantum', splash: true, ext: {}, reg: '', adblock: true };
 const prefsFile = () => path.join(app.getPath('userData'), 'prefs.json');
 const atomicWrite = (file, data) => {
   const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
@@ -38,7 +38,7 @@ const atomicWrite = (file, data) => {
 };
 const loadPrefs = () => { try { prefs = Object.assign(prefs, JSON.parse(fs.readFileSync(prefsFile(), 'utf8'))); } catch { } prefs.logo = 'quantum'; savePrefs(); };
 const savePrefs = () => { try { atomicWrite(prefsFile(), JSON.stringify(prefs)); } catch { } };
-const { pathToFileURL } = require('url');
+const { pathToFileURL, fileURLToPath } = require('url');
 const extUrl = a => { // enlace http(s) o archivo .html/.pdf/.svg... recibido desde Windows (navegador predeterminado)
   for (const x of a || []) {
     if (/^https?:\/\//i.test(x)) return x;
@@ -64,7 +64,10 @@ const userFile = (...p) => path.join(app.getPath('userData'), ...p);
 let blockerP = null, blockOn = null, blockerAt = 0, blockerRefreshBusy = false;
 const AD_CACHE = () => userFile('adblock-2.18.bin');
 async function setAdblock(on) {
-  on = !!on; if (blockOn === on) return; blockOn = on;
+  on = !!on;
+  if (blockOn === on) return true;
+  if (!on && !blockerP) { blockOn = false; return true; }
+  blockOn = on;
   try {
     if (!blockerP) blockerP = (async () => {
       const { ElectronBlocker } = require('@ghostery/adblocker-electron');
@@ -82,13 +85,15 @@ async function setAdblock(on) {
       blockerAt = Date.now();
       return b;
     })();
-    const b = await blockerP; if (blockOn !== on) return;
+    const b = await blockerP; if (blockOn !== on) return false;
     const ses = web();
     on ? b.enableBlockingInSession(ses) : b.disableBlockingInSession(ses);
+    return true;
   } catch (e) {
     blockerP = null;
     blockOn = null;
     console.error('Adblock:', e.message);
+    return false;
   }
 }
 
@@ -164,6 +169,19 @@ const safeWebUrl = u => {
     const x = new URL(u);
     return x.protocol === 'http:' || x.protocol === 'https:' || x.protocol === 'file:' || (x.protocol === 'about:' && x.href === 'about:blank');
   } catch { return false; }
+};
+const isNewTabFileUrl = raw => {
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== 'file:') return false;
+    const file = path.resolve(fileURLToPath(u));
+    const expected = path.resolve(__dirname, 'shell', 'newtab.html');
+    return process.platform === 'win32' ? file.toLowerCase() === expected.toLowerCase() : file === expected;
+  } catch { return false; }
+};
+const isTrustedNewTabContents = contents => {
+  try { return contents.getType() === 'webview' && isNewTabFileUrl(contents.getURL()); }
+  catch { return false; }
 };
 
 function createMain() {
@@ -247,6 +265,8 @@ app.whenReady().then(() => {
   const ua = web().getUserAgent()
     .replace(/\s?Electron\/\S+/i, '').replace(/\s?nova-browser\/\S+/i, '').replace(/\s?Nova\/\S+/i, '') + ' Nova/' + app.getVersion();
   web().setUserAgent(ua);
+  // Restaura la preferencia de privacidad al arrancar, sin bloquear la apertura de la ventana.
+  setAdblock(prefs.adblock !== false).catch(() => {});
 
   if (prefs.splash !== false) { // animación de inicio (se puede quitar en Personalizar)
     splash = new BrowserWindow({
@@ -293,7 +313,10 @@ app.whenReady().then(() => {
   app.on('web-contents-created', (_, c) => {
     if (c.getType() === 'window') {
       c.on('will-attach-webview', (e, wp, params) => {
-        delete wp.preload;
+        // Solo la página local de nueva pestaña obtiene el puente limitado de Nova.
+        // Las páginas web nunca reciben Node integration ni una API privilegiada.
+        if (isNewTabFileUrl(params.src || '')) wp.preload = path.join(__dirname, 'shell', 'newtab-preload.js');
+        else delete wp.preload;
         wp.nodeIntegration = false;
         wp.nodeIntegrationInSubFrames = false;
         wp.contextIsolation = true;
@@ -426,7 +449,7 @@ ipcMain.on('userdata', e => { if (denyUntrusted(e)) return; e.returnValue = app.
 ipcMain.handle('install-cfg', e => { if (denyUntrusted(e)) return {}; 
   try { return JSON.parse(fs.readFileSync(userFile('install.json'), 'utf8')); } catch { return {}; }
 });
-ipcMain.handle('adblock', (e, on) => { if (denyUntrusted(e) || typeof on !== 'boolean') return false; return setAdblock(on); });
+ipcMain.handle('adblock', async (e, on) => { if (denyUntrusted(e) || typeof on !== 'boolean') return false; const ok = await setAdblock(on); if (ok) { prefs.adblock = on; savePrefs(); } return ok; });
 ipcMain.handle('save-shot', (e, buf) => {
   if (denyUntrusted(e) || (!Buffer.isBuffer(buf) && !(buf instanceof Uint8Array)) || buf.length > 25 * 1024 * 1024) return null;
   const f = path.join(app.getPath('pictures'), `Nova-${Date.now()}.png`);
@@ -681,10 +704,12 @@ async function fetchNewsFeed(url, source) {
   }).filter(Boolean);
 }
 ipcMain.handle('news-feed', async (e, payload) => {
-  if (denyUntrusted(e)) return { ok:false, items:NEWS_FALLBACK, live:false, sources:[] };
-  const topic=String(payload?.topic||'todas').toLowerCase();
+  if (denyUntrusted(e) && !isTrustedNewTabContents(e.sender)) return { ok:false, items:NEWS_FALLBACK, live:false, sources:[] };
+  const requestedTopic = String(payload?.topic || 'todas').toLowerCase();
+  const topic = ['todas', 'tecnologia', 'videojuegos', 'codigo'].includes(requestedTopic) ? requestedTopic : 'todas';
+  const force = payload?.force === true;
   const key=topic;
-  const hit=newsCache.get(key); if(hit && Date.now()-hit.at<5*60*1000) return hit.value;
+  const hit=newsCache.get(key); if(!force && hit && Date.now()-hit.at<5*60*1000) return hit.value;
   const disk=readLiveNewsCache();
   const stale=disk[key];
   const results=await Promise.allSettled(NEWS_SOURCES.map(s=>fetchNewsFeed(s.url,s)));
@@ -809,7 +834,7 @@ ipcMain.handle('performance-cache', async e => {
 });
 ipcMain.handle('security-state', e => {
   if (denyUntrusted(e)) return {};
-  return { popupBlocked: true, insecureContentBlocked: true, webSecurity: true, webviewSandbox: true, webviewNodeIntegration: false, fileAccessFromFileUrls: false, universalAccessFromFileUrls: false, singleInstance: !!gotLock, adblock: blockOn !== false, csp: true };
+  return { popupBlocked: true, insecureContentBlocked: true, webSecurity: true, webviewSandbox: true, webviewNodeIntegration: false, fileAccessFromFileUrls: false, universalAccessFromFileUrls: false, singleInstance: !!gotLock, adblock: blockOn === true, csp: true };
 });
 ipcMain.handle('ai-ask', async (e, data) => {
   if (denyUntrusted(e) || !data || typeof data !== 'object') return { error: 'Solicitud no válida.' };

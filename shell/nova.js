@@ -2,10 +2,11 @@ const { ipcRenderer: ipc } = require('electron');
 const path = require('path');
 const { pathToFileURL } = require('url');
 const { CATALOG } = require('./extensions.js');
+const { resolveNavigation } = require('./navigation.js');
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const APP_VERSION = ipc.sendSync('app-version') || '5.4.0';
+const APP_VERSION = ipc.sendSync('app-version') || '5.5.0';
 let mainPrefs = ipc.sendSync('prefs-get') || {};
 const DEFAULT_STATE = {
   appearance: 'system', accent: '#3f6df6', search: 'https://www.google.com/search?q=',
@@ -57,7 +58,7 @@ function newTabUrl() {
   const qp = new URLSearchParams({ state: JSON.stringify({ appearance:state.appearance, accent:state.accent, search:state.search, bookmarks:state.bookmarks.slice(0,20) }) });
   return `${file.href}?${qp.toString()}`;
 }
-function isNewTabUrl(url) { return typeof url === 'string' && url.startsWith(pathToFileURL(path.join(__dirname,'newtab.html')).href); }
+function isNewTabUrl(url) { return typeof url === 'string' && url.split(/[?#]/, 1)[0] === pathToFileURL(path.join(__dirname, 'newtab.html')).href; }
 
 function iconSvg(name) {
   const p = {
@@ -78,15 +79,29 @@ function renderTab(t) {
   t.el.innerHTML = `<img class="tab-fav" src="../assets/brand/nova-icon.png" alt=""><span class="tab-title">${esc(t.title || 'Nueva pestaña')}</span><button class="icon-btn tab-close" title="Cerrar">${iconSvg('close')}</button>`;
   const close = t.el.querySelector('.tab-close'); close.onclick = e => { e.stopPropagation(); closeTab(t); };
   t.el.onclick = () => selectTab(t);
-  t.el.addEventListener('contextmenu', e => { e.preventDefault(); e.stopPropagation(); showTabMenu(t); });
+  t.el.oncontextmenu = e => { e.preventDefault(); e.stopPropagation(); showTabMenu(t); };
   refreshTabIcon(t);
   t.el.classList.toggle('active', t === activeTab);
 }
 function refreshTabIcon(t) {
-  const img = t.el.querySelector('.tab-fav'); if (!img) return;
-  const u = t.wv.getURL();
-  if (isNewTabUrl(u) || !/^https?:/i.test(u)) { img.src='../assets/brand/nova-icon.png'; return; }
-  try { const o = new URL(u); const f = o.origin + '/favicon.ico'; img.src=f; img.onerror=()=>{img.onerror=null;img.src='../assets/brand/nova-icon.png'}; } catch { img.src='../assets/brand/nova-icon.png'; }
+  const img = t?.el?.querySelector('.tab-fav'); if (!img) return;
+  let u = ''; try { u = t.wv.getURL(); } catch { }
+  const fallback = '../assets/brand/nova-icon.png';
+  const setFallback = () => { if (img.isConnected) img.src = fallback; };
+  if (isNewTabUrl(u) || !/^https?:/i.test(u)) { setFallback(); return; }
+  let originIcon = fallback;
+  try { originIcon = new URL(u).origin + '/favicon.ico'; } catch { setFallback(); return; }
+  img.onerror = () => { img.onerror = null; setFallback(); };
+  img.src = originIcon;
+  // Prioriza el favicon declarado por la página frente a /favicon.ico.
+  try {
+    Promise.resolve(t.wv.executeJavaScript("(() => { const links = [...document.querySelectorAll('link[rel]')]; const icon = links.find(link => /icon/i.test(link.rel)); return icon ? icon.href : ''; })()"))
+      .then(raw => {
+        if (!img.isConnected || typeof raw !== 'string' || !raw) return;
+        const iconUrl = new URL(raw, u);
+        if (['http:', 'https:', 'data:'].includes(iconUrl.protocol)) { img.onerror = () => { img.onerror = null; img.src = originIcon; }; img.src = iconUrl.href; }
+      }).catch(() => {});
+  } catch { }
 }
 function createTab(url) {
   const t = { id: crypto.randomUUID?.() || String(Date.now()+Math.random()), title:'Nueva pestaña', wv:null, el:null };
@@ -96,8 +111,17 @@ function createTab(url) {
   $('#views').appendChild(t.wv); $('#tabs').appendChild(t.el);
   t.wv.addEventListener('did-start-loading', ()=>t.el.classList.add('loading'));
   t.wv.addEventListener('did-stop-loading', ()=>t.el.classList.remove('loading'));
-  t.wv.addEventListener('did-navigate', syncActiveFromWeb);
-  t.wv.addEventListener('did-navigate-in-page', syncActiveFromWeb);
+  t.wv.addEventListener('did-navigate', () => syncTabFromWeb(t));
+  t.wv.addEventListener('did-navigate-in-page', () => syncTabFromWeb(t));
+  t.wv.addEventListener('ipc-message', event => {
+    if (event.channel !== 'nova-newtab-action' || !isNewTabUrl(t.wv.getURL())) return;
+    const action = event.args?.[0];
+    if (!action || typeof action !== 'object') return;
+    if (action.type === 'navigate' && typeof action.value === 'string' && action.value.length <= 2048) {
+      selectTab(t); navigate(action.value);
+    } else if (action.type === 'open-tour') { selectTab(t); showTour(); }
+    else if (action.type === 'open-command') { selectTab(t); showCommand(); }
+  });
   t.wv.addEventListener('page-title-updated', e=>{t.title=e.title||'Nueva pestaña';renderTab(t);if(t===activeTab)document.title=t.title});
   t.wv.addEventListener('did-finish-load', ()=>{refreshTabIcon(t);applyBuiltinsToTab(t)});
   t.wv.addEventListener('did-fail-load', e=>{if(e.errorCode!==-3)toast('No se pudo cargar la página')});
@@ -107,9 +131,23 @@ function createTab(url) {
 function newTab(url) { return createTab(url || undefined); }
 function selectTab(t) { if(!t) return; activeTab=t; tabs.forEach(x=>{x.el.classList.toggle('active',x===t);x.wv.classList.toggle('active',x===t)}); internalView=null; hideDrawer(); syncAddress(); document.title=t.title||'Nova'; }
 function closeTab(t, remember=true) { const idx=tabs.indexOf(t); if(idx<0)return; const was=t===activeTab; if(remember && /^https?:/i.test(t.wv.getURL())) closedTabs.unshift({url:t.wv.getURL(),title:t.title||t.wv.getURL()}); closedTabs=closedTabs.slice(0,10); try{t.wv.remove()}catch{} t.el.remove(); tabs.splice(idx,1); if(!tabs.length){newTab();return;} if(was)selectTab(tabs[Math.min(idx,tabs.length-1)]); }
-function syncActiveFromWeb() { if(!activeTab)return; syncAddress(); refreshTabIcon(activeTab); const u=activeTab.wv.getURL(); if(/^https?:/i.test(u)){state.history=[{url:u,title:activeTab.title||u,ts:Date.now()},...state.history.filter(x=>x.url!==u)].slice(0,300);saveState();} }
+function syncTabFromWeb(t) {
+  if (!t || !tabs.includes(t)) return;
+  let u = ''; try { u = t.wv.getURL(); } catch { return; }
+  if (t === activeTab) { syncAddress(); refreshTabIcon(t); document.title = t.title || 'Nova'; }
+  if (/^https?:/i.test(u)) {
+    state.history = [{ url: u, title: t.title || u, ts: Date.now() }, ...state.history.filter(x => x.url !== u)].slice(0, 300);
+    saveState();
+  }
+}
 function syncAddress() { if(!activeTab)return; const u=activeTab.wv.getURL(); $('#address').value=isNewTabUrl(u)?'':u; $('#secureMark').className=/^https:/i.test(u)?'secure':(/^http:/i.test(u)?'insecure':''); $('#secureMark').textContent=/^https:/i.test(u)?'●':(/^http:/i.test(u)?'!':'○'); $('#star').innerHTML=iconSvg('star'); $('#star').style.color=isBookmarked(u)?'var(--accent)':''; }
-function navigate(v) { v=String(v||'').trim(); if(!activeTab||!v)return; const u=/^(https?|file):\/\//i.test(v)?v:/^[\w-]+(\.[\w-]+)+(\/.*)?$/i.test(v)?'https://'+v:state.search+encodeURIComponent(v); activeTab.wv.loadURL(u).catch(()=>toast('Dirección no válida')); }
+function navigate(v) {
+  if (!activeTab) return;
+  const target = resolveNavigation(v, state.search);
+  if (!target) return;
+  try { Promise.resolve(activeTab.wv.loadURL(target)).catch(() => toast('No se pudo abrir la dirección')); }
+  catch { toast('No se pudo abrir la dirección'); }
+}
 function isBookmarked(u){return !!u && state.bookmarks.some(b=>b.url===u)}
 function toggleBookmark(){if(!activeTab)return;const u=activeTab.wv.getURL();if(!/^https?:/i.test(u)){toast('Abre una página web para guardarla');return;}const i=state.bookmarks.findIndex(b=>b.url===u);if(i>=0)state.bookmarks.splice(i,1);else state.bookmarks.unshift({url:u,title:activeTab.title||u});state.bookmarks=state.bookmarks.slice(0,100);saveState();syncAddress();toast(i>=0?'Favorito eliminado':'Añadido a favoritos');refreshAllNewTabs();}
 function refreshAllNewTabs(){tabs.filter(t=>isNewTabUrl(t.wv.getURL())).forEach(t=>{const u=newTabUrl();try{t.wv.loadURL(u)}catch{}})}
@@ -212,7 +250,7 @@ function renderSettings(r){
   $('#sideToggle').onclick=()=>{state.sidebarOpen=!state.sidebarOpen;saveState();applyAppearance();renderSettings(r)};
   $('#animToggle').onclick=()=>{state.animations=!state.animations;saveState();applyAppearance();renderSettings(r)};
   $('#reopenTab').onclick=reopenClosedTab;
-  $('#tourStartup').onclick=()=>{state.showTourOnStart=!state.showTourOnStart;saveState();renderSettings(r)};
+  $('#tourStartup').onclick=()=>{state.showTourOnStart=!state.showTourOnStart;saveState();renderSettings(r);toast(state.showTourOnStart?'La guía aparecerá al iniciar':'La guía automática está desactivada')};
   $('#adblockToggle').onclick=async()=>{const next=mainPrefs.adblock===false;const ok=await ipc.invoke('adblock',next);if(ok){mainPrefs=ipc.sendSync('prefs-get')||mainPrefs;renderSettings(r)}else toast('No se pudo cambiar el bloqueador')};
   $('#defaultBrowser').onclick=()=>ipc.invoke('default-browser',true).then(d=>toast(d?.portable?'No disponible en modo portable':'Abre la configuración de Windows'));
   $('#tour').onclick=()=>showTour();$('#news').onclick=()=>showWhatsNew(true);$('#diag').onclick=async()=>{const d=await ipc.invoke('nova51-diagnostics').catch(()=>null);showDrawer('Diagnóstico',`<pre style="white-space:pre-wrap;font-size:11px">${esc(JSON.stringify(d,null,2))}</pre>`)};
@@ -225,7 +263,7 @@ function showTour(){
 function showWhatsNew(force=false){
   const key='nova-whatsnew-seen-'+APP_VERSION;
   if(!force && localStorage.getItem(key)==='1')return;
-  let i=0;const cards=[['../assets/illustrations/renderer.svg','Interfaz unificada','Nova deja atrás capas de UI antiguas y concentra la navegación en un shell limpio.'],['../assets/illustrations/extensions.svg','Extension Center','Extensiones integradas y tienda oficial separadas, con una única pantalla de gestión.'],['../assets/illustrations/performance.svg','Rendimiento','Memoria y ahorro de energía quedan en un panel único.'],['../assets/illustrations/onboarding.svg','Noticias y nueva pestaña','Noticias en vivo, caché del último feed válido e imágenes cuando la fuente las proporciona.']];const m=document.createElement('div');m.className='modal on';m.innerHTML=`<div class="modal-card"><div class="modal-head"><strong>Novedades de Nova ${esc(APP_VERSION)}</strong><button class="icon-btn" id="wnClose">×</button></div><div class="modal-body"><div id="wnCard" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:center"></div><div class="tour-dots">${cards.map((_,k)=>`<span class="dot ${k===0?'on':''}" data-dot="${k}"></span>`).join('')}</div><div style="display:flex;justify-content:flex-end"><button class="btn primary" id="wnNext">Siguiente</button></div></div></div>`;document.body.appendChild(m);const keyClose=()=>{localStorage.setItem(key,'1');m.remove()};$('#wnClose').onclick=keyClose;$('#wnNext').onclick=()=>{if(i<cards.length-1){i++;paint()}else keyClose()};function paint(){const c=cards[i];$('#wnCard').innerHTML=`<img class="tour-img" src="${c[0]}" onerror="this.style.display='none'" alt=""><div><h2 style="margin-top:0">${esc(c[1])}</h2><p class="muted">${esc(c[2])}</p></div>`;m.querySelectorAll('[data-dot]').forEach(x=>x.classList.toggle('on',+x.dataset.dot===i));$('#wnNext').textContent=i===cards.length-1?'Terminar':'Siguiente'}paint();
+  let i=0;const cards=[['../assets/illustrations/renderer.svg','Nueva pestaña reparada','El buscador, las noticias y las acciones de la página de inicio vuelven a comunicarse con Nova mediante un puente limitado.'],['../assets/illustrations/onboarding.svg','Búsqueda unificada','Direcciones web, dominios con puerto, localhost y búsquedas por texto comparten el mismo resolutor.'],['../assets/illustrations/extensions.svg','Pestañas más fiables','El historial y la barra de direcciones se actualizan desde la pestaña que realmente ha navegado.'],['../assets/illustrations/performance.svg','Interfaz adaptativa','Estilo inspirado en Chrome, tema del sistema actualizado en nueva pestaña y controles de teclado más visibles.']];const m=document.createElement('div');m.className='modal on';m.innerHTML=`<div class="modal-card"><div class="modal-head"><strong>Novedades de Nova ${esc(APP_VERSION)}</strong><button class="icon-btn" id="wnClose">×</button></div><div class="modal-body"><div id="wnCard" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:center"></div><div class="tour-dots">${cards.map((_,k)=>`<span class="dot ${k===0?'on':''}" data-dot="${k}"></span>`).join('')}</div><div style="display:flex;justify-content:flex-end"><button class="btn primary" id="wnNext">Siguiente</button></div></div></div>`;document.body.appendChild(m);const keyClose=()=>{localStorage.setItem(key,'1');m.remove()};$('#wnClose').onclick=keyClose;$('#wnNext').onclick=()=>{if(i<cards.length-1){i++;paint()}else keyClose()};function paint(){const c=cards[i];$('#wnCard').innerHTML=`<img class="tour-img" src="${c[0]}" onerror="this.style.display='none'" alt=""><div><h2 style="margin-top:0">${esc(c[1])}</h2><p class="muted">${esc(c[2])}</p></div>`;m.querySelectorAll('[data-dot]').forEach(x=>x.classList.toggle('on',+x.dataset.dot===i));$('#wnNext').textContent=i===cards.length-1?'Terminar':'Siguiente'}paint();
 }
 
 function showMenu(){

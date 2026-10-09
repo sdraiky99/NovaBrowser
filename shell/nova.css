@@ -1,23 +1,23 @@
 
 :root{
   color-scheme:light;
-  --bg:#f7f8fa;--surface:#ffffff;--surface-2:#f0f2f5;--surface-3:#e7eaf0;
-  --hover:#e9ecf1;--active:#e8eefc;--fg:#202124;--muted:#5f6368;--border:rgba(60,64,67,.16);
+  --bg:#f8fafd;--surface:#ffffff;--surface-2:#f1f3f4;--surface-3:#e8eaed;
+  --hover:#e8edf7;--active:#e8f0fe;--fg:#202124;--muted:#5f6368;--border:rgba(60,64,67,.14);
   --accent:#1a73e8;--accent-soft:rgba(26,115,232,.12);--danger:#c5221f;--shadow:0 8px 28px rgba(32,33,36,.12);
-  --radius:10px;--pill:999px;--font:"Segoe UI Variable","Segoe UI",Inter,system-ui,sans-serif
+  --radius:12px;--pill:999px;--font:"Segoe UI Variable","Segoe UI",Inter,system-ui,sans-serif
 }
 body.dark{color-scheme:dark;--bg:#202124;--surface:#292a2d;--surface-2:#303134;--surface-3:#3c4043;--hover:#3c4043;--active:rgba(138,180,248,.16);--fg:#e8eaed;--muted:#bdc1c6;--border:rgba(232,234,237,.13);--accent:#8ab4f8;--accent-soft:rgba(138,180,248,.16);--danger:#f28b82;--shadow:0 12px 34px rgba(0,0,0,.34)}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:var(--font);color:var(--fg);background:var(--bg)}button,input,select{font:inherit;color:inherit}button{border:0}
 #app{display:flex;flex-direction:column;height:100%;background:var(--bg)}
-#windowbar{height:42px;display:flex;align-items:center;gap:8px;padding:0 8px;background:var(--surface);border-bottom:1px solid var(--border);-webkit-app-region:drag;flex:none}
+#windowbar{height:44px;display:flex;align-items:center;gap:8px;padding:5px 8px 0;background:var(--bg);border-bottom:0;-webkit-app-region:drag;flex:none}
 #brand{display:flex;align-items:center;gap:8px;width:66px;padding:0 4px;color:var(--muted);font-size:12px;font-weight:600;letter-spacing:.01em}.brand img{width:18px;height:18px}.brand span{font-size:12px}
 #tabs{display:flex;align-items:center;gap:3px;flex:1;min-width:0;height:100%;overflow:hidden;-webkit-app-region:drag}
 .tab{height:32px;min-width:120px;max-width:220px;flex:1;display:flex;align-items:center;gap:7px;padding:0 9px;border:1px solid transparent;background:transparent;border-radius:9px 9px 0 0;color:var(--muted);-webkit-app-region:no-drag;transition:background .12s ease,color .12s ease,border-color .12s ease,transform .12s ease;animation:tabIn .14s ease}
-.tab:hover{background:var(--hover);color:var(--fg)}.tab.active{background:var(--surface-2);color:var(--fg);border-color:var(--border);border-bottom-color:var(--surface-2)}
+.tab:hover{background:var(--hover);color:var(--fg)}.tab.active{background:var(--surface);color:var(--fg);border-color:var(--border);border-bottom-color:var(--surface);box-shadow:0 -1px 2px rgba(60,64,67,.025)}
 .tab-fav{width:16px;height:16px;object-fit:contain;flex:none}.tab-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}.tab-close{width:24px!important;height:24px!important;opacity:.62}.tab-close:hover{opacity:1;background:var(--hover)}
 .tab-add{width:30px!important;height:30px!important;flex:none;margin-left:2px;font-size:20px;line-height:1;background:transparent}
 #windowActions{display:flex;gap:1px;-webkit-app-region:no-drag;flex:none}.window-btn{width:42px;height:30px;background:transparent;border-radius:7px;cursor:pointer;color:var(--muted);font-size:14px;transition:background .12s ease,color .12s ease}.window-btn:hover{background:var(--hover);color:var(--fg)}.window-btn.close:hover{background:var(--danger);color:#fff}
-#toolbar{height:54px;display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface);border-bottom:1px solid var(--border);flex:none}
+#toolbar{height:52px;display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--surface);border-bottom:1px solid var(--border);flex:none}
 .nav-group,.toolbar-actions{display:flex;gap:3px;flex:none}.icon-btn{display:grid;place-items:center;width:34px;height:34px;border-radius:var(--pill);background:transparent;cursor:pointer;transition:background .12s ease,color .12s ease,transform .08s ease}.icon-btn:hover{background:var(--hover)}.icon-btn:active{transform:scale(.96)}.nav-btn{color:var(--muted)}.nav-btn:hover{color:var(--fg)}.icon-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}.accent-dot{width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 #addressWrap{flex:1;display:flex;align-items:center;gap:8px;height:38px;min-width:180px;padding:0 10px;background:var(--surface-2);border:1px solid transparent;border-radius:var(--pill);transition:border-color .12s ease,background .12s ease,box-shadow .12s ease}#addressWrap:focus-within{background:var(--surface);border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}#secureMark{font-size:12px;color:var(--muted);width:14px;text-align:center}.secure{color:#188038!important}.insecure{color:#b06000!important}#address{flex:1;min-width:0;border:0;outline:0;background:transparent;font-size:13px}#address::placeholder{color:var(--muted)}.address-action{width:28px;height:28px;color:var(--muted)}
 #workspace{display:flex;flex:1;min-height:0}.sidebar-open #sidebar{width:184px}.sidebar-open #sidebar .side-item{justify-content:flex-start;padding:0 12px}.sidebar-open #sidebar .side-item span+span{display:inline}
@@ -33,5 +33,30 @@ body.dark{color-scheme:dark;--bg:#202124;--surface:#292a2d;--surface-2:#303134;-
 @media(max-width:760px){#brand{width:34px}#brand span{display:none}.tab{min-width:80px}.window-btn{width:34px}.panel{padding:20px 16px}.sidebar-open #sidebar{width:56px}.sidebar-open #sidebar .side-item span+span{display:none}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
-/* Nova 5.4 Daily Driver */
+/* UI base de Nova */
 .address-suggestions{position:absolute;left:0;right:0;top:44px;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:5px;display:none;z-index:1300}.address-suggestions.show{display:block;animation:drawerIn .12s ease}.address-suggestions .suggestion{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:9px;background:transparent;text-align:left;cursor:pointer}.address-suggestions .suggestion:hover{background:var(--hover)}.suggest-kind{font-size:10px;color:var(--accent);min-width:52px}.suggest-main{display:flex;flex-direction:column;min-width:0}.suggest-main strong{font-size:12px}.suggest-main small{font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.suggest-empty{padding:10px;font-size:11px;color:var(--muted)}#addressWrap{position:relative}.tab.pinned{max-width:56px;min-width:56px;flex:0 0 56px;justify-content:center}.tab.pinned .tab-title,.tab.pinned .tab-close{display:none}.tab.pinned .tab-fav{width:18px;height:18px}.modal-card{backdrop-filter:blur(10px)}.tour-step{display:none}.tour-step.active{display:block;animation:panelIn .16s ease}.tour-img{width:100%;max-height:250px;object-fit:contain;background:var(--surface-2);border-radius:12px;margin-bottom:10px}.dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--surface-3);margin:0 3px}.dot.on{background:var(--accent)}@keyframes drawerIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+
+/* Controles de ventana y objetivos de clic */
+#brand,#newTab{ -webkit-app-region:no-drag; }
+#windowActions{height:100%;align-items:center;gap:0;margin-left:4px}
+.window-btn{width:46px;height:30px;border-radius:0;display:grid;place-items:center;padding:0;color:var(--fg);background:transparent}
+.window-btn svg{width:10px;height:10px;fill:none;stroke:currentColor;stroke-width:1.1;stroke-linecap:square}
+.window-btn:hover{background:var(--hover)}
+.window-btn.close:hover{background:#c42b1c;color:#fff}
+#windowbar{gap:8px}
+#addressSuggestions{pointer-events:auto}
+button:disabled{opacity:.42;cursor:default}
+
+/* Nova 5.5.0 — Chrome-inspired navigation polish */
+#brand{width:68px;color:var(--fg);font-size:12px;font-weight:650;letter-spacing:.01em}
+#brand img{width:18px;height:18px;object-fit:contain}
+#tabs{align-items:flex-end;gap:2px}
+.tab{max-width:230px;border-radius:9px 9px 0 0}
+#addressWrap{box-shadow:inset 0 0 0 1px rgba(60,64,67,.025)}
+#addressWrap:focus-within{box-shadow:0 0 0 2px var(--accent-soft)}
+.icon-btn:focus-visible,.btn:focus-visible,.menu-item:focus-visible,.window-btn:focus-visible,.side-item:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+#newTab{font-weight:500;color:var(--muted)}
+#newTab:hover{background:var(--hover);color:var(--fg)}
+.tab-close{opacity:.55}
+.tab:hover .tab-close,.tab.active .tab-close{opacity:.85}
+@media(prefers-color-scheme:dark){body:not(.dark){color-scheme:light}}

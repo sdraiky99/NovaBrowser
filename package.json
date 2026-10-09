@@ -1,21 +1,20 @@
 {
   "name": "nova-browser",
   "productName": "Nova",
-  "version": "5.4.0",
-  "description": "Nova 5.4.0: navegador basado en Chromium con pestañas inteligentes, historial, descargas, Workspaces y rendimiento.",
+  "version": "5.5.0",
+  "description": "Nova 5.5.0: navegador Chromium con navegación corregida, nueva pestaña segura, noticias y una interfaz adaptativa inspirada en Chrome.",
   "author": "Nova",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "dist": "npm run dist:win",
-    "check": "npm run check:project && npm run check:syntax && npm run qa:5.4.0 && npm run check:build-assets",
+    "check": "npm run check:project && npm run check:syntax && npm run qa:5.5.0 && npm run check:build-assets",
     "dist:win": "electron-builder --win --publish never",
     "dist:linux": "electron-builder --linux rpm AppImage --publish never",
-    "check:syntax": "node --check main.js && node --check migration.js && node --check account-service.js && node --check account-server/server.js && node --check shell/extensions.js && node --check shell/nova.js",
+    "check:syntax": "node --check main.js && node --check migration.js && node --check account-service.js && node --check account-server/server.js && node --check shell/extensions.js && node --check shell/navigation.js && node --check shell/newtab-preload.js && node --check shell/nova.js",
     "check:project": "node scripts/check-project.js",
     "check:build-assets": "node scripts/check-build-assets.js",
-    "qa:5.3.4": "node scripts/qa-5.3.4.js",
-    "qa:5.4.0": "node scripts/qa-5.4.0.js"
+    "qa:5.5.0": "node scripts/qa-5.5.0.js"
   },
   "dependencies": {
     "@ghostery/adblocker-electron": "2.18.2",
@@ -65,7 +64,7 @@
       "installerSidebar": "build/installerSidebar.bmp",
       "uninstallerSidebar": "build/uninstallerSidebar.bmp",
       "deleteAppDataOnUninstall": false,
-      "uninstallDisplayName": "Nova Browser 5.4.0",
+      "uninstallDisplayName": "Nova Browser 5.5.0",
       "installerHeader": "build/installerHeader.bmp",
       "include": "build/installer.nsh"
     },

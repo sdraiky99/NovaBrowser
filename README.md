@@ -1,17 +1,16 @@
-# Nova Browser 5.4.0
+# Nova Browser 5.5.0
 
-Nova es un navegador basado en Chromium orientado a una experiencia diaria limpia y rápida.
+Nova es un navegador de escritorio basado en Electron/Chromium, con una interfaz adaptativa inspirada en Chrome, barra lateral y nueva pestaña con buscador, accesos rápidos y noticias.
 
-## 5.4.0 Daily Driver
+## Nova 5.5.0
 
-- Pestañas con menú contextual, duplicado, fijado, silencio y reapertura.
-- Omnibox con sugerencias de historial, favoritos y pestañas.
-- Centro de descargas con apertura directa y revelar en carpeta.
-- Historial con búsqueda y limpieza.
-- Workspaces conservados y mejor integrados.
-- Rendimiento y ahorro de energía en un único panel.
-- Guía de inicio accesible siempre desde Ayuda.
-- What's New se muestra una vez por versión y puede abrirse manualmente.
+- Reparación del flujo entre nueva pestaña, buscador, menú y noticias.
+- Búsqueda unificada para direcciones, `localhost`, puertos, direcciones IP y texto.
+- Puente de nueva pestaña limitado a la interfaz local; las webs externas no reciben Node integration.
+- Corrección de la sincronización entre pestañas e historial.
+- Tema claro/oscuro que sigue el sistema y se actualiza en nueva pestaña.
+- Conservación de favoritos, historial, privacidad, barra lateral, extensiones, noticias, Workspaces y descargas.
+- Recursos y notas de versiones anteriores conservados en el proyecto.
 
 ## Desarrollo
 
@@ -24,3 +23,7 @@ npm run check
 ```
 
 Para compilar Windows: `npm run dist:win`.
+
+## Publicación
+
+El flujo de GitHub Actions realiza las comprobaciones y genera los paquetes para Windows y Linux. Antes de publicar una release, prueba Nova en Windows: la suite automática comprueba estáticamente el código y los recursos, pero no sustituye una prueba de la interfaz en ejecución.
