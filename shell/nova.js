@@ -6,13 +6,13 @@ const { resolveNavigation } = require('./navigation.js');
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const APP_VERSION = ipc.sendSync('app-version') || '5.5.0';
+const APP_VERSION = ipc.sendSync('app-version') || '5.5.1';
 let mainPrefs = ipc.sendSync('prefs-get') || {};
 const DEFAULT_STATE = {
   appearance: 'system', accent: '#3f6df6', search: 'https://www.google.com/search?q=',
   sidebarOpen: false, adblock: true, animations: true, energy: false,
   bookmarks: [], history: [], downloads: [], workspaces: [], currentWorkspace: '',
-  firstRun: true, showTourOnStart: true
+  firstRun: true, showTourOnStart: true, toolbarWallpaper: ''
 };
 let state = loadState();
 let tabs = [], activeTab = null, internalView = null, closedTabs = [], omniboxTimer = null;
@@ -25,10 +25,23 @@ function loadState() {
   const bookmarks=Array.isArray(raw.bookmarks)?raw.bookmarks.filter(x=>x&&typeof x.url==='string'&&/^https?:/i.test(x.url)).slice(0,100).map(x=>({url:x.url,title:String(x.title||x.url).slice(0,200)})):[];
   const history=Array.isArray(raw.history)?raw.history.filter(x=>x&&typeof x.url==='string'&&/^https?:/i.test(x.url)).slice(0,300).map(x=>({url:x.url,title:String(x.title||x.url).slice(0,200),ts:Number(x.ts)||Date.now()})):[];
   const workspaces=Array.isArray(raw.workspaces)?raw.workspaces.filter(x=>x&&typeof x.name==='string'&&Array.isArray(x.tabs)).slice(0,20).map(x=>({name:x.name.slice(0,40),tabs:x.tabs.filter(u=>typeof u==='string'&&(/^https?:/i.test(u)||isNewTabUrl(u))).slice(0,50)})):[];
-  return {...DEFAULT_STATE, appearance:ap, accent, search, bookmarks, history, workspaces, sidebarOpen:!!raw.sidebarOpen, adblock:raw.adblock!==false, animations:raw.animations!==false, energy:!!raw.energy, firstRun:raw.firstRun!==false, showTourOnStart:raw.showTourOnStart!==false};
+  const toolbarWallpaper = typeof raw.toolbarWallpaper === 'string' ? raw.toolbarWallpaper : '';
+  return {...DEFAULT_STATE, appearance:ap, accent, search, bookmarks, history, workspaces, toolbarWallpaper, sidebarOpen:!!raw.sidebarOpen, adblock:raw.adblock!==false, animations:raw.animations!==false, energy:!!raw.energy, firstRun:raw.firstRun!==false, showTourOnStart:raw.showTourOnStart!==false};
 }
 function saveState() {
   try { localStorage.setItem('nova-state', JSON.stringify(state)); } catch {}
+}
+function toolbarWallpaperUrl() {
+  try {
+    const u = new URL(state.toolbarWallpaper || '');
+    if (u.protocol !== 'file:' || !/\/wallpapers\/nova-toolbar-wallpaper\.(?:png|jpe?g|webp)$/i.test(u.pathname) || u.search || u.hash) return '';
+    return u.href;
+  } catch { return ''; }
+}
+function applyToolbarWallpaper() {
+  const url = toolbarWallpaperUrl();
+  document.documentElement.style.setProperty('--toolbar-wallpaper', url ? `url("${url}")` : 'none');
+  document.body.classList.toggle('has-toolbar-wallpaper', !!url);
 }
 function applyAppearance() {
   const ap = state.appearance;
@@ -38,6 +51,7 @@ function applyAppearance() {
   document.documentElement.style.setProperty('--accent-soft', `color-mix(in srgb, ${state.accent || '#3f6df6'} 12%, transparent)`);
   document.body.classList.toggle('no-anim', !state.animations);
   document.body.classList.toggle('sidebar-open', !!state.sidebarOpen);
+  applyToolbarWallpaper();
 }
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyAppearance);
 
@@ -107,7 +121,7 @@ function createTab(url) {
   const t = { id: crypto.randomUUID?.() || String(Date.now()+Math.random()), title:'Nueva pestaña', wv:null, el:null };
   t.el = document.createElement('div'); t.el.className='tab';
   t.wv = document.createElement('webview'); t.wv.className='browser-view'; t.wv.setAttribute('partition','persist:web'); t.wv.setAttribute('allowpopups','false');
-  t.wv.setAttribute('webpreferences','contextIsolation=false, nodeIntegration=true, sandbox=false');
+  t.wv.setAttribute('webpreferences','contextIsolation=true, nodeIntegration=false, sandbox=true');
   $('#views').appendChild(t.wv); $('#tabs').appendChild(t.el);
   t.wv.addEventListener('did-start-loading', ()=>t.el.classList.add('loading'));
   t.wv.addEventListener('did-stop-loading', ()=>t.el.classList.remove('loading'));
@@ -121,6 +135,7 @@ function createTab(url) {
       selectTab(t); navigate(action.value);
     } else if (action.type === 'open-tour') { selectTab(t); showTour(); }
     else if (action.type === 'open-command') { selectTab(t); showCommand(); }
+    else if (action.type === 'open-whats-new') { selectTab(t); showWhatsNew(true); }
   });
   t.wv.addEventListener('page-title-updated', e=>{t.title=e.title||'Nueva pestaña';renderTab(t);if(t===activeTab)document.title=t.title});
   t.wv.addEventListener('did-finish-load', ()=>{refreshTabIcon(t);applyBuiltinsToTab(t)});
@@ -191,7 +206,7 @@ function renderInternal(r, view){
   }
   if(view==='workspaces'){renderWorkspaces(r);return;}
   if(view==='history'){const groups={};state.history.forEach(x=>{const d=new Date(x.ts||Date.now()).toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});(groups[d]??=[]).push(x)});r.innerHTML=panelHeader('Historial','Tus páginas recientes, organizadas por día y con búsqueda rápida.')+`<div class="section-card"><div class="row"><input class="field" id="historySearch" placeholder="Buscar en historial…"><button class="btn" id="clearHistory">Limpiar</button></div></div><div id="historyList"></div>`;const list=r.querySelector('#historyList');const paint=q=>{q=String(q||'').toLowerCase();const rows=Object.entries(groups).map(([d,items])=>`<div class="section-card"><h2>${esc(d)}</h2>${items.filter(x=>!q||String(x.title+' '+x.url).toLowerCase().includes(q)).map(x=>`<div class="bookmark-item"><img class="ext-icon" src="${esc(getFavicon(x.url))}" onerror="this.src='../assets/brand/nova-icon.png'" alt=""><div class="stack"><strong>${esc(x.title||x.url)}</strong><small class="truncate">${esc(x.url)}</small></div><button class="btn" data-hu="${esc(x.url)}">Abrir</button></div>`).join('')}</div>`).join('');list.innerHTML=rows||'<div class="empty">No hay resultados.</div>';list.querySelectorAll('[data-hu]').forEach(b=>b.onclick=()=>navigate(b.dataset.hu))};paint('');r.querySelector('#historySearch').oninput=e=>paint(e.target.value);r.querySelector('#clearHistory').onclick=()=>{if(!state.history.length){toast('El historial ya está vacío');return;}state.history=[];saveState();renderInternal(r,view);toast('Historial limpiado')};return;}
-  if(view==='downloads'){r.innerHTML=panelHeader('Descargas','Archivos de la sesión y acceso a la carpeta de descargas.')+`<div class="section-card"><div class="row"><div><strong>Carpeta de descargas</strong><div class="sub">Abre la carpeta configurada por el sistema.</div></div><button class="btn primary" id="openDownloads">Abrir carpeta</button></div></div><div class="section-card">${state.downloads.length?state.downloads.map((x,i)=>`<div class="download-item"><div class="ext-icon">↓</div><div class="stack"><strong>${esc(x.name)}</strong><small class="truncate">${esc(x.path||x.state)}</small></div>${x.path?`<button class="btn" data-showdl="${i}">Mostrar</button>`:''}</div>`).join(''):'<div class="empty">Todavía no hay descargas en esta sesión.</div>'}</div>`;r.querySelector('#openDownloads').onclick=()=>ipc.invoke('open-downloads-folder').then(ok=>toast(ok?'Carpeta abierta':'No se pudo abrir la carpeta'));r.querySelectorAll('[data-showdl]').forEach(b=>b.onclick=()=>ipc.invoke('show-in-folder',state.downloads[+b.dataset.showdl]?.path||'').then(ok=>toast(ok?'Archivo mostrado':'No se pudo localizar el archivo')));return;}
+  if(view==='downloads'){r.innerHTML=panelHeader('Descargas','Archivos de la sesión y acceso a la carpeta de descargas.')+`<div class="section-card"><div class="row"><div><strong>Carpeta de descargas</strong><div class="sub">Abre la carpeta configurada por el sistema.</div></div><button class="btn primary" id="openDownloads">Abrir carpeta</button></div></div><div class="section-card">${state.downloads.length?state.downloads.map((x,i)=>`<div class="download-item"><div class="ext-icon">${iconSvg('download')}</div><div class="stack"><strong>${esc(x.name)}</strong><small class="truncate">${esc(x.path||x.state)}</small></div>${x.path?`<button class="btn" data-showdl="${i}">Mostrar</button>`:''}</div>`).join(''):'<div class="empty">Todavía no hay descargas en esta sesión.</div>'}</div>`;r.querySelector('#openDownloads').onclick=()=>ipc.invoke('open-downloads-folder').then(ok=>toast(ok?'Carpeta abierta':'No se pudo abrir la carpeta'));r.querySelectorAll('[data-showdl]').forEach(b=>b.onclick=()=>ipc.invoke('show-in-folder',state.downloads[+b.dataset.showdl]?.path||'').then(ok=>toast(ok?'Archivo mostrado':'No se pudo localizar el archivo')));return;}
   if(view==='extensions'){renderExtensions(r);return;}
   if(view==='performance'){renderPerformance(r);return;}
   if(view==='settings'){renderSettings(r);return;}
@@ -199,7 +214,7 @@ function renderInternal(r, view){
 function getFavicon(u){try{return new URL(u).origin+'/favicon.ico'}catch{return '../assets/brand/nova-icon.png'}}
 
 function renderWorkspaces(r){
-  r.innerHTML=panelHeader('Workspaces','Separa tus sesiones por proyecto. Solo se guardan los espacios que tú crees.')+`<div class="section-card"><div class="row"><div><strong>Crear workspace</strong><div class="sub">Guarda las pestañas abiertas con un nombre propio.</div></div><button class="btn primary" id="createWs">Nuevo workspace</button></div></div><div class="section-card">${state.workspaces.length?state.workspaces.map((w,i)=>`<div class="workspace-card"><div class="ext-icon">▦</div><div class="stack"><strong>${esc(w.name)}</strong><small>${w.tabs.length} pestañas guardadas</small></div><button class="btn primary" data-openws="${i}">Abrir</button><button class="btn danger" data-delws="${i}">Eliminar</button></div>`).join(''):'<div class="empty">Crea tu primer workspace. Nova no crea espacios de ejemplo automáticamente.</div>'}</div>`;
+  r.innerHTML=panelHeader('Workspaces','Separa tus sesiones por proyecto. Solo se guardan los espacios que tú crees.')+`<div class="section-card"><div class="row"><div><strong>Crear workspace</strong><div class="sub">Guarda las pestañas abiertas con un nombre propio.</div></div><button class="btn primary" id="createWs">Nuevo workspace</button></div></div><div class="section-card">${state.workspaces.length?state.workspaces.map((w,i)=>`<div class="workspace-card"><div class="ext-icon">${iconSvg('grid')}</div><div class="stack"><strong>${esc(w.name)}</strong><small>${w.tabs.length} pestañas guardadas</small></div><button class="btn primary" data-openws="${i}">Abrir</button><button class="btn danger" data-delws="${i}">Eliminar</button></div>`).join(''):'<div class="empty">Crea tu primer workspace. Nova no crea espacios de ejemplo automáticamente.</div>'}</div>`;
   r.querySelector('#createWs').onclick=()=>{const name=prompt('Nombre del workspace','Trabajo');if(!name?.trim())return;const w={name:name.trim().slice(0,40),tabs:tabs.map(t=>t.wv.getURL()).filter(u=>/^https?:/i.test(u)||isNewTabUrl(u))};state.workspaces.push(w);saveState();renderWorkspaces(r);toast('Workspace guardado')};
   r.querySelectorAll('[data-openws]').forEach(b=>b.onclick=()=>{const w=state.workspaces[+b.dataset.openws];if(!w)return;tabs.slice().forEach(closeTab);w.tabs.filter(Boolean).forEach(u=>newTab(u));toast(`Workspace ${w.name} abierto`) });
   r.querySelectorAll('[data-delws]').forEach(b=>b.onclick=()=>{state.workspaces.splice(+b.dataset.delws,1);saveState();renderWorkspaces(r)});
@@ -214,7 +229,7 @@ const STORE=[
 ];
 function renderExtensions(r){
   const extPrefs=mainPrefs.ext||{};
-  const catHtml=CATALOG.map(x=>`<div class="section-card extension-card"><div class="ext-icon">◈</div><div class="ext-main"><strong>${esc(x.name)}</strong><div class="sub">${esc(x.cat)} · ${esc(x.desc)}</div></div><button class="toggle ${extPrefs[x.id]?'on':''}" data-toggle-ext="${esc(x.id)}" aria-label="Activar extensión"></button></div>`).join('');
+  const catHtml=CATALOG.map(x=>`<div class="section-card extension-card"><div class="ext-icon">${iconSvg('extensions')}</div><div class="ext-main"><strong>${esc(x.name)}</strong><div class="sub">${esc(x.cat)} · ${esc(x.desc)}</div></div><button class="toggle ${extPrefs[x.id]?'on':''}" data-toggle-ext="${esc(x.id)}" aria-label="Activar extensión"></button></div>`).join('');
   r.innerHTML=panelHeader('Extensiones','Un único centro para extensiones integradas, extensiones Chromium cargadas y enlaces a la tienda oficial.')+
     `<div class="section-card"><div class="row"><div><strong>Extension Center</strong><div class="sub">Extensiones externas verificables en Chrome Web Store. Nova abre la ficha oficial; la instalación queda bajo tu control.</div></div></div><div class="grid">${STORE.map((x,i)=>`<div class="section-card extension-card"><img class="ext-icon" src="${esc(x[4]||'../assets/brand/nova-icon.png')}" onerror="this.onerror=null;this.src='../assets/brand/nova-icon.png'" alt=""><div class="ext-main"><strong>${esc(x[0])}</strong><div class="sub">${esc(x[2])}</div><p class="sub">${esc(x[1])}</p></div><button class="btn primary" data-store="${i}">Abrir tienda</button></div>`).join('')}</div></div>`+
     `<div class="section-card"><div class="row"><div><strong>Manager de extensiones reales</strong><div class="sub">Carga una carpeta con manifest.json y recupérala automáticamente al reiniciar.</div></div><button class="btn primary" id="loadRealExt">Cargar carpeta</button></div><div id="realExtList" class="section-card"><div class="empty">Consultando…</div></div></div>`+
@@ -238,12 +253,17 @@ function renderSettings(r){
   const colors=['#1a73e8','#6f55df','#188038','#d56d12','#c5221f'];
   r.innerHTML=panelHeader('Ajustes de Nova','Configuración organizada por funciones activas, sin opciones heredadas.')+
   `<div class="section-card"><h2>Apariencia</h2><div class="row"><div><strong>Modo</strong><div class="sub">Claro, oscuro o seguir el sistema operativo.</div></div><select id="appearance"><option value="system">Sistema</option><option value="light">Claro</option><option value="dark">Oscuro</option></select></div><div class="row"><div><strong>Color de acento</strong><div class="sub">Cambia detalles interactivos sin crear temas completos.</div></div><div class="swatch-row">${colors.map(c=>`<button class="swatch ${state.accent===c?'active':''}" data-accent="${c}" style="background:${c}" aria-label="Acento ${c}"></button>`).join('')}</div></div></div>`+
+  `<div class="section-card"><h2>Fondo de la barra superior</h2><p class="sub wallpaper-intro">Elige una imagen local para personalizar la zona de pestañas y navegación. Se guarda en este equipo.</p><div id="wallpaperPreview" class="wallpaper-preview"><span>Vista previa de la barra</span></div><div class="row wallpaper-row"><div><strong>Imagen personalizada</strong><div class="sub">PNG, JPG o WebP · máximo 12 MB.</div></div><div class="wallpaper-actions"><button class="btn primary" id="pickWallpaper">Elegir imagen</button><button class="btn" id="resetWallpaper">Restablecer</button></div></div><div id="wallpaperState" class="sub" aria-live="polite"></div></div>`+
   `<div class="section-card"><h2>Navegación</h2><div class="row"><div><strong>Buscador</strong><div class="sub">Proveedor usado al buscar desde la barra de dirección.</div></div><select id="search"><option value="https://www.google.com/search?q=">Google</option><option value="https://duckduckgo.com/?q=">DuckDuckGo</option><option value="https://www.bing.com/search?q=">Bing</option><option value="https://search.brave.com/search?q=">Brave</option></select></div><div class="row"><div><strong>Sidebar expandida</strong><div class="sub">Muestra texto junto a los iconos.</div></div><button class="toggle ${state.sidebarOpen?'on':''}" id="sideToggle"></button></div><div class="row"><div><strong>Animaciones</strong><div class="sub">Desactívalas para reducir movimiento.</div></div><button class="toggle ${state.animations?'on':''}" id="animToggle"></button></div></div>`+
   `<div class="section-card"><h2>Pestañas y sesión</h2><div class="row"><div><strong>Reabrir pestaña cerrada</strong><div class="sub">Conserva hasta 10 pestañas cerradas durante la sesión.</div></div><button class="btn" id="reopenTab">Reabrir</button></div><div class="row"><div><strong>Guía de inicio al arrancar</strong><div class="sub">Muestra la guía automáticamente en el próximo arranque.</div></div><button class="toggle ${state.showTourOnStart?'on':''}" id="tourStartup"></button></div></div>`+
   `<div class="section-card"><h2>Privacidad y seguridad</h2><div class="row"><div><strong>Bloqueador integrado</strong><div class="sub">Controla el bloqueador de anuncios y rastreadores.</div></div><button class="toggle ${(mainPrefs.adblock!==false)?'on':''}" id="adblockToggle"></button></div><div class="row"><div><strong>Navegador predeterminado</strong><div class="sub">Abre la configuración de aplicaciones predeterminadas de Windows.</div></div><button class="btn" id="defaultBrowser">Configurar</button></div></div>`+
   `<div class="section-card"><h2>Ayuda</h2><div class="row"><div><strong>Guía de inicio</strong><div class="sub">Consulta las funciones principales cuando quieras.</div></div><button class="btn" id="tour">Repetir guía</button></div><div class="row"><div><strong>Novedades</strong><div class="sub">Abre la presentación de la versión actual.</div></div><button class="btn" id="news">Ver novedades</button></div><div class="row"><div><strong>Diagnóstico</strong><div class="sub">Comprueba el estado de la sesión y configuración.</div></div><button class="btn" id="diag">Ejecutar</button></div></div>`+
   `<div class="section-card"><h2>Acerca de Nova</h2><div class="row"><div><strong>Nova ${esc(APP_VERSION)}</strong><div class="sub">Chromium ${esc(process.versions.chrome)} · Electron ${esc(process.versions.electron)}</div></div><button class="btn" id="update">Buscar actualizaciones</button></div></div>`;
   $('#appearance').value=state.appearance;$('#search').value=state.search;
+  const wpUrl=toolbarWallpaperUrl(), wpPreview=r.querySelector('#wallpaperPreview'), wpState=r.querySelector('#wallpaperState');
+  if(wpUrl){wpPreview.style.backgroundImage=`linear-gradient(rgba(255,255,255,.48),rgba(255,255,255,.48)),url("${wpUrl}")`;wpState.textContent='Hay un fondo personalizado activo.';}else{wpPreview.style.backgroundImage='';wpState.textContent='Se está usando el fondo predeterminado.';}
+  r.querySelector('#pickWallpaper').onclick=async()=>{const d=await ipc.invoke('toolbar-wallpaper-pick').catch(()=>({ok:false,error:'No se pudo abrir el selector de imágenes.'}));if(d?.ok){state.toolbarWallpaper=d.url;saveState();applyToolbarWallpaper();renderSettings(r);toast('Fondo de barra actualizado.');}else if(!d?.canceled)toast(d?.error||'No se pudo aplicar el fondo.');};
+  r.querySelector('#resetWallpaper').onclick=async()=>{const ok=await ipc.invoke('toolbar-wallpaper-clear').catch(()=>false);if(ok){state.toolbarWallpaper='';saveState();applyToolbarWallpaper();renderSettings(r);toast('Fondo predeterminado restaurado.');}else toast('No se pudo restablecer el fondo.');};
   $('#appearance').onchange=e=>{state.appearance=e.target.value;saveState();applyAppearance();refreshAllNewTabs();renderSettings(r)};
   $('#search').onchange=e=>{state.search=e.target.value;saveState();refreshAllNewTabs()};
   r.querySelectorAll('[data-accent]').forEach(b=>b.onclick=()=>{state.accent=b.dataset.accent;saveState();applyAppearance();refreshAllNewTabs();renderSettings(r)});
@@ -263,7 +283,7 @@ function showTour(){
 function showWhatsNew(force=false){
   const key='nova-whatsnew-seen-'+APP_VERSION;
   if(!force && localStorage.getItem(key)==='1')return;
-  let i=0;const cards=[['../assets/illustrations/renderer.svg','Nueva pestaña reparada','El buscador, las noticias y las acciones de la página de inicio vuelven a comunicarse con Nova mediante un puente limitado.'],['../assets/illustrations/onboarding.svg','Búsqueda unificada','Direcciones web, dominios con puerto, localhost y búsquedas por texto comparten el mismo resolutor.'],['../assets/illustrations/extensions.svg','Pestañas más fiables','El historial y la barra de direcciones se actualizan desde la pestaña que realmente ha navegado.'],['../assets/illustrations/performance.svg','Interfaz adaptativa','Estilo inspirado en Chrome, tema del sistema actualizado en nueva pestaña y controles de teclado más visibles.']];const m=document.createElement('div');m.className='modal on';m.innerHTML=`<div class="modal-card"><div class="modal-head"><strong>Novedades de Nova ${esc(APP_VERSION)}</strong><button class="icon-btn" id="wnClose">×</button></div><div class="modal-body"><div id="wnCard" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:center"></div><div class="tour-dots">${cards.map((_,k)=>`<span class="dot ${k===0?'on':''}" data-dot="${k}"></span>`).join('')}</div><div style="display:flex;justify-content:flex-end"><button class="btn primary" id="wnNext">Siguiente</button></div></div></div>`;document.body.appendChild(m);const keyClose=()=>{localStorage.setItem(key,'1');m.remove()};$('#wnClose').onclick=keyClose;$('#wnNext').onclick=()=>{if(i<cards.length-1){i++;paint()}else keyClose()};function paint(){const c=cards[i];$('#wnCard').innerHTML=`<img class="tour-img" src="${c[0]}" onerror="this.style.display='none'" alt=""><div><h2 style="margin-top:0">${esc(c[1])}</h2><p class="muted">${esc(c[2])}</p></div>`;m.querySelectorAll('[data-dot]').forEach(x=>x.classList.toggle('on',+x.dataset.dot===i));$('#wnNext').textContent=i===cards.length-1?'Terminar':'Siguiente'}paint();
+  let i=0;const cards=[['../assets/brand/nova-icon.png','Nueva identidad Nova','El cubo 3D con la N se convierte en la identidad oficial de Nova: icono de aplicación, pestañas internas y marca de la interfaz.'],['../assets/illustrations/onboarding.svg','Fondo propio en la barra','Elige una imagen local PNG, JPG o WebP para la zona superior. Nova la guarda en tu perfil y permite volver al aspecto predeterminado.'],['../assets/illustrations/renderer.svg','Interfaz más limpia','Menos sombras y efectos decorativos, controles más consistentes, radios más discretos e iconos SVG coherentes.'],['../assets/illustrations/performance.svg','Movimiento más ligero','Animaciones y elevaciones visuales más contenidas, respetando la opción para reducir movimiento. Las pruebas estáticas no sustituyen las pruebas reales en Windows.']];const m=document.createElement('div');m.className='modal on';m.innerHTML=`<div class="modal-card"><div class="modal-head"><strong>Novedades de Nova ${esc(APP_VERSION)}</strong><button class="icon-btn" id="wnClose">×</button></div><div class="modal-body"><div id="wnCard" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:center"></div><div class="tour-dots">${cards.map((_,k)=>`<span class="dot ${k===0?'on':''}" data-dot="${k}"></span>`).join('')}</div><div style="display:flex;justify-content:flex-end"><button class="btn primary" id="wnNext">Siguiente</button></div></div></div>`;document.body.appendChild(m);const keyClose=()=>{localStorage.setItem(key,'1');m.remove()};$('#wnClose').onclick=keyClose;$('#wnNext').onclick=()=>{if(i<cards.length-1){i++;paint()}else keyClose()};function paint(){const c=cards[i];$('#wnCard').innerHTML=`<img class="tour-img" src="${c[0]}" onerror="this.style.display='none'" alt=""><div><h2 style="margin-top:0">${esc(c[1])}</h2><p class="muted">${esc(c[2])}</p></div>`;m.querySelectorAll('[data-dot]').forEach(x=>x.classList.toggle('on',+x.dataset.dot===i));$('#wnNext').textContent=i===cards.length-1?'Terminar':'Siguiente'}paint();
 }
 
 function showMenu(){
@@ -282,7 +302,7 @@ function showMenu(){
   showDrawer('Menú',actions.map((x,i)=>(i===1||i===6||i===8?'<div class="menu-sep"></div>':'')+`<button class="menu-item" data-menu="${i}"><span>${esc(x[0])}</span><span class="muted">${esc(x[1])}</span></button>`).join(''));
   document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>{hideDrawer();actions[+b.dataset.menu]?.[2]?.()});
 }
-function showAbout(){showDrawer('Acerca de Nova',`<div style="text-align:center;padding:10px 0 16px"><img src="../assets/brand/nova-icon.png" style="width:76px;height:76px;object-fit:contain"><h2 style="margin:8px 0 2px">Nova</h2><div class="muted">Quantum · ${esc(APP_VERSION)}</div></div><div class="section-card"><div class="row"><span>Chromium</span><strong>${esc(process.versions.chrome)}</strong></div><div class="row"><span>Electron</span><strong>${esc(process.versions.electron)}</strong></div><div class="row"><span>Node</span><strong>${esc(process.versions.node)}</strong></div></div>`)}
+function showAbout(){showDrawer('Acerca de Nova',`<div style="text-align:center;padding:10px 0 16px"><img src="../assets/brand/nova-icon.png" style="width:76px;height:76px;object-fit:contain"><h2 style="margin:8px 0 2px">Nova</h2><div class="muted">Next-Gen · ${esc(APP_VERSION)}</div></div><div class="section-card"><div class="row"><span>Chromium</span><strong>${esc(process.versions.chrome)}</strong></div><div class="row"><span>Electron</span><strong>${esc(process.versions.electron)}</strong></div><div class="row"><span>Node</span><strong>${esc(process.versions.node)}</strong></div></div>`)}
 
 $('#newTab').innerHTML='+';$('#newTab').onclick=()=>newTab();
 $('#back').innerHTML=iconSvg('back');$('#forward').innerHTML=iconSvg('forward');$('#reload').innerHTML=iconSvg('reload');$('#star').innerHTML=iconSvg('star');$('#menuButton').innerHTML=iconSvg('menu');

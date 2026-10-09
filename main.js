@@ -464,6 +464,34 @@ ipcMain.handle('pick-wp', async (e, sec) => {
   return r.filePaths.length;
 });
 
+// Fondo de la barra de Nova: solo imágenes raster elegidas localmente, sin SVG ni contenido remoto.
+const toolbarWallpaperNames = ['nova-toolbar-wallpaper.png','nova-toolbar-wallpaper.jpg','nova-toolbar-wallpaper.jpeg','nova-toolbar-wallpaper.webp'];
+ipcMain.handle('toolbar-wallpaper-pick', async e => {
+  if (denyUntrusted(e)) return { ok:false, error:'Solicitud no válida.' };
+  try {
+    const picked = await dialog.showOpenDialog(win, { title:'Elegir fondo de la barra de Nova', properties:['openFile'], filters:[{ name:'Imágenes', extensions:['png','jpg','jpeg','webp'] }] });
+    if (picked.canceled || !picked.filePaths?.[0]) return { ok:false, canceled:true };
+    const source = picked.filePaths[0], ext = path.extname(source).slice(1).toLowerCase();
+    if (!['png','jpg','jpeg','webp'].includes(ext)) return { ok:false, error:'Formato no compatible. Usa PNG, JPG o WebP.' };
+    const stat = fs.statSync(source);
+    if (!stat.isFile() || stat.size < 16 || stat.size > 12 * 1024 * 1024) return { ok:false, error:'La imagen debe pesar entre 16 bytes y 12 MB.' };
+    const bytes = fs.readFileSync(source);
+    const validPng = bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]));
+    const validJpeg = bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+    const validWebp = bytes.toString('ascii',0,4) === 'RIFF' && bytes.toString('ascii',8,12) === 'WEBP';
+    if (!((ext==='png' && validPng) || (['jpg','jpeg'].includes(ext) && validJpeg) || (ext==='webp' && validWebp))) return { ok:false, error:'El archivo no parece ser una imagen válida del formato elegido.' };
+    const dir = userFile('wallpapers'); fs.mkdirSync(dir, { recursive:true });
+    for (const name of toolbarWallpaperNames) { try { fs.rmSync(path.join(dir,name), { force:true }); } catch {} }
+    const target = path.join(dir, `nova-toolbar-wallpaper.${ext}`);
+    fs.writeFileSync(target, bytes);
+    return { ok:true, url:pathToFileURL(target).href, name:path.basename(source), size:stat.size };
+  } catch (err) { return { ok:false, error:String(err?.message || 'No se pudo guardar la imagen.') }; }
+});
+ipcMain.handle('toolbar-wallpaper-clear', e => {
+  if (denyUntrusted(e)) return false;
+  try { const dir=userFile('wallpapers'); for (const name of toolbarWallpaperNames) fs.rmSync(path.join(dir,name),{force:true}); return true; } catch { return false; }
+});
+
 /* ---------- Nova 2.5 · DOCX minimal writer ---------- */
 function crc32(buf) {
   let c = 0xffffffff;

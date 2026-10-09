@@ -12,7 +12,7 @@ try {
 
 if (isNovaNewTab) {
   const sendAction = (type, value) => {
-    if (!['navigate', 'open-tour', 'open-command'].includes(type)) return;
+    if (!['navigate', 'open-tour', 'open-command', 'open-whats-new'].includes(type)) return;
     const payload = { type };
     if (type === 'navigate') {
       if (typeof value !== 'string' || value.length > 2048) return;
@@ -25,6 +25,7 @@ if (isNovaNewTab) {
     navigate: value => sendAction('navigate', value),
     openTour: () => sendAction('open-tour'),
     openCommand: () => sendAction('open-command'),
+    openWhatsNew: () => sendAction('open-whats-new'),
     newsFeed: payload => {
       const topic = ['todas', 'tecnologia', 'videojuegos', 'codigo'].includes(payload?.topic) ? payload.topic : 'todas';
       return ipcRenderer.invoke('news-feed', { topic, force: payload?.force === true });
