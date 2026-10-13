@@ -1,9 +1,10 @@
-# Nova Chromium 5.5.1 — Next-Gen
+# Nova Chromium 5.5.2 — Next-Gen
 
-Nova es un navegador de escritorio basado en Electron/Chromium. Esta versión estrena la identidad 3D de Nova, una interfaz más sobria y fondos locales personalizables para la barra superior.
+Nova es un navegador de escritorio basado en Electron/Chromium. Esta versión corrige la superposición de paneles internos y estrena un icono 3D con transparencia real, conservando la personalización de la barra superior.
 
 ## Novedades
-- Nuevo icono oficial de cubo 3D con la letra N.
+- Icono de cubo 3D con la letra N y canal alfa, sin un fondo rectangular opaco.
+- Paneles internos con capas y cambio de vista corregidos para evitar que se oculten tras el contenido web.
 - Menos sombras y efectos decorativos en la interfaz.
 - Fondo local para la barra superior: PNG, JPG/JPEG o WebP, máximo 12 MB.
 - Vista previa y opción para volver al fondo predeterminado.

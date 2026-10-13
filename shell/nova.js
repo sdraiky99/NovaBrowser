@@ -6,7 +6,7 @@ const { resolveNavigation } = require('./navigation.js');
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const APP_VERSION = ipc.sendSync('app-version') || '5.5.1';
+const APP_VERSION = ipc.sendSync('app-version') || '5.5.2';
 let mainPrefs = ipc.sendSync('prefs-get') || {};
 const DEFAULT_STATE = {
   appearance: 'system', accent: '#3f6df6', search: 'https://www.google.com/search?q=',
@@ -144,7 +144,21 @@ function createTab(url) {
   const target = safeUrl(url || newTabUrl()) || newTabUrl(); t.wv.src=target; tabs.push(t); renderTab(t); selectTab(t); return t;
 }
 function newTab(url) { return createTab(url || undefined); }
-function selectTab(t) { if(!t) return; activeTab=t; tabs.forEach(x=>{x.el.classList.toggle('active',x===t);x.wv.classList.toggle('active',x===t)}); internalView=null; hideDrawer(); syncAddress(); document.title=t.title||'Nova'; }
+function selectTab(t) {
+  if (!t) return;
+  // Volver a la pestaña web elimina la vista interna anterior; dejarla en el DOM
+  // provocaba capas obsoletas y hacía que algunos paneles parecieran parpadear.
+  $('#internalPanel')?.remove();
+  internalView = null;
+  activeTab = t;
+  tabs.forEach(x => {
+    x.el.classList.toggle('active', x === t);
+    x.wv.classList.toggle('active', x === t);
+  });
+  hideDrawer();
+  syncAddress();
+  document.title = t.title || 'Nova';
+}
 function closeTab(t, remember=true) { const idx=tabs.indexOf(t); if(idx<0)return; const was=t===activeTab; if(remember && /^https?:/i.test(t.wv.getURL())) closedTabs.unshift({url:t.wv.getURL(),title:t.title||t.wv.getURL()}); closedTabs=closedTabs.slice(0,10); try{t.wv.remove()}catch{} t.el.remove(); tabs.splice(idx,1); if(!tabs.length){newTab();return;} if(was)selectTab(tabs[Math.min(idx,tabs.length-1)]); }
 function syncTabFromWeb(t) {
   if (!t || !tabs.includes(t)) return;
@@ -158,6 +172,8 @@ function syncTabFromWeb(t) {
 function syncAddress() { if(!activeTab)return; const u=activeTab.wv.getURL(); $('#address').value=isNewTabUrl(u)?'':u; $('#secureMark').className=/^https:/i.test(u)?'secure':(/^http:/i.test(u)?'insecure':''); $('#secureMark').textContent=/^https:/i.test(u)?'●':(/^http:/i.test(u)?'!':'○'); $('#star').innerHTML=iconSvg('star'); $('#star').style.color=isBookmarked(u)?'var(--accent)':''; }
 function navigate(v) {
   if (!activeTab) return;
+  // Navegar desde Favoritos/Historial debe volver al contenido web, no dejar el panel por encima.
+  if (internalView) backToBrowser();
   const target = resolveNavigation(v, state.search);
   if (!target) return;
   try { Promise.resolve(activeTab.wv.loadURL(target)).catch(() => toast('No se pudo abrir la dirección')); }
@@ -188,13 +204,25 @@ function renderOmniboxSuggestions(query){
 function hideOmniboxSuggestions(){const b=$('#addressSuggestions');if(b){b.classList.remove('show');b.setAttribute('aria-hidden','true')}}
 
 function setInternal(view) {
-  internalView=view;
-  document.querySelectorAll('.side-item').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
-  const root=$('#browserArea');
-  const old=root.querySelector('.panel'); if(old)old.remove();
-  const p=document.createElement('section'); p.className='panel'; p.id='internalPanel'; root.appendChild(p); renderInternal(p,view);
+  internalView = view;
+  // Desactiva la capa de contenido web mientras se muestra una sección de Nova.
+  // Los webviews son posicionados y se pintaban por encima de los paneles normales.
+  tabs.forEach(t => t.wv.classList.remove('active'));
+  document.querySelectorAll('.side-item').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  const root = $('#browserArea');
+  root.querySelector('#internalPanel')?.remove();
+  const p = document.createElement('section');
+  p.className = 'panel';
+  p.id = 'internalPanel';
+  root.appendChild(p);
+  renderInternal(p, view);
 }
-function backToBrowser(){internalView=null;const p=$('#internalPanel');p?.remove();document.querySelectorAll('.side-item').forEach(b=>b.classList.toggle('active',b.dataset.view==='home'));if(activeTab)selectTab(activeTab)}
+function backToBrowser() {
+  internalView = null;
+  $('#internalPanel')?.remove();
+  document.querySelectorAll('.side-item').forEach(b => b.classList.toggle('active', b.dataset.view === 'home'));
+  if (activeTab) selectTab(activeTab);
+}
 
 function panelHeader(title, lead){return `<h1>${esc(title)}</h1><p class="lead">${esc(lead)}</p>`}
 function renderInternal(r, view){

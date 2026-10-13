@@ -1,5 +1,12 @@
 # Nova Changelog
 
+## 5.5.2 — Stability Hotfix
+- Corregida la superposición de paneles internos con el contenido web: Favoritos, Historial, Descargas, Workspaces, Extensiones, Rendimiento y Ajustes permanecen visibles y reciben los clics.
+- Al volver a una pestaña web se retira correctamente el panel interno anterior.
+- Icono de Nova exportado con canal alfa: sin fondo rectangular en la interfaz, ventanas y accesos directos.
+- Metadatos, splash, novedades e instalador actualizados a 5.5.2.
+
+
 ## 5.5.1 — Nova Next-Gen
 - Nuevo icono oficial 3D con la N de Nova, aplicado a recursos de la aplicación e instalador.
 - Rediseño visual más contenido: menos sombras y radios grandes, mejores separadores y movimiento más discreto.

@@ -62,7 +62,7 @@ button:disabled{opacity:.42;cursor:default}
 @media(prefers-color-scheme:dark){body:not(.dark){color-scheme:light}}
 
 
-/* Nova 5.5.1 Next-Gen — lower visual noise, lighter surfaces, restrained motion. */
+/* Nova 5.5.2 — estabilidad de capas internas y movimiento contenido. */
 #toolbar,#windowbar{background-clip:padding-box}
 #brand{width:72px;gap:7px;color:var(--fg)}
 #brand img{width:23px;height:23px;object-fit:contain;border-radius:4px}
@@ -91,3 +91,9 @@ body.has-toolbar-wallpaper .tab.active{background-color:color-mix(in srgb,var(--
 
 /* Consistent line icons for internal panels. */
 .ext-icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+
+/* 5.5.2: paneles internos por encima del webview, sin parpadeos ni clics perdidos. */
+#views{z-index:1}
+.panel{position:absolute;inset:0;z-index:2;width:100%;min-width:0;background:var(--bg);}
+webview.browser-view{z-index:1}
