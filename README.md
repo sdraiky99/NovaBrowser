@@ -1,6 +1,6 @@
-# Nova Chromium 5.5.2 — Next-Gen
+# Nova Chromium 5.5.3 — Reliability & UI Fix
 
-Nova es un navegador de escritorio basado en Electron/Chromium. Esta versión corrige la superposición de paneles internos y estrena un icono 3D con transparencia real, conservando la personalización de la barra superior.
+Nova es un navegador de escritorio basado en Electron/Chromium. Esta versión corrige la inicialización del puente de la nueva pestaña, fortalece búsqueda/navegación, repara la aplicación del color de acento y mejora la barra de ventana. También deja clara la diferencia entre consultar Chrome Web Store e instalar extensiones compatibles en Nova.
 
 ## Novedades
 - Icono de cubo 3D con la letra N y canal alfa, sin un fondo rectangular opaco.
@@ -9,6 +9,13 @@ Nova es un navegador de escritorio basado en Electron/Chromium. Esta versión co
 - Fondo local para la barra superior: PNG, JPG/JPEG o WebP, máximo 12 MB.
 - Vista previa y opción para volver al fondo predeterminado.
 - El fondo se guarda en el perfil local de Nova y no se envía a un servidor.
+
+## Cambios principales
+- El webview recibe su URL antes de adjuntarse: el preload limitado de la nueva pestaña se detecta al iniciar.
+- Búsqueda desde ambas barras con validación y errores comprensibles.
+- El color de acento seleccionado se mantiene en modo claro y oscuro, también en la nueva pestaña.
+- Controles de ventana de tamaño completo dentro de la barra superior y botón `+` centrado.
+- La tienda oficial se presenta como ficha de consulta; la instalación en Nova se realiza cargando una carpeta Chromium compatible con `manifest.json`.
 
 ## Requisitos y desarrollo
 Requiere Node.js 22.12.0 o superior.

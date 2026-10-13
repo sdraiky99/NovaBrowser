@@ -6,7 +6,7 @@
   --accent:#1a73e8;--accent-soft:rgba(26,115,232,.12);--danger:#c5221f;--shadow:0 8px 28px rgba(32,33,36,.12);
   --radius:9px;--pill:999px;--chrome-overlay:rgba(248,250,253,.63);--toolbar-wallpaper:none;--font:"Segoe UI Variable","Segoe UI",Inter,system-ui,sans-serif
 }
-body.dark{color-scheme:dark;--bg:#202124;--surface:#292a2d;--surface-2:#303134;--surface-3:#3c4043;--hover:#3c4043;--active:rgba(138,180,248,.16);--fg:#e8eaed;--muted:#bdc1c6;--border:rgba(232,234,237,.13);--accent:#8ab4f8;--accent-soft:rgba(138,180,248,.16);--danger:#f28b82;--shadow:0 8px 22px rgba(0,0,0,.24);--chrome-overlay:rgba(32,33,36,.62)}
+body.dark{color-scheme:dark;--bg:#202124;--surface:#292a2d;--surface-2:#303134;--surface-3:#3c4043;--hover:#3c4043;--active:color-mix(in srgb,var(--user-accent,#8ab4f8) 16%,transparent);--fg:#e8eaed;--muted:#bdc1c6;--border:rgba(232,234,237,.13);--accent:var(--user-accent,#8ab4f8);--accent-soft:color-mix(in srgb,var(--user-accent,#8ab4f8) 16%,transparent);--danger:#f28b82;--shadow:0 8px 22px rgba(0,0,0,.24);--chrome-overlay:rgba(32,33,36,.62)}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:var(--font);color:var(--fg);background:var(--bg)}button,input,select{font:inherit;color:inherit}button{border:0}
 #app{display:flex;flex-direction:column;height:100%;background:var(--bg)}
 #windowbar{height:44px;display:flex;align-items:center;gap:8px;padding:5px 8px 0;background-color:var(--bg);background-image:linear-gradient(var(--chrome-overlay),var(--chrome-overlay)),var(--toolbar-wallpaper);background-position:center 34%;background-size:cover;background-repeat:no-repeat;border-bottom:0;-webkit-app-region:drag;flex:none}
@@ -62,7 +62,7 @@ button:disabled{opacity:.42;cursor:default}
 @media(prefers-color-scheme:dark){body:not(.dark){color-scheme:light}}
 
 
-/* Nova 5.5.2 — estabilidad de capas internas y movimiento contenido. */
+/* Nova 5.5.3 — reparación de búsqueda, preferencias y controles de interfaz. */
 #toolbar,#windowbar{background-clip:padding-box}
 #brand{width:72px;gap:7px;color:var(--fg)}
 #brand img{width:23px;height:23px;object-fit:contain;border-radius:4px}
@@ -93,7 +93,22 @@ body.has-toolbar-wallpaper .tab.active{background-color:color-mix(in srgb,var(--
 .ext-icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
 
-/* 5.5.2: paneles internos por encima del webview, sin parpadeos ni clics perdidos. */
+/* 5.5.3: paneles internos por encima del webview, sin parpadeos ni clics perdidos. */
 #views{z-index:1}
 .panel{position:absolute;inset:0;z-index:2;width:100%;min-width:0;background:var(--bg);}
 webview.browser-view{z-index:1}
+
+
+/* 5.5.3: selected accent survives light/dark mode and is shared by all accent controls. */
+:root{--user-accent:#3f6df6;--accent:var(--user-accent);--accent-soft:color-mix(in srgb,var(--user-accent) 12%,transparent)}
+body.dark{--active:color-mix(in srgb,var(--user-accent) 16%,transparent);--accent:var(--user-accent);--accent-soft:color-mix(in srgb,var(--user-accent) 16%,transparent)}
+.accent-dot{background:var(--accent)!important}
+.icon-btn{padding:0;line-height:1}
+.icon-btn svg{display:block;flex:none}
+#newTab{display:grid;place-items:center;align-self:center;width:34px;height:34px;min-width:34px;margin:0 3px;padding:0;line-height:1;text-align:center}
+#windowbar{height:44px;padding:0 0 0 8px;gap:8px;align-items:stretch}
+#tabs{height:100%;min-width:0;align-items:flex-end}
+#windowActions{height:100%;align-self:stretch;align-items:stretch;gap:0;margin:0 0 0 auto;padding:0}
+.window-btn{width:46px;height:100%;min-height:44px;flex:0 0 46px;align-self:stretch;display:grid;place-items:center;padding:0;border-radius:0;margin:0}
+.window-btn svg{width:10px;height:10px;display:block}
+@media(max-width:760px){#windowbar{padding-left:6px;gap:5px}.window-btn{width:40px;min-height:44px;flex-basis:40px}#windowActions{margin-left:auto}}

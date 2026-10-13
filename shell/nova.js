@@ -6,7 +6,8 @@ const { resolveNavigation } = require('./navigation.js');
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const APP_VERSION = ipc.sendSync('app-version') || '5.5.2';
+const ACCENT_COLORS = ['#3f6df6', '#6f55df', '#188038', '#d56d12', '#c5221f'];
+const APP_VERSION = ipc.sendSync('app-version') || '5.5.3';
 let mainPrefs = ipc.sendSync('prefs-get') || {};
 const DEFAULT_STATE = {
   appearance: 'system', accent: '#3f6df6', search: 'https://www.google.com/search?q=',
@@ -47,8 +48,10 @@ function applyAppearance() {
   const ap = state.appearance;
   const dark = ap === 'dark' || (ap === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
   document.body.classList.toggle('dark', dark);
-  document.documentElement.style.setProperty('--accent', state.accent || '#3f6df6');
-  document.documentElement.style.setProperty('--accent-soft', `color-mix(in srgb, ${state.accent || '#3f6df6'} 12%, transparent)`);
+  const accent = /^#[0-9a-f]{6}$/i.test(state.accent || '') ? state.accent : '#1a73e8';
+  document.documentElement.style.setProperty('--user-accent', accent);
+  document.documentElement.style.setProperty('--accent', accent);
+  document.documentElement.style.setProperty('--accent-soft', `color-mix(in srgb, ${accent} 12%, transparent)`);
   document.body.classList.toggle('no-anim', !state.animations);
   document.body.classList.toggle('sidebar-open', !!state.sidebarOpen);
   applyToolbarWallpaper();
@@ -67,6 +70,25 @@ function showDrawer(title, html) {
 }
 function hideDrawer() { $('#drawer').classList.remove('drawer-open'); $('#drawer').setAttribute('aria-hidden','true'); }
 function safeUrl(raw) { try { const u = new URL(raw); return ['http:','https:','file:'].includes(u.protocol) ? u.href : ''; } catch { return ''; } }
+function getTabUrl(t) {
+  try {
+    const current = t?.wv?.getURL?.();
+    if (typeof current === 'string' && current && current !== 'about:blank') return current;
+  } catch { }
+  try { return t?.wv?.getAttribute?.('src') || ''; } catch { return ''; }
+}
+function loadTabUrl(t, target) {
+  if (!t?.wv || !target) return Promise.reject(new Error('Pestaña o destino no disponible'));
+  try {
+    if (typeof t.wv.loadURL === 'function') return Promise.resolve(t.wv.loadURL(target));
+    // Fallback for the short period before Electron exposes guest methods.
+    t.wv.setAttribute('src', target);
+    return Promise.resolve();
+  } catch (error) {
+    try { t.wv.setAttribute('src', target); return Promise.resolve(); }
+    catch { return Promise.reject(error); }
+  }
+}
 function newTabUrl() {
   const file = pathToFileURL(path.join(__dirname, 'newtab.html'));
   const qp = new URLSearchParams({ state: JSON.stringify({ appearance:state.appearance, accent:state.accent, search:state.search, bookmarks:state.bookmarks.slice(0,20) }) });
@@ -118,30 +140,48 @@ function refreshTabIcon(t) {
   } catch { }
 }
 function createTab(url) {
-  const t = { id: crypto.randomUUID?.() || String(Date.now()+Math.random()), title:'Nueva pestaña', wv:null, el:null };
-  t.el = document.createElement('div'); t.el.className='tab';
-  t.wv = document.createElement('webview'); t.wv.className='browser-view'; t.wv.setAttribute('partition','persist:web'); t.wv.setAttribute('allowpopups','false');
-  t.wv.setAttribute('webpreferences','contextIsolation=true, nodeIntegration=false, sandbox=true');
-  $('#views').appendChild(t.wv); $('#tabs').appendChild(t.el);
-  t.wv.addEventListener('did-start-loading', ()=>t.el.classList.add('loading'));
-  t.wv.addEventListener('did-stop-loading', ()=>t.el.classList.remove('loading'));
+  const target = safeUrl(url || newTabUrl()) || newTabUrl();
+  const t = { id: crypto.randomUUID?.() || String(Date.now() + Math.random()), title: 'Nueva pestaña', wv: null, el: null };
+  t.el = document.createElement('div');
+  t.el.className = 'tab';
+  t.wv = document.createElement('webview');
+  t.wv.className = 'browser-view';
+  t.wv.setAttribute('partition', 'persist:web');
+  t.wv.setAttribute('allowpopups', 'false');
+  t.wv.setAttribute('webpreferences', 'contextIsolation=true, nodeIntegration=false, sandbox=true');
+  // Electron decides a webview's preload during will-attach-webview. Set src
+  // BEFORE appending the element so the trusted new-tab preload is available
+  // on its first document, not only after a later reload.
+  t.wv.setAttribute('src', target);
+  t.wv.addEventListener('did-start-loading', () => t.el.classList.add('loading'));
+  t.wv.addEventListener('did-stop-loading', () => t.el.classList.remove('loading'));
   t.wv.addEventListener('did-navigate', () => syncTabFromWeb(t));
   t.wv.addEventListener('did-navigate-in-page', () => syncTabFromWeb(t));
   t.wv.addEventListener('ipc-message', event => {
-    if (event.channel !== 'nova-newtab-action' || !isNewTabUrl(t.wv.getURL())) return;
+    if (event.channel !== 'nova-newtab-action' || !isNewTabUrl(getTabUrl(t))) return;
     const action = event.args?.[0];
     if (!action || typeof action !== 'object') return;
-    if (action.type === 'navigate' && typeof action.value === 'string' && action.value.length <= 2048) {
-      selectTab(t); navigate(action.value);
+    if (action.type === 'navigate' && typeof action.value === 'string' && action.value.trim() && action.value.length <= 2048) {
+      selectTab(t);
+      navigate(action.value);
     } else if (action.type === 'open-tour') { selectTab(t); showTour(); }
     else if (action.type === 'open-command') { selectTab(t); showCommand(); }
     else if (action.type === 'open-whats-new') { selectTab(t); showWhatsNew(true); }
   });
-  t.wv.addEventListener('page-title-updated', e=>{t.title=e.title||'Nueva pestaña';renderTab(t);if(t===activeTab)document.title=t.title});
-  t.wv.addEventListener('did-finish-load', ()=>{refreshTabIcon(t);applyBuiltinsToTab(t)});
-  t.wv.addEventListener('did-fail-load', e=>{if(e.errorCode!==-3)toast('No se pudo cargar la página')});
-  t.wv.addEventListener('render-process-gone', ()=>toast('Una pestaña dejó de responder; Nova la recuperará al recargarla.'));
-  const target = safeUrl(url || newTabUrl()) || newTabUrl(); t.wv.src=target; tabs.push(t); renderTab(t); selectTab(t); return t;
+  t.wv.addEventListener('page-title-updated', e => {
+    t.title = e.title || 'Nueva pestaña';
+    renderTab(t);
+    if (t === activeTab) document.title = t.title;
+  });
+  t.wv.addEventListener('did-finish-load', () => { refreshTabIcon(t); applyBuiltinsToTab(t); });
+  t.wv.addEventListener('did-fail-load', e => { if (e.errorCode !== -3) toast('No se pudo cargar la página'); });
+  t.wv.addEventListener('render-process-gone', () => toast('Una pestaña dejó de responder; recárgala para continuar.'));
+  tabs.push(t);
+  $('#views').appendChild(t.wv);
+  $('#tabs').appendChild(t.el);
+  renderTab(t);
+  selectTab(t);
+  return t;
 }
 function newTab(url) { return createTab(url || undefined); }
 function selectTab(t) {
@@ -159,7 +199,7 @@ function selectTab(t) {
   syncAddress();
   document.title = t.title || 'Nova';
 }
-function closeTab(t, remember=true) { const idx=tabs.indexOf(t); if(idx<0)return; const was=t===activeTab; if(remember && /^https?:/i.test(t.wv.getURL())) closedTabs.unshift({url:t.wv.getURL(),title:t.title||t.wv.getURL()}); closedTabs=closedTabs.slice(0,10); try{t.wv.remove()}catch{} t.el.remove(); tabs.splice(idx,1); if(!tabs.length){newTab();return;} if(was)selectTab(tabs[Math.min(idx,tabs.length-1)]); }
+function closeTab(t, remember=true) { const idx=tabs.indexOf(t); if(idx<0)return; const was=t===activeTab; const u=getTabUrl(t); if(remember && /^https?:/i.test(u)) closedTabs.unshift({url:u,title:t.title||u}); closedTabs=closedTabs.slice(0,10); try{t.wv.remove()}catch{} t.el.remove(); tabs.splice(idx,1); if(!tabs.length){newTab();return;} if(was)selectTab(tabs[Math.min(idx,tabs.length-1)]); }
 function syncTabFromWeb(t) {
   if (!t || !tabs.includes(t)) return;
   let u = ''; try { u = t.wv.getURL(); } catch { return; }
@@ -169,22 +209,37 @@ function syncTabFromWeb(t) {
     saveState();
   }
 }
-function syncAddress() { if(!activeTab)return; const u=activeTab.wv.getURL(); $('#address').value=isNewTabUrl(u)?'':u; $('#secureMark').className=/^https:/i.test(u)?'secure':(/^http:/i.test(u)?'insecure':''); $('#secureMark').textContent=/^https:/i.test(u)?'●':(/^http:/i.test(u)?'!':'○'); $('#star').innerHTML=iconSvg('star'); $('#star').style.color=isBookmarked(u)?'var(--accent)':''; }
+function syncAddress() { if(!activeTab)return; const u=getTabUrl(activeTab); $('#address').value=isNewTabUrl(u)?'':u; $('#secureMark').className=/^https:/i.test(u)?'secure':(/^http:/i.test(u)?'insecure':''); $('#secureMark').textContent=/^https:/i.test(u)?'●':(/^http:/i.test(u)?'!':'○'); $('#star').innerHTML=iconSvg('star'); $('#star').style.color=isBookmarked(u)?'var(--accent)':''; }
 function navigate(v) {
-  if (!activeTab) return;
-  // Navegar desde Favoritos/Historial debe volver al contenido web, no dejar el panel por encima.
+  const raw = String(v ?? '').trim();
+  if (!raw) { toast('Escribe una dirección o una búsqueda.'); return false; }
+  if (!activeTab || !tabs.includes(activeTab) || !activeTab.wv) {
+    toast('No hay una pestaña activa. Abre una pestaña nueva e inténtalo de nuevo.');
+    return false;
+  }
+  // Volver primero a la vista web; no dejar el panel interno sobre la navegación.
   if (internalView) backToBrowser();
-  const target = resolveNavigation(v, state.search);
-  if (!target) return;
-  try { Promise.resolve(activeTab.wv.loadURL(target)).catch(() => toast('No se pudo abrir la dirección')); }
-  catch { toast('No se pudo abrir la dirección'); }
+  const target = resolveNavigation(raw, state.search);
+  if (!target) { toast('No se pudo interpretar la dirección o búsqueda.'); return false; }
+  const targetTab = activeTab;
+  try {
+    loadTabUrl(targetTab, target).catch(err => {
+      console.error('Nova navigation failed:', err?.message || err);
+      toast('No se pudo abrir la dirección. Comprueba la conexión e inténtalo otra vez.');
+    });
+    return true;
+  } catch (err) {
+    console.error('Nova navigation failed:', err?.message || err);
+    toast('No se pudo abrir la dirección. Comprueba la conexión e inténtalo otra vez.');
+    return false;
+  }
 }
 function isBookmarked(u){return !!u && state.bookmarks.some(b=>b.url===u)}
-function toggleBookmark(){if(!activeTab)return;const u=activeTab.wv.getURL();if(!/^https?:/i.test(u)){toast('Abre una página web para guardarla');return;}const i=state.bookmarks.findIndex(b=>b.url===u);if(i>=0)state.bookmarks.splice(i,1);else state.bookmarks.unshift({url:u,title:activeTab.title||u});state.bookmarks=state.bookmarks.slice(0,100);saveState();syncAddress();toast(i>=0?'Favorito eliminado':'Añadido a favoritos');refreshAllNewTabs();}
-function refreshAllNewTabs(){tabs.filter(t=>isNewTabUrl(t.wv.getURL())).forEach(t=>{const u=newTabUrl();try{t.wv.loadURL(u)}catch{}})}
+function toggleBookmark(){if(!activeTab)return;const u=getTabUrl(activeTab);if(!/^https?:/i.test(u)){toast('Abre una página web para guardarla');return;}const i=state.bookmarks.findIndex(b=>b.url===u);if(i>=0)state.bookmarks.splice(i,1);else state.bookmarks.unshift({url:u,title:activeTab.title||u});state.bookmarks=state.bookmarks.slice(0,100);saveState();syncAddress();toast(i>=0?'Favorito eliminado':'Añadido a favoritos');refreshAllNewTabs();}
+function refreshAllNewTabs(){tabs.filter(t=>isNewTabUrl(getTabUrl(t))).forEach(t=>{const u=newTabUrl();loadTabUrl(t,u).catch(err=>{console.error('No se pudo actualizar la nueva pestaña:',err?.message||err);})})}
 function applyBuiltinsToTab(t){const enabled=mainPrefs.ext||{};for(const x of CATALOG){if(enabled[x.id]){try{t.wv.executeJavaScript(require('./extensions.js').on(x.id))}catch{}}}}
 
-function duplicateTab(t){ if(!t)return; const u=t.wv.getURL(); if(u)newTab(u); }
+function duplicateTab(t){ if(!t)return; const u=getTabUrl(t); if(u)newTab(u); }
 function reopenClosedTab(){ const last=closedTabs.shift(); if(!last){toast('No hay pestañas cerradas para reabrir');return;} newTab(last.url); }
 function showTabMenu(t){
   const items=[['Duplicar pestaña',()=>duplicateTab(t)],['Silenciar pestaña',()=>{try{t.wv.setAudioMuted(!t.wv.isAudioMuted());toast(t.wv.isAudioMuted()?'Pestaña silenciada':'Sonido activado')}catch{toast('Esta pestaña no permite controlar el audio')}}],['Fijar pestaña',()=>{t.pinned=!t.pinned; t.el.classList.toggle('pinned',!!t.pinned);toast(t.pinned?'Pestaña fijada':'Pestaña liberada')}],['Cerrar pestaña',()=>closeTab(t)],['Cerrar las demás',()=>tabs.slice().filter(x=>x!==t).forEach(x=>closeTab(x))]];
@@ -195,7 +250,7 @@ function renderOmniboxSuggestions(query){
   const box=$('#addressSuggestions'); if(!box)return; const q=String(query||'').trim().toLowerCase();
   if(!q){box.classList.remove('show');box.setAttribute('aria-hidden','true');return;}
   const list=[];
-  tabs.forEach(t=>{const text=(t.title+' '+t.wv.getURL()).toLowerCase();if(text.includes(q))list.push({kind:'Pestaña',title:t.title||'Pestaña',url:t.wv.getURL(),run:()=>selectTab(t)})});
+  tabs.forEach(t=>{const url=getTabUrl(t);const text=(t.title+' '+url).toLowerCase();if(text.includes(q))list.push({kind:'Pestaña',title:t.title||'Pestaña',url,run:()=>selectTab(t)})});
   state.bookmarks.forEach(b=>{if((b.title+' '+b.url).toLowerCase().includes(q))list.push({kind:'Favorito',title:b.title||b.url,url:b.url,run:()=>navigate(b.url)})});
   state.history.forEach(h=>{if((h.title+' '+h.url).toLowerCase().includes(q))list.push({kind:'Historial',title:h.title||h.url,url:h.url,run:()=>navigate(h.url)})});
   const out=list.slice(0,8); box.innerHTML=out.length?out.map((x,i)=>`<button class="suggestion" data-suggest="${i}"><span class="suggest-kind">${esc(x.kind)}</span><span class="suggest-main"><strong>${esc(x.title)}</strong><small>${esc(x.url)}</small></span></button>`).join(''):`<div class="suggest-empty">Buscar en la web al pulsar Enter</div>`;
@@ -243,7 +298,7 @@ function getFavicon(u){try{return new URL(u).origin+'/favicon.ico'}catch{return 
 
 function renderWorkspaces(r){
   r.innerHTML=panelHeader('Workspaces','Separa tus sesiones por proyecto. Solo se guardan los espacios que tú crees.')+`<div class="section-card"><div class="row"><div><strong>Crear workspace</strong><div class="sub">Guarda las pestañas abiertas con un nombre propio.</div></div><button class="btn primary" id="createWs">Nuevo workspace</button></div></div><div class="section-card">${state.workspaces.length?state.workspaces.map((w,i)=>`<div class="workspace-card"><div class="ext-icon">${iconSvg('grid')}</div><div class="stack"><strong>${esc(w.name)}</strong><small>${w.tabs.length} pestañas guardadas</small></div><button class="btn primary" data-openws="${i}">Abrir</button><button class="btn danger" data-delws="${i}">Eliminar</button></div>`).join(''):'<div class="empty">Crea tu primer workspace. Nova no crea espacios de ejemplo automáticamente.</div>'}</div>`;
-  r.querySelector('#createWs').onclick=()=>{const name=prompt('Nombre del workspace','Trabajo');if(!name?.trim())return;const w={name:name.trim().slice(0,40),tabs:tabs.map(t=>t.wv.getURL()).filter(u=>/^https?:/i.test(u)||isNewTabUrl(u))};state.workspaces.push(w);saveState();renderWorkspaces(r);toast('Workspace guardado')};
+  r.querySelector('#createWs').onclick=()=>{const name=prompt('Nombre del workspace','Trabajo');if(!name?.trim())return;const w={name:name.trim().slice(0,40),tabs:tabs.map(getTabUrl).filter(u=>/^https?:/i.test(u)||isNewTabUrl(u))};state.workspaces.push(w);saveState();renderWorkspaces(r);toast('Workspace guardado')};
   r.querySelectorAll('[data-openws]').forEach(b=>b.onclick=()=>{const w=state.workspaces[+b.dataset.openws];if(!w)return;tabs.slice().forEach(closeTab);w.tabs.filter(Boolean).forEach(u=>newTab(u));toast(`Workspace ${w.name} abierto`) });
   r.querySelectorAll('[data-delws]').forEach(b=>b.onclick=()=>{state.workspaces.splice(+b.dataset.delws,1);saveState();renderWorkspaces(r)});
 }
@@ -258,15 +313,23 @@ const STORE=[
 function renderExtensions(r){
   const extPrefs=mainPrefs.ext||{};
   const catHtml=CATALOG.map(x=>`<div class="section-card extension-card"><div class="ext-icon">${iconSvg('extensions')}</div><div class="ext-main"><strong>${esc(x.name)}</strong><div class="sub">${esc(x.cat)} · ${esc(x.desc)}</div></div><button class="toggle ${extPrefs[x.id]?'on':''}" data-toggle-ext="${esc(x.id)}" aria-label="Activar extensión"></button></div>`).join('');
-  r.innerHTML=panelHeader('Extensiones','Un único centro para extensiones integradas, extensiones Chromium cargadas y enlaces a la tienda oficial.')+
-    `<div class="section-card"><div class="row"><div><strong>Extension Center</strong><div class="sub">Extensiones externas verificables en Chrome Web Store. Nova abre la ficha oficial; la instalación queda bajo tu control.</div></div></div><div class="grid">${STORE.map((x,i)=>`<div class="section-card extension-card"><img class="ext-icon" src="${esc(x[4]||'../assets/brand/nova-icon.png')}" onerror="this.onerror=null;this.src='../assets/brand/nova-icon.png'" alt=""><div class="ext-main"><strong>${esc(x[0])}</strong><div class="sub">${esc(x[2])}</div><p class="sub">${esc(x[1])}</p></div><button class="btn primary" data-store="${i}">Abrir tienda</button></div>`).join('')}</div></div>`+
-    `<div class="section-card"><div class="row"><div><strong>Manager de extensiones reales</strong><div class="sub">Carga una carpeta con manifest.json y recupérala automáticamente al reiniciar.</div></div><button class="btn primary" id="loadRealExt">Cargar carpeta</button></div><div id="realExtList" class="section-card"><div class="empty">Consultando…</div></div></div>`+
+  r.innerHTML=panelHeader('Extensiones','Gestiona extensiones integradas y extensiones Chromium compatibles. La Chrome Web Store no instala extensiones directamente en Nova; usa una carpeta compatible con manifest.json.')+
+    `<div class="section-card"><div class="row"><div><strong>Extension Center</strong><div class="sub">Consulta la ficha oficial. La instalación directa desde Chrome Web Store está reservada a Chrome; para Nova, carga una carpeta desempaquetada compatible en el gestor de abajo.</div></div></div><div class="grid">${STORE.map((x,i)=>`<div class="section-card extension-card"><img class="ext-icon" src="${esc(x[4]||'../assets/brand/nova-icon.png')}" onerror="this.onerror=null;this.src='../assets/brand/nova-icon.png'" alt=""><div class="ext-main"><strong>${esc(x[0])}</strong><div class="sub">${esc(x[2])}</div><p class="sub">${esc(x[1])}</p></div><button class="btn primary" data-store="${i}">Ver ficha oficial</button></div>`).join('')}</div></div>`+
+    `<div class="section-card"><div class="row"><div><strong>Extensiones Chromium instaladas</strong><div class="sub">Carga una carpeta de extensión con manifest.json. Las extensiones compatibles se recuperan al reiniciar; no todas las extensiones de Chrome son compatibles con Electron.</div></div><button class="btn primary" id="loadRealExt">Cargar carpeta</button></div><div id="realExtList" class="section-card"><div class="empty">Consultando…</div></div></div>`+
     `<h2>Extensiones integradas de Nova</h2>${catHtml}`;
-  r.querySelectorAll('[data-store]').forEach(b=>b.onclick=()=>ipc.invoke('open-external',STORE[+b.dataset.store][3]).then(ok=>{if(!ok)toast('No se pudo abrir la tienda oficial')}).catch(()=>toast('No se pudo abrir la tienda oficial')));
+  r.querySelectorAll('[data-store]').forEach(b=>b.onclick=()=>ipc.invoke('open-external',STORE[+b.dataset.store][3]).then(ok=>{
+    if(!ok) toast('No se pudo abrir la ficha oficial. Puedes cargar una carpeta compatible desde este panel.');
+    else toast('Ficha oficial abierta. Para instalar en Nova, carga una carpeta compatible con manifest.json.');
+  }).catch(()=>toast('No se pudo abrir la ficha oficial.')));
   r.querySelectorAll('[data-toggle-ext]').forEach(b=>b.onclick=()=>{const id=b.dataset.toggleExt;const nx=Object.assign({},mainPrefs.ext||{});nx[id]=!nx[id];ipc.send('prefs-set',{ext:nx});mainPrefs=ipc.sendSync('prefs-get')||mainPrefs;renderExtensions(r)});
-  r.querySelector('#loadRealExt').onclick=()=>ipc.invoke('extension-pick-load',{partition:'persist:web'}).then(d=>{toast(d?.ok?`Cargada: ${d.name||'extensión'}`:(d?.error||'No se pudo cargar'));paintRealExt()});
+  r.querySelector('#loadRealExt').onclick=()=>ipc.invoke('extension-pick-load',{partition:'persist:web'}).then(d=>{toast(d?.ok?`Cargada: ${d.name||'extensión'}`:(d?.error||'No se pudo cargar'));return paintRealExt()}).catch(()=>toast('No se pudo abrir el selector de extensiones.'));
   const listBox=r.querySelector('#realExtList');
-  async function paintRealExt(){const d=await ipc.invoke('extensions-list',{partition:'persist:web'}).catch(()=>({items:[]}));const items=d?.items||[];listBox.innerHTML=items.length?items.map((x,i)=>`<div class="row"><div class="stack"><strong>${esc(x.name||'Extensión')}</strong><small class="truncate">${esc(x.version||'')} · ${esc(x.path||'')}</small></div><button class="btn danger" data-real-del="${i}">Quitar</button></div>`).join(''):'<div class="empty">No hay extensiones Chromium desempaquetadas.</div>';listBox.querySelectorAll('[data-real-del]').forEach(b=>b.onclick=async()=>{const x=items[+b.dataset.realDel];if(!x)return;await ipc.invoke('extension-unload',{partition:'persist:web',id:x.id});paintRealExt()})}
+  async function paintRealExt(){const d=await ipc.invoke('extensions-list',{partition:'persist:web'}).catch(()=>({items:[]}));const items=d?.items||[];listBox.innerHTML=items.length?items.map((x,i)=>`<div class="row"><div class="stack"><strong>${esc(x.name||'Extensión')}</strong><small class="truncate">${esc(x.version||'')} · ${esc(x.path||'')}</small></div><button class="btn danger" data-real-del="${i}">Quitar</button></div>`).join(''):'<div class="empty">No hay extensiones Chromium desempaquetadas.</div>';listBox.querySelectorAll('[data-real-del]').forEach(b=>b.onclick=async()=>{
+      const x=items[+b.dataset.realDel]; if(!x)return;
+      const ok=await ipc.invoke('extension-unload',{partition:'persist:web',id:x.id}).catch(()=>false);
+      if(!ok) toast('No se pudo quitar la extensión.');
+      await paintRealExt();
+    })}
   paintRealExt();
 }
 
@@ -278,7 +341,7 @@ async function renderPerformance(r){
 }
 
 function renderSettings(r){
-  const colors=['#1a73e8','#6f55df','#188038','#d56d12','#c5221f'];
+  const colors = ACCENT_COLORS;
   r.innerHTML=panelHeader('Ajustes de Nova','Configuración organizada por funciones activas, sin opciones heredadas.')+
   `<div class="section-card"><h2>Apariencia</h2><div class="row"><div><strong>Modo</strong><div class="sub">Claro, oscuro o seguir el sistema operativo.</div></div><select id="appearance"><option value="system">Sistema</option><option value="light">Claro</option><option value="dark">Oscuro</option></select></div><div class="row"><div><strong>Color de acento</strong><div class="sub">Cambia detalles interactivos sin crear temas completos.</div></div><div class="swatch-row">${colors.map(c=>`<button class="swatch ${state.accent===c?'active':''}" data-accent="${c}" style="background:${c}" aria-label="Acento ${c}"></button>`).join('')}</div></div></div>`+
   `<div class="section-card"><h2>Fondo de la barra superior</h2><p class="sub wallpaper-intro">Elige una imagen local para personalizar la zona de pestañas y navegación. Se guarda en este equipo.</p><div id="wallpaperPreview" class="wallpaper-preview"><span>Vista previa de la barra</span></div><div class="row wallpaper-row"><div><strong>Imagen personalizada</strong><div class="sub">PNG, JPG o WebP · máximo 12 MB.</div></div><div class="wallpaper-actions"><button class="btn primary" id="pickWallpaper">Elegir imagen</button><button class="btn" id="resetWallpaper">Restablecer</button></div></div><div id="wallpaperState" class="sub" aria-live="polite"></div></div>`+
@@ -334,14 +397,14 @@ function showAbout(){showDrawer('Acerca de Nova',`<div style="text-align:center;
 
 $('#newTab').innerHTML='+';$('#newTab').onclick=()=>newTab();
 $('#back').innerHTML=iconSvg('back');$('#forward').innerHTML=iconSvg('forward');$('#reload').innerHTML=iconSvg('reload');$('#star').innerHTML=iconSvg('star');$('#menuButton').innerHTML=iconSvg('menu');
-$('#accentButton').querySelector('.accent-dot').style.background=state.accent;
-$('#back').onclick=()=>activeTab?.wv?.canGoBack()&&activeTab.wv.goBack();$('#forward').onclick=()=>activeTab?.wv?.canGoForward()&&activeTab.wv.goForward();$('#reload').onclick=()=>activeTab?.wv?.reload();$('#star').onclick=toggleBookmark;$('#menuButton').onclick=showMenu;$('#accentButton').onclick=()=>showDrawer('Color de acento',`<div class="swatch-row" style="padding:10px 0">${['#3f6df6','#6f55df','#16a36c','#e07b24','#cf4c4c'].map(c=>`<button class="swatch ${state.accent===c?'active':''}" data-a="${c}" style="background:${c}"></button>`).join('')}</div>`);$('#accentButton').addEventListener('click',()=>setTimeout(()=>document.querySelectorAll('#drawer [data-a]').forEach(b=>b.onclick=()=>{state.accent=b.dataset.a;saveState();applyAppearance();hideDrawer();refreshAllNewTabs()}),0));
+$('#accentButton').querySelector('.accent-dot').style.removeProperty('background');
+$('#back').onclick=()=>activeTab?.wv?.canGoBack()&&activeTab.wv.goBack();$('#forward').onclick=()=>activeTab?.wv?.canGoForward()&&activeTab.wv.goForward();$('#reload').onclick=()=>activeTab?.wv?.reload();$('#star').onclick=toggleBookmark;$('#menuButton').onclick=showMenu;$('#accentButton').onclick=()=>showDrawer('Color de acento',`<div class="swatch-row" style="padding:10px 0">${ACCENT_COLORS.map(c=>`<button class="swatch ${state.accent===c?'active':''}" data-a="${c}" style="background:${c}"></button>`).join('')}</div>`);$('#accentButton').addEventListener('click',()=>setTimeout(()=>document.querySelectorAll('#drawer [data-a]').forEach(b=>b.onclick=()=>{state.accent=b.dataset.a;saveState();applyAppearance();hideDrawer();refreshAllNewTabs()}),0));
 document.querySelectorAll('[data-window]').forEach(b=>b.addEventListener('click',()=>{const a=b.dataset.window;try{ipc.send('win',a)}catch{toast('No se pudo controlar la ventana')}}));
 $('#address').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();hideOmniboxSuggestions();navigate(e.target.value)}};$('#address').onfocus=e=>{e.target.select();renderOmniboxSuggestions(e.target.value)};$('#address').oninput=e=>{clearTimeout(omniboxTimer);omniboxTimer=setTimeout(()=>renderOmniboxSuggestions(e.target.value),40)};document.addEventListener('click',e=>{if(!e.target.closest('#addressWrap'))hideOmniboxSuggestions()});
 $('.side-item[data-view="home"]').onclick=()=>backToBrowser();document.querySelectorAll('.side-item[data-view]:not([data-view="home"])').forEach(b=>b.onclick=()=>setInternal(b.dataset.view));
 window.addEventListener('keydown',e=>{if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==='t'){e.preventDefault();reopenClosedTab()}else if(e.ctrlKey&&e.key.toLowerCase()==='t'){e.preventDefault();newTab()}else if(e.ctrlKey&&e.key.toLowerCase()==='w'){e.preventDefault();closeTab(activeTab)}else if(e.ctrlKey&&e.key.toLowerCase()==='l'){e.preventDefault();$('#address').focus()}else if(e.ctrlKey&&e.key.toLowerCase()==='d'){e.preventDefault();toggleBookmark()}else if(e.ctrlKey&&e.key.toLowerCase()==='k'){e.preventDefault();showCommand()}else if(e.key==='Escape'){hideDrawer();document.querySelectorAll('.modal.on').forEach(x=>x.remove())}});
 ipc.on('open-tab',(_,url)=>newTab(url)); ipc.on('open-tour',()=>showTour()); ipc.on('open-command',()=>showCommand());ipc.on('blocked',(_,n)=>toast(`${n} solicitudes bloqueadas`));ipc.on('dl',(_,d)=>{state.downloads=[{name:String(d?.name||'archivo'),path:String(d?.path||''),state:String(d?.state||''),ts:Date.now()},...state.downloads].slice(0,100);saveState();toast(d?.state==='done'?`Descarga completada: ${d.name||'archivo'}`:`Descarga: ${d.name||'archivo'}`)});ipc.on('tab-health',(_,d)=>{if(d?.type==='unresponsive')toast('Una pestaña no responde');if(d?.type==='responsive')toast('Pestaña recuperada')});
-function showCommand(){showDrawer('Nova Command',`<input class="field" id="cmd" placeholder="Busca pestañas, favoritos, ajustes o acciones…"><div id="cmdResults" style="margin-top:10px"></div>`);const input=$('#cmd');const data=()=>{const q=input.value.trim().toLowerCase();const out=[];tabs.forEach((t,i)=>{if(!q||String(t.title+' '+t.wv.getURL()).toLowerCase().includes(q))out.push(['Pestaña: '+(t.title||'Nueva pestaña'),()=>selectTab(t)]);});state.bookmarks.forEach(b=>{if(!q||String(b.title+' '+b.url).toLowerCase().includes(q))out.push(['Favorito: '+(b.title||b.url),()=>navigate(b.url)])});[['Historial',()=>setInternal('history')],['Ajustes',()=>setInternal('settings')],['Extensiones',()=>setInternal('extensions')],['Rendimiento',()=>setInternal('performance')],['Workspaces',()=>setInternal('workspaces')],['Novedades',()=>showWhatsNew(true)]].forEach(x=>{if(!q||x[0].toLowerCase().includes(q))out.push([x[0],x[1]])});return out.slice(0,12)};function paint(){const box=$('#cmdResults');const arr=data();box.innerHTML=arr.length?arr.map((x,i)=>`<button class="menu-item" data-cmd="${i}">${esc(x[0])}</button>`).join(''):'<div class="empty">Sin resultados.</div>';box.querySelectorAll('[data-cmd]').forEach(b=>b.onclick=()=>{arr[+b.dataset.cmd][1]();hideDrawer()})}input.oninput=paint;paint();input.focus();}
+function showCommand(){showDrawer('Nova Command',`<input class="field" id="cmd" placeholder="Busca pestañas, favoritos, ajustes o acciones…"><div id="cmdResults" style="margin-top:10px"></div>`);const input=$('#cmd');const data=()=>{const q=input.value.trim().toLowerCase();const out=[];tabs.forEach((t,i)=>{if(!q||String(t.title+' '+getTabUrl(t)).toLowerCase().includes(q))out.push(['Pestaña: '+(t.title||'Nueva pestaña'),()=>selectTab(t)]);});state.bookmarks.forEach(b=>{if(!q||String(b.title+' '+b.url).toLowerCase().includes(q))out.push(['Favorito: '+(b.title||b.url),()=>navigate(b.url)])});[['Historial',()=>setInternal('history')],['Ajustes',()=>setInternal('settings')],['Extensiones',()=>setInternal('extensions')],['Rendimiento',()=>setInternal('performance')],['Workspaces',()=>setInternal('workspaces')],['Novedades',()=>showWhatsNew(true)]].forEach(x=>{if(!q||x[0].toLowerCase().includes(q))out.push([x[0],x[1]])});return out.slice(0,12)};function paint(){const box=$('#cmdResults');const arr=data();box.innerHTML=arr.length?arr.map((x,i)=>`<button class="menu-item" data-cmd="${i}">${esc(x[0])}</button>`).join(''):'<div class="empty">Sin resultados.</div>';box.querySelectorAll('[data-cmd]').forEach(b=>b.onclick=()=>{arr[+b.dataset.cmd][1]();hideDrawer()})}input.oninput=paint;paint();input.focus();}
 
 applyAppearance();
 newTab();

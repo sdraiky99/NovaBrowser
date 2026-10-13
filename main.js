@@ -226,7 +226,10 @@ async function loadOneRealExtension(partition, extPath, persist=true){
   const manifestFile=path.join(extPath,'manifest.json');
   if(!fs.existsSync(manifestFile)) throw new Error('La carpeta no contiene manifest.json.');
   let manifest; try { manifest=JSON.parse(fs.readFileSync(manifestFile,'utf8')); } catch { throw new Error('manifest.json no es válido.'); }
-  if(!manifest || typeof manifest!=='object' || !manifest.name) throw new Error('Manifest inválido: falta el nombre.');
+  if(!manifest || typeof manifest!=='object' || Array.isArray(manifest) || !manifest.name) throw new Error('Manifest inválido: falta el nombre.');
+  if (![2, 3].includes(Number(manifest.manifest_version))) throw new Error('Versión de manifest no compatible. Nova admite extensiones Chromium Manifest V2/V3 que Electron pueda ejecutar.');
+  if (typeof manifest.name !== 'string' || manifest.name.trim().length === 0 || manifest.name.length > 200) throw new Error('El nombre de la extensión no es válido.');
+  if (manifest.version !== undefined && (typeof manifest.version !== 'string' || manifest.version.length > 64)) throw new Error('La versión de la extensión no es válida.');
   const ses=sessionForPartition(partition);
   const loaded=await ses.loadExtension(extPath,{allowFileAccess:true});
   const meta={id:loaded.id,name:String(loaded.name||manifest.name).slice(0,160),path:extPath,version:String(loaded.version||manifest.version||'').slice(0,64)};

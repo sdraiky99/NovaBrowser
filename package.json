@@ -1,20 +1,20 @@
 {
   "name": "nova-browser",
   "productName": "Nova",
-  "version": "5.5.2",
-  "description": "Nova 5.5.2 Next-Gen: hotfix de paneles, menús persistentes e icono 3D con transparencia.",
+  "version": "5.5.3",
+  "description": "Nova 5.5.3 Reliability & UI Fix: búsqueda, puente de nueva pestaña, personalización y extensiones.",
   "author": "Nova",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "dist": "npm run dist:win",
-    "check": "npm run check:project && npm run check:syntax && npm run qa:5.5.2 && npm run check:build-assets",
+    "check": "npm run check:project && npm run check:syntax && npm run qa:5.5.3 && npm run check:build-assets",
     "dist:win": "electron-builder --win --publish never",
     "dist:linux": "electron-builder --linux rpm AppImage --publish never",
-    "check:syntax": "node --check main.js && node --check migration.js && node --check account-service.js && node --check account-server/server.js && node --check shell/extensions.js && node --check shell/navigation.js && node --check shell/newtab-preload.js && node --check shell/nova.js",
+    "check:syntax": "node scripts/check-syntax-all.js",
     "check:project": "node scripts/check-project.js",
     "check:build-assets": "node scripts/check-build-assets.js",
-    "qa:5.5.2": "node scripts/qa-5.5.2.js"
+    "qa:5.5.3": "node scripts/qa-5.5.3.js"
   },
   "dependencies": {
     "@ghostery/adblocker-electron": "2.18.2",
@@ -64,7 +64,7 @@
       "installerSidebar": "build/installerSidebar.bmp",
       "uninstallerSidebar": "build/uninstallerSidebar.bmp",
       "deleteAppDataOnUninstall": false,
-      "uninstallDisplayName": "Nova Browser 5.5.2",
+      "uninstallDisplayName": "Nova Browser 5.5.3",
       "installerHeader": "build/installerHeader.bmp",
       "include": "build/installer.nsh"
     },
