@@ -1,8 +1,8 @@
 {
   "name": "nova-browser",
   "productName": "Nova",
-  "version": "5.5.3",
-  "description": "Nova 5.5.3 Reliability & UI Fix: búsqueda, puente de nueva pestaña, personalización y extensiones.",
+  "version": "5.5.3.1",
+  "description": "Nova 5.5.3.1 Installer Hotfix: cierre automático de procesos Nova antes de actualizar.",
   "author": "Nova",
   "main": "main.js",
   "scripts": {
@@ -64,7 +64,7 @@
       "installerSidebar": "build/installerSidebar.bmp",
       "uninstallerSidebar": "build/uninstallerSidebar.bmp",
       "deleteAppDataOnUninstall": false,
-      "uninstallDisplayName": "Nova Browser 5.5.3",
+      "uninstallDisplayName": "Nova Browser 5.5.3.1",
       "installerHeader": "build/installerHeader.bmp",
       "include": "build/installer.nsh"
     },
