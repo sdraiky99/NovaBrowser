@@ -687,11 +687,7 @@ const NEWS_SOURCES = [
   { name: 'Ars Technica Gaming', url: 'https://feeds.arstechnica.com/arstechnica/gaming', site: 'https://arstechnica.com/gaming/', topics:['videojuegos'] },
   { name: 'The Guardian Technology', url: 'https://www.theguardian.com/technology/rss', site: 'https://www.theguardian.com/technology', topics:['tecnologia','codigo'] }
 ];
-const NEWS_FALLBACK = [
-  { source:'Nova Briefing', title:'Cómo mantener una sesión de navegación ligera', summary:'Nova combina suspensión de pestañas, control de extensiones y ahorro de energía para mantener sesiones largas más fluidas.', url:'https://www.chromium.org/', date:'', kind:'briefing' },
-  { source:'Nova Briefing', title:'Extensiones: potencia con permisos visibles', summary:'Las extensiones pueden modificar páginas y acceder a información. Nova muestra qué hay instalado y permite retirarlo desde un único centro.', url:'https://developer.chrome.com/docs/extensions/', date:'', kind:'briefing' },
-  { source:'Nova Briefing', title:'Workspaces para separar tus sesiones', summary:'Agrupar pestañas por contexto reduce el ruido cuando alternas entre trabajo, estudio, proyectos personales y ocio.', url:'https://www.chromium.org/', date:'', kind:'briefing' }
-];
+const NEWS_FALLBACK = []; // Nunca presentar contenido editorial de ejemplo como si fueran noticias reales.
 const NEWS_LIVE_CACHE = () => userFile('news-live-cache.json');
 const readLiveNewsCache = () => { try { const x=JSON.parse(fs.readFileSync(NEWS_LIVE_CACHE(),'utf8')); return x&&typeof x==='object'?x:{}; } catch { return {}; } };
 const writeLiveNewsCache = x => { try { atomicWrite(NEWS_LIVE_CACHE(), JSON.stringify(x)); } catch {} };
@@ -735,7 +731,7 @@ async function fetchNewsFeed(url, source) {
   }).filter(Boolean);
 }
 ipcMain.handle('news-feed', async (e, payload) => {
-  if (denyUntrusted(e) && !isTrustedNewTabContents(e.sender)) return { ok:false, items:NEWS_FALLBACK, live:false, sources:[] };
+  if (denyUntrusted(e) && !isTrustedNewTabContents(e.sender)) return { ok:false, items:[], live:false, stale:false, sources:[], error:'Origen no autorizado' };
   const requestedTopic = String(payload?.topic || 'todas').toLowerCase();
   const topic = ['todas', 'tecnologia', 'videojuegos', 'codigo'].includes(requestedTopic) ? requestedTopic : 'todas';
   const force = payload?.force === true;
@@ -752,7 +748,7 @@ ipcMain.handle('news-feed', async (e, payload) => {
     newsCache.set(key,{at:Date.now(),value}); disk[key]={items:picked,sources:value.sources,at:Date.now()}; writeLiveNewsCache(disk); return value;
   }
   if(stale?.items?.length){ const value={ok:true,items:stale.items,live:true,stale:true,sources:stale.sources||[]}; newsCache.set(key,{at:Date.now(),value}); return value; }
-  const value={ok:true,items:NEWS_FALLBACK.map(x=>({...x})),live:false,stale:false,sources:['Nova Briefing']}; newsCache.set(key,{at:Date.now(),value}); return value;
+  const value={ok:true,items:[],live:false,stale:false,sources:[],error:'Las fuentes de noticias no están disponibles y no hay caché local.'}; newsCache.set(key,{at:Date.now(),value}); return value;
 });
 
 let updateState = { status:'idle', current:app.getVersion(), available:false, version:'', downloaded:false, progress:0, error:'' };

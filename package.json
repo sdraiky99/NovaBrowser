@@ -1,20 +1,20 @@
 {
   "name": "nova-browser",
   "productName": "Nova",
-  "version": "6.0.0",
+  "version": "6.0.1",
   "description": "Nova 6 Chrome Hybrid: rediseño integral de interfaz, navegación coherente y funciones propias de Nova.",
   "author": "Nova",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "dist": "npm run dist:win",
-    "check": "npm run check:project && npm run check:syntax && npm run qa:6.0.0 && npm run check:build-assets",
+    "check": "npm run check:project && npm run check:syntax && npm run qa:6.0.1 && npm run check:build-assets",
     "dist:win": "electron-builder --win --publish never",
     "dist:linux": "electron-builder --linux rpm AppImage --publish never",
     "check:syntax": "node scripts/check-syntax-all.js",
     "check:project": "node scripts/check-project.js",
     "check:build-assets": "node scripts/check-build-assets.js",
-    "qa:6.0.0": "node scripts/qa-6.0.0.js"
+    "qa:6.0.1": "node scripts/qa-6.0.1.js"
   },
   "dependencies": {
     "@ghostery/adblocker-electron": "2.18.2",
@@ -64,7 +64,7 @@
       "installerSidebar": "build/installerSidebar.bmp",
       "uninstallerSidebar": "build/uninstallerSidebar.bmp",
       "deleteAppDataOnUninstall": false,
-      "uninstallDisplayName": "Nova Browser 6.0.0",
+      "uninstallDisplayName": "Nova Browser 6.0.1",
       "installerHeader": "build/installerHeader.bmp",
       "include": "build/installer.nsh"
     },

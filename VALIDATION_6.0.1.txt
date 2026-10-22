@@ -1,0 +1,21 @@
+Nova 6.0.1 — Hotfix de calidad
+
+Comprobaciones ejecutadas localmente:
+- npm run check: PASS
+- Comprobación de estructura y archivos: PASS
+- Sintaxis de 17 archivos JavaScript: PASS
+- QA de nueva pestaña, búsqueda, accesos rápidos y puente IPC simulado: PASS
+- 12 casos de resolución de dirección/búsqueda: PASS
+- Recursos gráficos, icono de aplicación y dimensiones de instalador: PASS
+- Carga/retirada/restauración de extensiones Chromium: comprobación de presencia de flujo real y puente UI; no se ejecutó instalación interactiva de una extensión real.
+
+No verificado en este entorno:
+- Ejecución visual y navegación real de la aplicación Electron en Windows.
+- Descarga de RSS desde la red en tiempo de ejecución.
+- Generación del instalador/portable con electron-builder.
+- Compatibilidad de extensiones concretas. Electron admite extensiones Chromium desempaquetadas compatibles; la Chrome Web Store no se integra como instalación directa universal.
+
+Para compilar en Windows con Node.js compatible y dependencias instaladas:
+  npm ci
+  npm run check
+  npm run dist:win

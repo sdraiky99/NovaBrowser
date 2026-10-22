@@ -100,16 +100,9 @@ function newTabUrl() {
 function isNewTabUrl(url) { return typeof url === 'string' && url.split(/[?#]/, 1)[0] === pathToFileURL(path.join(__dirname, 'newtab.html')).href; }
 
 function iconSvg(name) {
-  const p = {
-    back:'M19 12H5m7 7-7-7 7-7', forward:'M5 12h14m-7-7 7 7-7 7', reload:'M20 11a8 8 0 1 0 2 5m0-5v5h-5',
-    star:'M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 18.9 6.4 22.2l1.1-6.2L3 9.6l6.2-.9L12 3z', menu:'M5 7h14M5 12h14M5 17h14',
-    close:'M6 6l12 12M18 6 6 18', search:'M21 21l-4.4-4.4M10.8 18a7.2 7.2 0 1 1 0-14.4 7.2 7.2 0 0 1 0 14.4',
-    home:'M3 10.5 12 3l9 7.5M5.5 9.5V21h13V9.5M9.5 21v-6h5v6', download:'M12 3v11m0 0 4-4m-4 4-4-4M4 17v4h16v-4',
-    history:'M3 12a9 9 0 1 0 3-6.7M3 4v5h5', extensions:'M9 3h6v3a3 3 0 1 1 3 3h3v6h-3a3 3 0 1 1-3 3v3H9v-3a3 3 0 1 1-3-3H3V9h3a3 3 0 1 1 3-3V3',
-    sidebar:'M3 4h18v16H3z M9 4v16 M13 8h4 M13 12h4 M13 16h4', settings:'M12 15.3a3.3 3.3 0 1 0 0-6.6 3.3 3.3 0 0 0 0 6.6z M19.4 15a7.8 7.8 0 0 0 .1-3 7.8 7.8 0 0 0-2.2-3.8l1-1.8-2.6-1.5-1.1 1.6a8 8 0 0 0-3-.9L11.3 3H8.4l-.3 2.1a8 8 0 0 0-3 .9L4 4.4 1.4 5.9l1 1.8A7.8 7.8 0 0 0 .2 11.5l-2 .2v3l2 .2a7.8 7.8 0 0 0 2.2 3.8l-1 1.8L4 22l1.1-1.6a8 8 0 0 0 3 .9l.3 2.1h2.9l.3-2.1a8 8 0 0 0 3-.9l1.1 1.6 2.6-1.5-1-1.8a7.8 7.8 0 0 0 2.2-3.8l2-.2v-3l-2-.2z',
-    grid:'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z', bolt:'M13 2 4 13h6l-1 9 9-11h-6l1-9z', help:'M12 18h.01M9.1 9a3 3 0 1 1 5.8 1c-.6 1-1.9 1.3-2.4 2.2-.3.5-.5 1-.5 1.8M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z',
-  };
-  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${p[name] || p.help}"/></svg>`;
+  const allowed = new Set(['back','forward','reload','star','menu','close','search','home','download','history','extensions','sidebar','settings','grid','bolt','help','plus']);
+  const key = allowed.has(name) ? name : 'help';
+  return `<img class="nova-icon" src="../assets/icons/${key}.svg" alt="" aria-hidden="true">`;
 }
 const SIDEBAR_ICONS=['home','star','grid','download','extensions','bolt','settings'];document.querySelectorAll('[data-icon]').forEach(e=>{e.innerHTML=iconSvg(e.dataset.icon)});
 function mkButton(cls, label, title, extra='') { return `<button class="${cls}" title="${esc(title || label)}" ${extra}>${label}</button>`; }
@@ -424,7 +417,7 @@ function showMenu(){
 }
 function showAbout(){showDrawer('Acerca de Nova',`<div style="text-align:center;padding:10px 0 16px"><img src="../assets/brand/nova-icon.png" style="width:76px;height:76px;object-fit:contain"><h2 style="margin:8px 0 2px">Nova</h2><div class="muted">Chrome Hybrid · ${esc(APP_VERSION)}</div></div><div class="section-card"><div class="row"><span>Chromium</span><strong>${esc(process.versions.chrome)}</strong></div><div class="row"><span>Electron</span><strong>${esc(process.versions.electron)}</strong></div><div class="row"><span>Node</span><strong>${esc(process.versions.node)}</strong></div></div>`)}
 
-$('#newTab').innerHTML='+';$('#newTab').onclick=()=>newTab();
+$('#newTab').innerHTML=iconSvg('plus');$('#newTab').onclick=()=>newTab();
 $('#back').innerHTML=iconSvg('back');$('#forward').innerHTML=iconSvg('forward');$('#reload').innerHTML=iconSvg('reload');$('#star').innerHTML=iconSvg('star');$('#sidebarToggle').innerHTML=iconSvg('sidebar');$('#menuButton').innerHTML=iconSvg('menu');
 $('#accentButton').querySelector('.accent-dot').style.removeProperty('background');
 $('#back').onclick=()=>activeTab?.wv?.canGoBack()&&activeTab.wv.goBack();$('#forward').onclick=()=>activeTab?.wv?.canGoForward()&&activeTab.wv.goForward();$('#reload').onclick=()=>activeTab?.wv?.reload();$('#star').onclick=toggleBookmark;$('#sidebarToggle').onclick=()=>{state.sidebarVisible=state.sidebarVisible===false;saveState();applyAppearance()};$('#menuButton').onclick=showMenu;$('#accentButton').onclick=()=>showDrawer('Color de acento',`<div class="swatch-row" style="padding:10px 0">${ACCENT_COLORS.map(c=>`<button class="swatch ${state.accent===c?'active':''}" data-a="${c}" style="background:${c}"></button>`).join('')}</div>`);$('#accentButton').addEventListener('click',()=>setTimeout(()=>document.querySelectorAll('#drawer [data-a]').forEach(b=>b.onclick=()=>{state.accent=b.dataset.a;saveState();applyAppearance();hideDrawer();refreshAllNewTabs()}),0));
