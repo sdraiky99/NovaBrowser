@@ -4,17 +4,17 @@
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' file: data: blob:; object-src 'none'; base-uri 'none'; frame-src 'self' file:; img-src 'self' file: data: blob: https:; style-src 'self' 'unsafe-inline' file:; script-src 'self' 'unsafe-inline' file:; connect-src 'self' https:">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Nova Next-Gen</title>
+<meta name="color-scheme" content="light dark">
+<title>Nova 6</title>
 <link rel="icon" href="../assets/brand/nova-icon.png">
 <link rel="stylesheet" href="nova.css">
 </head>
 <body>
 <div id="app">
   <header id="windowbar" aria-label="Barra de pestañas">
-    <div id="brand" title="Nova"><img src="../assets/brand/nova-icon.png" alt="Nova"><span>Nova</span></div>
-    <div id="tabs" aria-label="Pestañas">
-      <button id="newTab" class="icon-btn tab-add" title="Nueva pestaña (Ctrl+T)" aria-label="Nueva pestaña">+</button>
-    </div>
+    <div id="brand" title="Nova"><img src="../assets/brand/nova-icon.png" alt=""><span>Nova</span></div>
+    <div id="tabs" aria-label="Pestañas"></div>
+    <button id="newTab" class="icon-btn tab-add" title="Nueva pestaña (Ctrl+T)" aria-label="Nueva pestaña">+</button>
     <div id="windowActions" aria-label="Ventana">
       <button class="window-btn" data-window="min" title="Minimizar" aria-label="Minimizar"><svg viewBox="0 0 10 1" aria-hidden="true"><path d="M1 .5H9"/></svg></button>
       <button class="window-btn" data-window="max" title="Maximizar" aria-label="Maximizar"><svg viewBox="0 0 10 10" aria-hidden="true"><rect x="1.2" y="1.2" width="7.6" height="7.6"/></svg></button>
@@ -29,12 +29,14 @@
     </div>
     <div id="addressWrap">
       <span id="secureMark" aria-hidden="true">○</span>
-      <input id="address" autocomplete="off" spellcheck="false" placeholder="Buscar o escribir una dirección" aria-label="Dirección o búsqueda"><div id="addressSuggestions" class="address-suggestions" aria-hidden="true"></div>
+      <input id="address" autocomplete="off" spellcheck="false" placeholder="Buscar con Google o escribir una dirección" aria-label="Dirección o búsqueda">
+      <div id="addressSuggestions" class="address-suggestions" aria-hidden="true"></div>
       <button id="star" class="icon-btn address-action" title="Añadir a favoritos" aria-label="Añadir a favoritos"></button>
     </div>
     <div class="toolbar-actions">
+      <button class="icon-btn nav-btn" id="sidebarToggle" title="Ocultar panel lateral" aria-label="Mostrar u ocultar panel lateral" aria-pressed="true"></button>
       <button class="icon-btn nav-btn" id="accentButton" title="Color de acento" aria-label="Color de acento"><span class="accent-dot"></span></button>
-      <button class="icon-btn nav-btn" id="menuButton" title="Menú" aria-label="Menú"></button>
+      <button class="icon-btn nav-btn" id="menuButton" title="Menú principal" aria-label="Menú principal"></button>
     </div>
   </div>
   <div id="workspace">

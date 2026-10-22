@@ -1,34 +1,30 @@
-# Nova Chromium 5.5.3 — Reliability & UI Fix
+# Nova 6.0.0 — Chrome Hybrid
 
-Nova es un navegador de escritorio basado en Electron/Chromium. Esta versión corrige la inicialización del puente de la nueva pestaña, fortalece búsqueda/navegación, repara la aplicación del color de acento y mejora la barra de ventana. También deja clara la diferencia entre consultar Chrome Web Store e instalar extensiones compatibles en Nova.
+Nova es un navegador de escritorio basado en Electron/Chromium. Nova 6 inicia un rediseño integral: interfaz híbrida inspirada en la familiaridad de Chrome, identidad propia de Nova y un sistema visual compartido entre ventana, nueva pestaña, paneles, menús y ajustes.
 
-## Novedades
-- Icono de cubo 3D con la letra N y canal alfa, sin un fondo rectangular opaco.
-- Paneles internos con capas y cambio de vista corregidos para evitar que se oculten tras el contenido web.
-- Menos sombras y efectos decorativos en la interfaz.
-- Fondo local para la barra superior: PNG, JPG/JPEG o WebP, máximo 12 MB.
-- Vista previa y opción para volver al fondo predeterminado.
-- El fondo se guarda en el perfil local de Nova y no se envía a un servidor.
+## Principios de Nova 6
+La especificación completa de pantallas y criterios de aceptación está en [`docs/NOVA_6_DESIGN_SPEC.md`](docs/NOVA_6_DESIGN_SPEC.md).
 
-## Cambios principales
-- El webview recibe su URL antes de adjuntarse: el preload limitado de la nueva pestaña se detecta al iniciar.
-- Búsqueda desde ambas barras con validación y errores comprensibles.
-- El color de acento seleccionado se mantiene en modo claro y oscuro, también en la nueva pestaña.
-- Controles de ventana de tamaño completo dentro de la barra superior y botón `+` centrado.
-- La tienda oficial se presenta como ficha de consulta; la instalación en Nova se realiza cargando una carpeta Chromium compatible con `manifest.json`.
+- Interfaz equilibrada, clara y coherente; modo claro, oscuro y adaptación al sistema.
+- Pestañas y barra de direcciones familiares, con búsqueda funcional.
+- Nueva pestaña inspirada en Chrome con búsqueda, accesos rápidos y noticias visibles por defecto.
+- Panel lateral opcional y contraíble.
+- Conservación y auditoría de favoritos, historial, descargas, Workspaces, extensiones, privacidad y rendimiento.
+- Instalador y paquete portable con versión técnica válida `6.0.0`.
 
-## Requisitos y desarrollo
+## Desarrollo
 Requiere Node.js 22.12.0 o superior.
 
 ```bash
 npm install
-npm start
 npm run check
+npm start
 ```
 
-Para compilar Windows: `npm run dist:win`.
+Compilar Windows: `npm run dist:win`. Compilar Linux: `npm run dist:linux`. Los artefactos previstos de Windows son `Nova-Setup-6.0.0.exe` y `Nova-Portable-6.0.0.exe`.
 
-**Nota de reproducibilidad:** esta entrega no incluye `package-lock.json`. El registro de npm no estuvo accesible durante la preparación, así que no he inventado un lockfile. En un equipo con conexión, ejecuta `npm install`, conserva el `package-lock.json` generado en Git y repite `npm run check` antes de etiquetar una publicación.
+## Verificación
+`npm run check` ejecuta las comprobaciones de proyecto, sintaxis, pruebas de regresión y recursos de compilación. Este paquete no incluye `package-lock.json` porque el registro de npm no respondió durante su preparación; los flujos de GitHub Actions usan `npm install`. Cuando se genere un lockfile en un entorno con conexión, conviene revisarlo, incluirlo y cambiar CI a `npm ci`. Una comprobación estática no sustituye abrir y probar Nova en Windows: confirma navegación, temas, menús, panel lateral, noticias, datos existentes e instalación antes de distribuirla.
 
-## Publicación
-Conserva una copia del proyecto y de los datos personales antes de probar una actualización. Ejecuta `npm run check` antes de publicar. Las pruebas estáticas no sustituyen una prueba interactiva en Windows: valida navegación, menús, persistencia de fondos e instalador antes de distribuir la versión.
+## Datos y actualizaciones
+No elimines manualmente la carpeta de datos de Nova al actualizar. Haz una copia de seguridad antes de instalar compilaciones de prueba. Las limitaciones de compatibilidad de extensiones deben comunicarse claramente; estar disponible en Chrome Web Store no garantiza que una extensión pueda instalarse directamente en Nova.
