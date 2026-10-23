@@ -211,53 +211,93 @@ function createMain() {
 }
 
 
-/* ---------- Real Chromium extensions (unpacked) ---------- */
-const realExtensions = new Map(); // partition -> Map(extensionId, metadata)
+/* ---------- Chromium extensions: load, enable/disable, remove and restore ---------- */
+const realExtensions = new Map(); // partition -> Map(extensionId, loaded metadata)
 const validPartition = p => typeof p === 'string' && (/^persist:[a-z0-9_-]{1,80}$/i.test(p) || p === 'persist:web');
 const extStoreFile = () => userFile('real-extensions.json');
-const loadRealExtStore = () => { try { const x=JSON.parse(fs.readFileSync(extStoreFile(),'utf8')); return x && typeof x==='object' ? x : {}; } catch { return {}; } };
-const saveRealExtStore = x => { try { atomicWrite(extStoreFile(), JSON.stringify(x)); } catch { } };
+const loadRealExtStore = () => { try { const x=JSON.parse(fs.readFileSync(extStoreFile(),'utf8')); return x && typeof x==='object' && !Array.isArray(x) ? x : {}; } catch { return {}; } };
+const saveRealExtStore = x => { try { atomicWrite(extStoreFile(), JSON.stringify(x)); return true; } catch (e) { console.warn('Nova extension state could not be saved:', e?.message); return false; } };
 const sessionForPartition = partition => session.fromPartition(partition || 'persist:web');
-const rememberRealExt = (partition, meta) => { const all=loadRealExtStore(); all[partition]=Array.isArray(all[partition])?all[partition]:[]; all[partition]=all[partition].filter(x=>x&&x.id!==meta.id); all[partition].push(meta); saveRealExtStore(all); };
+const listStoredExtensions = partition => { const all=loadRealExtStore(); return Array.isArray(all[partition]) ? all[partition].filter(x=>x&&typeof x.id==='string'&&typeof x.path==='string') : []; };
+const rememberRealExt = (partition, meta) => { const all=loadRealExtStore(); all[partition]=Array.isArray(all[partition])?all[partition]:[]; all[partition]=all[partition].filter(x=>x&&x.id!==meta.id); all[partition].push({...meta,enabled:meta.enabled!==false}); return saveRealExtStore(all); };
+const updateStoredExt = (partition,id,patch) => { const all=loadRealExtStore(); const list=Array.isArray(all[partition])?all[partition]:[]; const i=list.findIndex(x=>x&&x.id===id); if(i<0)return false; list[i]={...list[i],...patch}; all[partition]=list; saveRealExtStore(all); return true; };
 const forgetRealExt = (partition,id) => { const all=loadRealExtStore(); all[partition]=(all[partition]||[]).filter(x=>x&&x.id!==id); if(!all[partition].length)delete all[partition]; saveRealExtStore(all); };
 async function loadOneRealExtension(partition, extPath, persist=true){
   if(!validPartition(partition)) throw new Error('Perfil no válido.');
-  if(!path.isAbsolute(extPath)) throw new Error('Ruta no válida.');
-  const manifestFile=path.join(extPath,'manifest.json');
-  if(!fs.existsSync(manifestFile)) throw new Error('La carpeta no contiene manifest.json.');
+  if(typeof extPath!=='string'||!path.isAbsolute(extPath)) throw new Error('Ruta no válida.');
+  const fullPath=path.resolve(extPath), manifestFile=path.join(fullPath,'manifest.json');
+  if(!fs.existsSync(manifestFile)) throw new Error('La carpeta no contiene manifest.json. Descomprime la extensión y selecciona la carpeta que contiene el manifiesto.');
   let manifest; try { manifest=JSON.parse(fs.readFileSync(manifestFile,'utf8')); } catch { throw new Error('manifest.json no es válido.'); }
-  if(!manifest || typeof manifest!=='object' || Array.isArray(manifest) || !manifest.name) throw new Error('Manifest inválido: falta el nombre.');
-  if (![2, 3].includes(Number(manifest.manifest_version))) throw new Error('Versión de manifest no compatible. Nova admite extensiones Chromium Manifest V2/V3 que Electron pueda ejecutar.');
-  if (typeof manifest.name !== 'string' || manifest.name.trim().length === 0 || manifest.name.length > 200) throw new Error('El nombre de la extensión no es válido.');
-  if (manifest.version !== undefined && (typeof manifest.version !== 'string' || manifest.version.length > 64)) throw new Error('La versión de la extensión no es válida.');
+  if(!manifest||typeof manifest!=='object'||Array.isArray(manifest)||!manifest.name) throw new Error('Manifest inválido: falta el nombre.');
+  if(![2,3].includes(Number(manifest.manifest_version))) throw new Error('Versión de manifest no compatible. Nova admite extensiones Chromium Manifest V2/V3 que Electron pueda ejecutar.');
+  if(typeof manifest.name!=='string'||manifest.name.trim().length===0||manifest.name.length>200) throw new Error('El nombre de la extensión no es válido.');
+  if(manifest.version!==undefined&&(typeof manifest.version!=='string'||manifest.version.length>64)) throw new Error('La versión de la extensión no es válida.');
+  const loadedMap=realExtensions.get(partition);
+  if(loadedMap){ const duplicate=[...loadedMap.values()].find(x=>path.resolve(x.path)===fullPath); if(duplicate)return duplicate; }
   const ses=sessionForPartition(partition);
-  const loaded=await ses.loadExtension(extPath,{allowFileAccess:true});
-  const meta={id:loaded.id,name:String(loaded.name||manifest.name).slice(0,160),path:extPath,version:String(loaded.version||manifest.version||'').slice(0,64)};
+  let loaded;
+  try { loaded=await ses.loadExtension(fullPath,{allowFileAccess:true}); }
+  catch(err) { throw new Error(`Chromium/Electron no pudo cargar esta extensión: ${String(err?.message||err).slice(0,220)}`); }
+  const stringList=v=>Array.isArray(v)?v.filter(x=>typeof x==='string').slice(0,30).map(x=>x.slice(0,180)):[];
+  const meta={id:loaded.id,name:String(loaded.name||manifest.name).slice(0,160),path:fullPath,version:String(loaded.version||manifest.version||'').slice(0,64),permissions:stringList(manifest.permissions),hostPermissions:stringList(manifest.host_permissions),enabled:true,loaded:true};
   if(!realExtensions.has(partition))realExtensions.set(partition,new Map());
   realExtensions.get(partition).set(meta.id,meta);
-  if(persist)rememberRealExt(partition,meta);
+  if(persist&&!rememberRealExt(partition,meta)){ try{ses.removeExtension(meta.id);}catch{} realExtensions.get(partition)?.delete(meta.id); throw new Error('No se pudo guardar el estado de la extensión en el perfil de Nova.'); }
   return meta;
 }
 async function restoreRealExtensions(partition){
   if(!validPartition(partition))return;
-  const all=loadRealExtStore(), list=Array.isArray(all[partition])?all[partition]:[];
-  for(const x of list){try{if(x?.path&&fs.existsSync(path.join(x.path,'manifest.json')))await loadOneRealExtension(partition,x.path,false);}catch(e){console.warn('Nova extension restore failed:',x?.path,e?.message)}}
+  const list=listStoredExtensions(partition);
+  for(const x of list){
+    if(x.enabled===false)continue;
+    const already=realExtensions.get(partition)?.get(x.id);
+    if(already)continue;
+    try { if(x.path&&fs.existsSync(path.join(x.path,'manifest.json'))) await loadOneRealExtension(partition,x.path,false); }
+    catch(e){console.warn('Nova extension restore failed:',x?.path,e?.message);}
+  }
 }
 ipcMain.handle('extensions-list', async (e,data)=>{
   if(denyUntrusted(e)||!validPartition(data?.partition))return {ok:false,items:[]};
-  try{await restoreRealExtensions(data.partition);return {ok:true,items:[...(realExtensions.get(data.partition)?.values()||[])]};}catch{return {ok:false,items:[]}}
+  try {
+    await restoreRealExtensions(data.partition);
+    const loaded=realExtensions.get(data.partition)||new Map();
+    const items=listStoredExtensions(data.partition).map(x=>({...x,desiredEnabled:x.enabled!==false,enabled:loaded.has(x.id),loaded:loaded.has(x.id)}));
+    return {ok:true,items};
+  } catch { return {ok:false,items:[]}; }
 });
 ipcMain.handle('extension-pick-load', async (e,data)=>{
   if(denyUntrusted(e)||!validPartition(data?.partition))return {ok:false,error:'Solicitud no válida.'};
   try{
     const picked=await dialog.showOpenDialog(win,{title:'Seleccionar carpeta de extensión Chromium',properties:['openDirectory']});
-    if(picked.canceled||!picked.filePaths?.[0])return {ok:false,error:'Selección cancelada.'};
+    if(picked.canceled||!picked.filePaths?.[0])return {ok:false,canceled:true,error:'Selección cancelada.'};
     const meta=await loadOneRealExtension(data.partition,picked.filePaths[0],true); return {ok:true,...meta};
-  }catch(err){return {ok:false,error:err?.message||'No se pudo cargar la extensión.'}}
+  }catch(err){return {ok:false,error:err?.message||'No se pudo cargar la extensión.'};}
+});
+ipcMain.handle('extension-toggle', async (e,data)=>{
+  if(denyUntrusted(e)||!validPartition(data?.partition)||typeof data?.id!=='string'||typeof data?.enabled!=='boolean')return {ok:false,error:'Solicitud no válida.'};
+  const {partition,id,enabled}=data;
+  const record=listStoredExtensions(partition).find(x=>x.id===id);
+  if(!record)return {ok:false,error:'La extensión ya no está instalada.'};
+  const loadedMap=realExtensions.get(partition)||new Map();
+  if(!enabled){
+    try { sessionForPartition(partition).removeExtension(id); } catch(e) { console.warn('Nova extension remove during disable:',e?.message); }
+    loadedMap.delete(id); if(!realExtensions.has(partition))realExtensions.set(partition,loadedMap);
+    if(!updateStoredExt(partition,id,{enabled:false}))return {ok:false,error:'La extensión se desactivó, pero Nova no pudo guardar el cambio.'};
+    return {ok:true,enabled:false};
+  }
+  try{
+    if(loadedMap.has(id)){if(!updateStoredExt(partition,id,{enabled:true}))return {ok:false,error:'La extensión está cargada, pero Nova no pudo guardar el cambio.'};return {ok:true,enabled:true};}
+    const meta=await loadOneRealExtension(partition,record.path,false);
+    if(!updateStoredExt(partition,id,{...meta,enabled:true})){try{sessionForPartition(partition).removeExtension(meta.id);}catch{};realExtensions.get(partition)?.delete(meta.id);return {ok:false,error:'La extensión se cargó, pero Nova no pudo guardar el cambio.'};}
+    return {ok:true,enabled:true};
+  }catch(err){return {ok:false,error:err?.message||'No se pudo activar la extensión.'};}
 });
 ipcMain.handle('extension-unload', async (e,data)=>{
   if(denyUntrusted(e)||!validPartition(data?.partition)||typeof data?.id!=='string')return false;
-  try{const ses=sessionForPartition(data.partition);try{ses.removeExtension(data.id)}catch{} realExtensions.get(data.partition)?.delete(data.id); forgetRealExt(data.partition,data.id); return true;}catch{return false}
+  try{
+    try{sessionForPartition(data.partition).removeExtension(data.id);}catch{}
+    realExtensions.get(data.partition)?.delete(data.id); forgetRealExt(data.partition,data.id); return true;
+  }catch{return false;}
 });
 
 app.whenReady().then(() => {
