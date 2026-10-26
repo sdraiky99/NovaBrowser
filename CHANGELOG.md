@@ -12,3 +12,8 @@
 
 ## Historial anterior
 Las notas y recursos históricos se conservan en `docs/history/`.
+
+
+## 6.2.1 — Hotfix de CI portable
+- Corregido el flujo de GitHub Actions para no acceder a `build.nsis.include` cuando la configuración NSIS no existe.
+- Reforzadas las validaciones para impedir que se reactive el instalador Setup.

@@ -17,3 +17,9 @@
 ## Límites
 - El modo portable no se registra como navegador predeterminado desde el código de Nova.
 - Las actualizaciones se aplican descargando y sustituyendo el portable cuando Nova está cerrada; realiza una copia de `User Data/` antes de cambiar de versión.
+
+
+### Hotfix de GitHub Actions
+- Añadido un preflight que valida que Windows solo compila el artefacto portable.
+- Eliminada la necesidad de modificar `package.json` en el workflow.
+- Se detecta la reintroducción accidental de NSIS antes de iniciar la compilación.

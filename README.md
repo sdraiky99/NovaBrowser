@@ -31,5 +31,17 @@ npm run dist:portable
 
 `npm run check` ejecuta comprobaciones de estructura, sintaxis, pruebas de regresión y configuración portable. Las pruebas automáticas no sustituyen una prueba de arranque y navegación en Windows. No se incluye `package-lock.json`; cuando haya un entorno con conexión estable, conviene generarlo y cambiar CI a `npm ci`.
 
+## Si GitHub Actions falla al modificar `build.nsis`
+
+Nova 6.2.1 ya no define `build.nsis`, porque el canal actual es portable-only. No añadas un paso de Node.js como `delete p.build.nsis.include` ni cambies `build.win.target` a `['nsis', 'portable']`: el primero falla cuando `build.nsis` no existe y el segundo vuelve a activar el instalador. Elimina ese paso de modificación del workflow y deja que la comprobación y la compilación usen directamente la configuración de `package.json`:
+
+```bash
+npm run check:portable-config
+npm run check
+npm run dist:portable
+```
+
+La comprobación preflight falla con un mensaje claro si alguien vuelve a añadir NSIS o modifica el target. No hace falta eliminar `build/installer.nsh` durante CI; los recursos antiguos ya están archivados en `docs/history/`.
+
 ## Recursos históricos
 Los recursos de NSIS de versiones anteriores se conservan en `docs/history/installer-resources-6.2.0/` únicamente como archivo histórico. No se usan para compilar Nova 6.2.1.

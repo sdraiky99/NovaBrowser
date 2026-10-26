@@ -10,11 +10,12 @@
     "dist": "npm run dist:portable",
     "dist:portable": "electron-builder --win portable --publish never",
     "dist:win": "npm run dist:portable",
-    "check": "npm run check:project && npm run check:syntax && npm run qa:6.2.1 && npm run check:build-assets",
+    "check": "npm run check:portable-config && npm run check:project && npm run check:syntax && npm run qa:6.2.1 && npm run check:build-assets",
     "check:syntax": "node scripts/check-syntax-all.js",
     "check:project": "node scripts/check-project.js",
     "check:build-assets": "node scripts/check-build-assets.js",
-    "qa:6.2.1": "node scripts/qa-6.2.1.js"
+    "qa:6.2.1": "node scripts/qa-6.2.1.js",
+    "check:portable-config": "node scripts/check-portable-config.js"
   },
   "dependencies": {
     "@ghostery/adblocker-electron": "2.18.2",

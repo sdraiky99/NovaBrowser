@@ -11,7 +11,7 @@ const required = [
   'shell/index.html', 'shell/newtab.html', 'shell/splash.html', 'shell/newtab-preload.js',
   'shell/navigation.js', 'shell/nova.js', 'shell/nova.css', 'shell/extensions.js',
   'assets/brand/nova-icon.png', 'assets/brand/nova.ico', 'assets/icons/plus.svg',
-  'scripts/qa-6.2.1.js', 'scripts/check-syntax-all.js', '.github/workflows/build.yml',
+  'scripts/qa-6.2.1.js', 'scripts/check-syntax-all.js', 'scripts/check-portable-config.js', '.github/workflows/build.yml',
   '.github/workflows/release.yml', 'RELEASE_NOTES_6.2.1.md', 'VALIDATION_6.2.1.txt',
   'docs/history/RELEASE_NOTES_6.2.0.md', 'docs/history/installer-resources-6.2.0/README.md'
 ];
@@ -25,6 +25,7 @@ if (pkg.scripts['dist:linux']) fail('no debe existir un flujo de distribución a
 if (build.portable?.artifactName !== 'Nova-Portable-${version}.exe') fail('nombre de artefacto portable incorrecto'); else ok('nombre de artefacto portable coherente');
 if (!build.files?.includes('portable-user-data.js')) fail('portable-user-data.js no está empaquetado'); else ok('gestor de perfil incluido en el paquete');
 if (!build.files?.includes('shell/**') || !build.files?.includes('assets/**')) fail('faltan globs de interfaz/recursos'); else ok('recursos de interfaz y branding incluidos');
+if (pkg.scripts['check:portable-config'] !== 'node scripts/check-portable-config.js') fail('falta comprobación de configuración portable'); else ok('comprobación preflight portable configurada');
 if (fs.existsSync(path.join(root, 'build'))) fail('carpeta de recursos del instalador aún activa en raíz'); else ok('recursos del instalador archivados');
 const roots = fs.readdirSync(root).filter(x => /^RELEASE_NOTES_.*\.md$/i.test(x));
 if (roots.length !== 1 || roots[0] !== 'RELEASE_NOTES_6.2.1.md') fail('notas de versión actuales en raíz'); else ok('notas actuales separadas del historial');
