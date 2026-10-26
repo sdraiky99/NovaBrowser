@@ -1,20 +1,20 @@
 {
   "name": "nova-browser",
   "productName": "Nova",
-  "version": "6.2.0",
-  "description": "Nova 6.2 Precision Update: extensiones Chromium gestionables, recuperación de sesión y calidad verificada.",
+  "version": "6.2.1",
+  "description": "Nova 6.2.1 Portable Stability Update: perfil portable persistente y distribución sin instalador.",
   "author": "Nova",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "npm run dist:win",
-    "check": "npm run check:project && npm run check:syntax && npm run qa:6.2.0 && npm run check:build-assets",
-    "dist:win": "electron-builder --win --publish never",
-    "dist:linux": "electron-builder --linux rpm AppImage --publish never",
+    "dist": "npm run dist:portable",
+    "dist:portable": "electron-builder --win portable --publish never",
+    "dist:win": "npm run dist:portable",
+    "check": "npm run check:project && npm run check:syntax && npm run qa:6.2.1 && npm run check:build-assets",
     "check:syntax": "node scripts/check-syntax-all.js",
     "check:project": "node scripts/check-project.js",
     "check:build-assets": "node scripts/check-build-assets.js",
-    "qa:6.2.0": "node scripts/qa-6.2.0.js"
+    "qa:6.2.1": "node scripts/qa-6.2.1.js"
   },
   "dependencies": {
     "@ghostery/adblocker-electron": "2.18.2",
@@ -29,12 +29,13 @@
   "build": {
     "appId": "com.nova.browser",
     "productName": "Nova",
-    "artifactName": "Nova-Setup-${version}.exe",
+    "artifactName": "Nova-Portable-${version}.exe",
     "directories": {
       "output": "dist"
     },
     "files": [
       "main.js",
+      "portable-user-data.js",
       "migration.js",
       "shell/**",
       "assets/**",
@@ -44,29 +45,9 @@
     ],
     "win": {
       "target": [
-        "nsis",
         "portable"
       ],
       "icon": "assets/brand/nova.ico"
-    },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "Nova",
-      "installerIcon": "assets/brand/nova.ico",
-      "uninstallerIcon": "assets/brand/nova.ico",
-      "installerHeaderIcon": "assets/brand/nova.ico",
-      "language": "1034",
-      "runAfterFinish": true,
-      "installerSidebar": "build/installerSidebar.bmp",
-      "uninstallerSidebar": "build/uninstallerSidebar.bmp",
-      "deleteAppDataOnUninstall": false,
-      "uninstallDisplayName": "Nova Browser 6.2.0",
-      "installerHeader": "build/installerHeader.bmp",
-      "include": "build/installer.nsh"
     },
     "portable": {
       "artifactName": "Nova-Portable-${version}.exe"
@@ -78,43 +59,10 @@
         "repo": "NovaBrowser"
       }
     ],
-    "copyright": "Copyright © 2026 Nova",
-    "linux": {
-      "target": [
-        "rpm",
-        "AppImage"
-      ],
-      "icon": "assets/brand/nova-icon.png",
-      "category": "Network",
-      "synopsis": "Navegador web moderno basado en Chromium",
-      "description": "Nova es un navegador moderno basado en Chromium con Workspaces, extensiones, privacidad y rendimiento.",
-      "desktop": {
-        "entry": {
-          "Name": "Nova",
-          "Comment": "Navegador web moderno basado en Chromium",
-          "Categories": "Network;WebBrowser;",
-          "Keywords": "browser;web;internet;nova;",
-          "StartupWMClass": "nova-browser",
-          "Terminal": false,
-          "Type": "Application"
-        }
-      },
-      "artifactName": "Nova-${version}-x86_64.${ext}"
-    },
-    "rpm": {
-      "packageCategory": "Applications/Internet",
-      "compression": "xz",
-      "depends": [
-        "gtk3",
-        "nss",
-        "libnotify",
-        "libXScrnSaver"
-      ]
-    }
+    "copyright": "Copyright © 2026 Nova"
   },
   "homepage": "https://github.com/sdraiky99/NovaBrowser",
   "engines": {
     "node": ">=22.12.0"
-  },
-  "nsis": {}
+  }
 }

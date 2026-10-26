@@ -1,16 +1,50 @@
-const fs=require('fs'),path=require('path');
-const root=path.resolve(__dirname,'..');
-const p=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
-const fail=m=>{throw new Error(m)},ok=m=>console.log('OK',m);
-if(p.version!=='6.2.0')fail('version '+p.version);ok('version 6.2.0');
-const files=[];(function walk(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){if(['node_modules','.git','dist'].includes(e.name))continue;const f=path.join(d,e.name);if(e.isDirectory())walk(f);else files.push(path.relative(root,f))}})(root);
-ok('repository files '+files.length+' (archivos útiles conservados)');
-for(const f of ['main.js','migration.js','account-service.js','account-server/server.js','shell/index.html','shell/newtab.html','shell/splash.html','shell/newtab-preload.js','shell/navigation.js','shell/nova.js','shell/nova.css','shell/extensions.js','assets/brand/nova-icon.png','assets/brand/nova.ico','build/installer.nsh','build/installerHeader.bmp','build/installerSidebar.bmp','.github/workflows/build.yml'])if(!fs.existsSync(path.join(root,f)))fail('missing '+f);else ok('required '+f);
-const h=fs.readFileSync(path.join(root,'shell/index.html'),'utf8');
-if(!h.includes('<script src="nova.js"></script>'))fail('clean renderer loader missing');
-for(const x of ['nova-runtime.js','nova532-ui.js','nova44','Cyberpunk 2077','Estudio','Themes','Fondos','Mods','QUANTUM 5.3.3'])if(h.includes(x))fail('legacy renderer text '+x);ok('clean renderer');
-for(const rel of ['shell/themes.css','assets/logos','shell/nova-runtime.js','shell/nova532-ui.js','shell/quantum53.css','shell/quantum.css'])if(fs.existsSync(path.join(root,rel)))fail('legacy artifact '+rel);ok('legacy artifacts removed');
-const roots=fs.readdirSync(root).filter(x=>/^RELEASE_NOTES_.*\.md$/i.test(x));if(roots.length!==1||roots[0]!=='RELEASE_NOTES_6.2.0.md')fail('release notes root');ok('current release notes isolated');
-const archived=['docs/history/RELEASE_NOTES_5.5.3.md','docs/history/HOTFIX_INSTALLER_5.5.3.1.md','docs/history/QA_5.5.3.md','docs/history/5.4.1.md','docs/history/qa-5.4.1.js','docs/history/RELEASE_NOTES_5.5.1.md','docs/history/qa-5.5.1.js','docs/history/RELEASE_NOTES_5.5.2.md','docs/history/qa-5.5.2.js','docs/history/qa-5.3.4.js','docs/history/auditoria-archivos-5.5.0.md','docs/history/RELEASE_NOTES_5.5.0.md','docs/history/qa-5.5.0.js'];for(const f of archived)if(!fs.existsSync(path.join(root,f)))fail('missing archived history '+f);else ok('archived '+f);
-for(const rel of ['shell','main.js','package.json']){const filesToScan=[];const abs=path.join(root,rel);const scan=f=>{const st=fs.statSync(f);if(st.isDirectory()){for(const x of fs.readdirSync(f))scan(path.join(f,x))}else if(/\.(js|html|json)$/.test(f)||path.basename(f)==='README.md')filesToScan.push(f)};scan(abs);for(const f of filesToScan){const s=fs.readFileSync(f,'utf8');if(/Nova 4\.4|Nova 4\.1|Cyberpunk 2077|Nova 3\.0\.1|5\.2\.0/.test(s)&&!f.includes('docs'))fail('stale text in '+path.relative(root,f))}}
-ok('stale source text scan');
+'use strict';
+const fs = require('node:fs');
+const path = require('node:path');
+const root = path.resolve(__dirname, '..');
+const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+const fail = message => { console.error('FAIL', message); process.exitCode = 1; };
+const ok = message => console.log('OK', message);
+if (pkg.version !== '6.2.1') fail(`version ${pkg.version}`); else ok('versión 6.2.1');
+const required = [
+  'main.js', 'portable-user-data.js', 'migration.js', 'account-service.js', 'account-server/server.js',
+  'shell/index.html', 'shell/newtab.html', 'shell/splash.html', 'shell/newtab-preload.js',
+  'shell/navigation.js', 'shell/nova.js', 'shell/nova.css', 'shell/extensions.js',
+  'assets/brand/nova-icon.png', 'assets/brand/nova.ico', 'assets/icons/plus.svg',
+  'scripts/qa-6.2.1.js', 'scripts/check-syntax-all.js', '.github/workflows/build.yml',
+  '.github/workflows/release.yml', 'RELEASE_NOTES_6.2.1.md', 'VALIDATION_6.2.1.txt',
+  'docs/history/RELEASE_NOTES_6.2.0.md', 'docs/history/installer-resources-6.2.0/README.md'
+];
+for (const rel of required) {
+  if (!fs.existsSync(path.join(root, rel))) fail(`falta ${rel}`); else ok(`archivo ${rel}`);
+}
+const build = pkg.build || {};
+if (JSON.stringify(build.win?.target) !== JSON.stringify(['portable'])) fail('Windows debe tener únicamente el target portable'); else ok('target Windows solo portable');
+if (build.nsis || pkg.nsis) fail('no debe existir configuración activa NSIS'); else ok('sin configuración NSIS activa');
+if (pkg.scripts['dist:linux']) fail('no debe existir un flujo de distribución adicional'); else ok('distribución limitada al portable Windows');
+if (build.portable?.artifactName !== 'Nova-Portable-${version}.exe') fail('nombre de artefacto portable incorrecto'); else ok('nombre de artefacto portable coherente');
+if (!build.files?.includes('portable-user-data.js')) fail('portable-user-data.js no está empaquetado'); else ok('gestor de perfil incluido en el paquete');
+if (!build.files?.includes('shell/**') || !build.files?.includes('assets/**')) fail('faltan globs de interfaz/recursos'); else ok('recursos de interfaz y branding incluidos');
+if (fs.existsSync(path.join(root, 'build'))) fail('carpeta de recursos del instalador aún activa en raíz'); else ok('recursos del instalador archivados');
+const roots = fs.readdirSync(root).filter(x => /^RELEASE_NOTES_.*\.md$/i.test(x));
+if (roots.length !== 1 || roots[0] !== 'RELEASE_NOTES_6.2.1.md') fail('notas de versión actuales en raíz'); else ok('notas actuales separadas del historial');
+const activeRefs = ['package.json', 'README.md', 'CHANGELOG.md', 'shell/newtab.html', 'shell/splash.html'];
+for (const rel of activeRefs) {
+  const s = fs.readFileSync(path.join(root, rel), 'utf8');
+  if (/(Nova-Setup-|setup NSIS|instalador y paquete portable)/i.test(s) && rel !== 'CHANGELOG.md') fail(`referencia a setup en ${rel}`);
+}
+ok('documentación y metadatos activos coherentes');
+const index = fs.readFileSync(path.join(root, 'shell/index.html'), 'utf8');
+if (!index.includes('<script src="nova.js"></script>')) fail('loader de renderer no encontrado'); else ok('loader del renderer');
+const home = fs.readFileSync(path.join(root, 'shell/newtab.html'), 'utf8');
+if (!home.includes('Nova 6.2.1 · Portable Stability')) fail('versión de nueva pestaña incorrecta'); else ok('versión de interfaz');
+const all = [];
+(function walk(dir) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (['node_modules', '.git', 'dist'].includes(entry.name)) continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) walk(full); else all.push(path.relative(root, full));
+  }
+})(root);
+if (all.length < 50) fail(`inventario pequeño (${all.length} archivos)`); else ok(`inventario de ${all.length} archivos útiles`);
+if (process.exitCode) process.exit(1);

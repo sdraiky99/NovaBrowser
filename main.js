@@ -12,6 +12,8 @@ try {
 } catch (e) { console.warn('Nova updater unavailable:', e.message); }
 const APP_ID = 'com.nova.browser';
 app.setName('Nova');
+const { configurePortableUserData } = require('./portable-user-data.js');
+const portableDataStatus = configurePortableUserData(app, process.env);
 app.setAppUserModelId(APP_ID); // imprescindible en Windows: agrupa la ventana con el acceso directo y permite cambiar el icono de la barra de tareas
 // rendimiento: rasterizado por GPU y sin el cálculo de oclusión de Windows (evita tirones al volver a la ventana)
 app.commandLine.appendSwitch('enable-gpu-rasterization');
@@ -489,6 +491,7 @@ ipcMain.handle('default-browser', async (e, set) => {
   return { portable, isDefault: await isWinDefault() };
 });
 ipcMain.on('userdata', e => { if (denyUntrusted(e)) return; e.returnValue = app.getPath('userData'); });
+ipcMain.on('portable-data-status', e => { if (denyUntrusted(e)) return; e.returnValue = { ...portableDataStatus, path: app.getPath('userData') }; });
 ipcMain.handle('install-cfg', e => { if (denyUntrusted(e)) return {}; 
   try { return JSON.parse(fs.readFileSync(userFile('install.json'), 'utf8')); } catch { return {}; }
 });

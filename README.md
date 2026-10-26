@@ -1,38 +1,35 @@
-# Nova 6.2.0 — Precision Update
+# Nova 6.2.1 — Portable Stability Update
 
-Nova es un navegador de escritorio basado en Electron/Chromium. Nova 6 mantiene una interfaz híbrida y pule las funciones cotidianas: interfaz híbrida inspirada en la familiaridad de Chrome, identidad propia de Nova y un sistema visual compartido entre ventana, nueva pestaña, paneles, menús y ajustes.
+Nova es un navegador de escritorio basado en Electron/Chromium. La distribución actual de Nova se centra en **Windows portable, sin instalador**.
 
-## Principios de Nova 6
-La especificación completa de pantallas y criterios de aceptación está en [`docs/NOVA_6_DESIGN_SPEC.md`](docs/NOVA_6_DESIGN_SPEC.md).
+## Características
+- Interfaz propia, modo claro/oscuro y adaptación al sistema.
+- Pestañas, barra de direcciones y búsqueda integrada.
+- Nueva pestaña con buscador, accesos rápidos y noticias con estado de conexión honesto.
+- Panel lateral plegable, marcadores, historial, descargas y ajustes.
+- Carga de extensiones Chromium compatibles desde carpetas desempaquetadas; compatibilidad de APIs no universal.
+- Restauración opcional de sesión.
 
-- Interfaz equilibrada, clara y coherente; modo claro, oscuro y adaptación al sistema.
-- Pestañas y barra de direcciones familiares, con búsqueda funcional.
-- Nueva pestaña inspirada en Chrome con búsqueda, accesos rápidos y noticias visibles por defecto.
-- Panel lateral opcional y contraíble.
-- Conservación y auditoría de favoritos, historial, descargas, Workspaces, extensiones, privacidad y rendimiento.
-- Instalador y paquete portable con versión técnica válida `6.2.0`.
+## Portable y datos del usuario
+El único artefacto publicado para Windows es `Nova-Portable-6.2.1.exe`. No se genera setup. Extrae o copia ese ejecutable a la carpeta que prefieras y ejecútalo sin permisos de administrador (sujeto a las políticas del equipo).
 
-## Desarrollo
+En una compilación portable, Nova guarda por defecto los datos en `User Data/` junto al ejecutable. En el primer arranque intenta migrar el perfil antiguo de Nova si la carpeta aún está vacía. Si esa ubicación no permite escribir, Nova utiliza el perfil normal de Windows y deja un aviso en el log. Para poder mover el navegador entre equipos, mueve la carpeta `User Data/` junto al ejecutable y cierra Nova antes de copiarla.
+
+Haz una copia de seguridad de `User Data/` antes de sustituir el portable por una versión nueva. La actualización se realiza manualmente: cierra Nova, guarda la carpeta de datos, reemplaza el ejecutable y vuelve a abrirlo.
+
+## Desarrollo y pruebas
 Requiere Node.js 22.12.0 o superior.
 
 ```bash
 npm install
 npm run check
 npm start
+npm run dist:portable
 ```
 
-Compilar Windows: `npm run dist:win`. Compilar Linux: `npm run dist:linux`. Los artefactos previstos de Windows son `Nova-Setup-6.2.0.exe` y `Nova-Portable-6.2.0.exe`.
+`npm run dist:portable` genera `dist/Nova-Portable-6.2.1.exe`. `npm run dist` y `npm run dist:win` son alias de ese mismo comando portable. No hay flujo de compilación de setup.
 
-## Verificación
-`npm run check` ejecuta las comprobaciones de proyecto, sintaxis, pruebas de regresión y recursos de compilación. Este paquete no incluye `package-lock.json` porque el registro de npm no respondió durante su preparación; los flujos de GitHub Actions usan `npm install`. Cuando se genere un lockfile en un entorno con conexión, conviene revisarlo, incluirlo y cambiar CI a `npm ci`. Una comprobación estática no sustituye abrir y probar Nova en Windows: confirma navegación, temas, menús, panel lateral, noticias, datos existentes e instalación antes de distribuirla.
+`npm run check` ejecuta comprobaciones de estructura, sintaxis, pruebas de regresión y configuración portable. Las pruebas automáticas no sustituyen una prueba de arranque y navegación en Windows. No se incluye `package-lock.json`; cuando haya un entorno con conexión estable, conviene generarlo y cambiar CI a `npm ci`.
 
-## Datos y actualizaciones
-No elimines manualmente la carpeta de datos de Nova al actualizar. Haz una copia de seguridad antes de instalar compilaciones de prueba. Las limitaciones de compatibilidad de extensiones deben comunicarse claramente; estar disponible en Chrome Web Store no garantiza que una extensión pueda instalarse directamente en Nova.
-
-## Funciones de 6.2.0
-- Recuperación opcional de la última sesión (hasta 10 direcciones HTTP/HTTPS), configurable desde Ajustes.
-- Extensiones Chromium compatibles: cargar carpeta desempaquetada, ver permisos declarados, activar/desactivar y desinstalar, con estado persistente.
-- Accesos rápidos que rellenan espacios disponibles y tienen fallback de icono fiable.
-- Suite QA actualizada para los flujos críticos.
-
-Las extensiones dependen de las APIs disponibles en la versión de Electron utilizada. No se ofrece instalación universal directa desde Chrome Web Store.
+## Recursos históricos
+Los recursos de NSIS de versiones anteriores se conservan en `docs/history/installer-resources-6.2.0/` únicamente como archivo histórico. No se usan para compilar Nova 6.2.1.

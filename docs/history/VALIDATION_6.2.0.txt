@@ -1,0 +1,21 @@
+Nova 6.2.0 — Precision Update
+
+Comprobaciones ejecutadas en este entorno:
+- `npm run check`: PASS.
+- Inventario y archivos requeridos: PASS (86 archivos de proyecto).
+- Sintaxis JavaScript: PASS (17 archivos).
+- QA de estructura, temas, barras, nueva pestaña y bridge IPC simulado: PASS.
+- Resolución de dirección y búsqueda: PASS (12 casos).
+- Recursos SVG, icono de aplicación y dimensiones de recursos NSIS: PASS.
+- Presencia estática de los handlers de extensión real, estado activado/desactivado y restauración de sesión: PASS.
+
+No verificado en este entorno:
+- No se ejecutó la interfaz Electron ni se cargó interactivamente una extensión real.
+- No se pudo comprobar el feed RSS en directo porque el entorno no tiene resolución DNS / acceso de red.
+- No se compiló ni ejecutó el instalador Windows o el paquete portable.
+- Las extensiones se cargan desde carpetas desempaquetadas con `manifest.json`; compatibilidad API por API depende de Electron/Chromium. No se afirma que Chrome Web Store o CRX se instalen de forma universal.
+
+Compilación de Windows en un entorno compatible:
+  npm install
+  npm run check
+  npm run dist:win

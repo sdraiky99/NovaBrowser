@@ -128,7 +128,7 @@
 
 - TEC-01: `package.json` usa una versión semántica válida, ahora `6.0.0`.
 - TEC-02: `npm run check` termina correctamente en el entorno de preparación.
-- TEC-03: GitHub Actions valida la versión y espera `Nova-Setup-6.0.0.exe` y `Nova-Portable-6.0.0.exe` para Windows.
+- TEC-03 (actualizado en 6.2.1): GitHub Actions valida la versión y espera únicamente `Nova-Portable-6.2.1.exe` para Windows; no debe generar setup.
 - TEC-04: instalar dependencias y compilar se verifica en CI; este entorno no tiene acceso confirmado al registro npm.
 - TEC-05: instalar, actualizar, ejecutar y desinstalar se prueban en Windows; las pruebas estáticas no se consideran prueba de instalación.
 - TEC-06: la actualización conserva datos existentes y no borra el perfil durante la instalación.
