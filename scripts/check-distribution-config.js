@@ -1,0 +1,34 @@
+'use strict';
+const fs = require('node:fs');
+const path = require('node:path');
+const assert = require('node:assert/strict');
+const root = path.resolve(__dirname, '..');
+const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+const build = pkg.build || {};
+assert.equal(pkg.version, '6.2.2', 'La versión debe ser 6.2.2.');
+assert.deepEqual(build.win?.target, ['nsis', 'portable'], 'Windows debe declarar Setup y Portable.');
+assert.equal(build.nsis?.oneClick, false, 'Setup debe usar instalador asistido.');
+assert.equal(build.nsis?.perMachine, false, 'Setup debe instalar por usuario.');
+assert.equal(build.nsis?.allowElevation, false, 'Setup no debe solicitar elevación.');
+assert.equal(build.nsis?.allowToChangeInstallationDirectory, false, 'Setup debe mantener su ruta segura de usuario.');
+assert.equal(build.nsis?.artifactName, 'Nova-Setup-${version}.${ext}', 'Nombre de Setup incorrecto.');
+assert.equal(build.portable?.artifactName, 'Nova-Portable-${version}.exe', 'Nombre Portable incorrecto.');
+assert.equal(pkg.scripts['dist:setup'], 'electron-builder --win nsis --publish never -c.directories.output=dist/setup');
+assert.equal(pkg.scripts['dist:portable'], 'electron-builder --win portable --publish never -c.directories.output=dist/portable');
+assert.equal(pkg.scripts['dist:win'], 'npm run dist:setup && npm run dist:portable');
+assert.ok(pkg.scripts['dist:setup'].includes('-c.directories.output=dist/setup'), 'Setup debe usar una carpeta de salida independiente.');
+assert.ok(pkg.scripts['dist:portable'].includes('-c.directories.output=dist/portable'), 'Portable debe usar una carpeta de salida independiente.');
+assert.equal(pkg.scripts['check:distribution-config'], 'node scripts/check-distribution-config.js');
+for (const name of ['.github/workflows/build.yml', '.github/workflows/release.yml']) {
+  const content = fs.readFileSync(path.join(root, name), 'utf8');
+  assert.ok(content.includes('npm run dist:setup'), `${name} debe compilar Setup.`);
+  assert.ok(content.includes('npm run dist:portable'), `${name} debe compilar Portable.`);
+  assert.ok(content.includes('Nova-Setup-${VERSION}.exe'), `${name} debe verificar Setup.`);
+  assert.ok(content.includes('Nova-Portable-${VERSION}.exe'), `${name} debe verificar Portable.`);
+  assert.ok(!content.includes('p.build.nsis.include'), `${name} no debe modificar propiedades NSIS dinámicamente.`);
+  assert.ok(!content.includes('fs.writeFileSync("package.json"'), `${name} no debe mutar package.json.`);
+}
+assert.ok(build.files.includes('portable-user-data.js'));
+assert.ok(build.files.includes('migration.js'));
+assert.ok(build.files.includes('permission-policy.js'));
+console.log('DISTRIBUTION CONFIG OK: Nova 6.2.2, NSIS per-user + Portable, workflows sin mutación de package.json.');

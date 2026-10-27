@@ -79,8 +79,9 @@ function clearDirectoryContents(dir, fs = fsDefault, path = pathDefault) {
  * Configure storage before any BrowserWindow or persistent session is created.
  * In portable builds data lives next to the launcher in `User Data`; if the
  * directory cannot be written, Nova keeps using Electron's normal userData.
- * The first portable launch migrates an existing Nova profile if the target is
- * empty. Chromium cache/lock files are deliberately not copied.
+ * Portable and Setup profiles are independent by default. Importing the installed
+ * profile is opt-in via NOVA_IMPORT_EXISTING_PROFILE=1. Chromium cache/lock files
+ * are deliberately not copied.
  */
 function configurePortableUserData(app, env = process.env, deps = {}) {
   const fs = deps.fs || fsDefault;
@@ -109,7 +110,7 @@ function configurePortableUserData(app, env = process.env, deps = {}) {
   try {
     probeWritable(target, fs);
     let migrated = false;
-    if (wasEmpty) {
+    if (wasEmpty && env.NOVA_IMPORT_EXISTING_PROFILE === '1') {
       try {
         migrated = copyProfileTree(defaultUserData, target, fs, path) || migrated;
         if (defaultSessionData && path.resolve(defaultSessionData) !== path.resolve(defaultUserData)) {
@@ -119,7 +120,7 @@ function configurePortableUserData(app, env = process.env, deps = {}) {
         // Never boot a partially migrated profile: empty it and safely use the
         // original profile. The next portable launch can retry migration.
         clearDirectoryContents(target, fs, path);
-        throw new Error(`No se pudo migrar el perfil existente: ${error.message}`);
+        throw new Error(`No se pudo importar el perfil existente: ${error.message}`);
       }
     }
     app.setPath('userData', target);

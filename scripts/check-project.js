@@ -1,51 +1,35 @@
+#!/usr/bin/env node
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
-const fail = message => { console.error('FAIL', message); process.exitCode = 1; };
+const failures = [];
 const ok = message => console.log('OK', message);
-if (pkg.version !== '6.2.1') fail(`version ${pkg.version}`); else ok('versión 6.2.1');
+const fail = message => failures.push(message);
+if (pkg.version !== '6.2.2') fail(`versión de package.json incorrecta: ${pkg.version}`); else ok('versión 6.2.2');
 const required = [
-  'main.js', 'portable-user-data.js', 'migration.js', 'account-service.js', 'account-server/server.js',
-  'shell/index.html', 'shell/newtab.html', 'shell/splash.html', 'shell/newtab-preload.js',
-  'shell/navigation.js', 'shell/nova.js', 'shell/nova.css', 'shell/extensions.js',
-  'assets/brand/nova-icon.png', 'assets/brand/nova.ico', 'assets/icons/plus.svg',
-  'scripts/qa-6.2.1.js', 'scripts/check-syntax-all.js', 'scripts/check-portable-config.js', '.github/workflows/build.yml',
-  '.github/workflows/release.yml', 'RELEASE_NOTES_6.2.1.md', 'VALIDATION_6.2.1.txt',
-  'docs/history/RELEASE_NOTES_6.2.0.md', 'docs/history/installer-resources-6.2.0/README.md'
+  'main.js','portable-user-data.js','migration.js','permission-policy.js','account-service.js','account-server/server.js',
+  'shell/index.html','shell/newtab.html','shell/splash.html','shell/newtab-preload.js','shell/navigation.js','shell/nova.js','shell/nova.css','shell/extensions.js',
+  'assets/brand/nova-icon.png','assets/brand/nova.ico','assets/icons/plus.svg','assets/icons/settings.svg',
+  'scripts/qa-6.2.2.js','scripts/check-syntax-all.js','scripts/check-distribution-config.js','.github/workflows/build.yml','.github/workflows/release.yml',
+  'RELEASE_NOTES_6.2.2.md','VALIDATION_6.2.2.txt','docs/history/RELEASE_NOTES_6.2.0.md'
 ];
-for (const rel of required) {
-  if (!fs.existsSync(path.join(root, rel))) fail(`falta ${rel}`); else ok(`archivo ${rel}`);
-}
-const build = pkg.build || {};
-if (JSON.stringify(build.win?.target) !== JSON.stringify(['portable'])) fail('Windows debe tener únicamente el target portable'); else ok('target Windows solo portable');
-if (build.nsis || pkg.nsis) fail('no debe existir configuración activa NSIS'); else ok('sin configuración NSIS activa');
-if (pkg.scripts['dist:linux']) fail('no debe existir un flujo de distribución adicional'); else ok('distribución limitada al portable Windows');
-if (build.portable?.artifactName !== 'Nova-Portable-${version}.exe') fail('nombre de artefacto portable incorrecto'); else ok('nombre de artefacto portable coherente');
-if (!build.files?.includes('portable-user-data.js')) fail('portable-user-data.js no está empaquetado'); else ok('gestor de perfil incluido en el paquete');
-if (!build.files?.includes('shell/**') || !build.files?.includes('assets/**')) fail('faltan globs de interfaz/recursos'); else ok('recursos de interfaz y branding incluidos');
-if (pkg.scripts['check:portable-config'] !== 'node scripts/check-portable-config.js') fail('falta comprobación de configuración portable'); else ok('comprobación preflight portable configurada');
-if (fs.existsSync(path.join(root, 'build'))) fail('carpeta de recursos del instalador aún activa en raíz'); else ok('recursos del instalador archivados');
-const roots = fs.readdirSync(root).filter(x => /^RELEASE_NOTES_.*\.md$/i.test(x));
-if (roots.length !== 1 || roots[0] !== 'RELEASE_NOTES_6.2.1.md') fail('notas de versión actuales en raíz'); else ok('notas actuales separadas del historial');
-const activeRefs = ['package.json', 'README.md', 'CHANGELOG.md', 'shell/newtab.html', 'shell/splash.html'];
-for (const rel of activeRefs) {
-  const s = fs.readFileSync(path.join(root, rel), 'utf8');
-  if (/(Nova-Setup-|setup NSIS|instalador y paquete portable)/i.test(s) && rel !== 'CHANGELOG.md') fail(`referencia a setup en ${rel}`);
-}
-ok('documentación y metadatos activos coherentes');
-const index = fs.readFileSync(path.join(root, 'shell/index.html'), 'utf8');
-if (!index.includes('<script src="nova.js"></script>')) fail('loader de renderer no encontrado'); else ok('loader del renderer');
+for (const rel of required) { if (!fs.existsSync(path.join(root, rel))) fail(`falta ${rel}`); else ok(`archivo ${rel}`); }
+if (pkg.scripts['dist:setup'] !== 'electron-builder --win nsis --publish never -c.directories.output=dist/setup') fail('script dist:setup incorrecto');
+if (pkg.scripts['dist:portable'] !== 'electron-builder --win portable --publish never -c.directories.output=dist/portable') fail('script dist:portable incorrecto');
+if (pkg.scripts['check'] !== 'npm run check:distribution-config && npm run check:project && npm run check:syntax && npm run qa:6.2.2 && npm run check:build-assets') fail('el pipeline de check no ejecuta todas las verificaciones 6.2.2');
+if (!pkg.build?.files?.includes('shell/**') || !pkg.build?.files?.includes('assets/**') || !pkg.build?.files?.includes('portable-user-data.js') || !pkg.build?.files?.includes('migration.js') || !pkg.build?.files?.includes('permission-policy.js')) fail('faltan recursos de ejecución en build.files'); else ok('archivos de ejecución y recursos incluidos');
+if (pkg.build?.files?.some(x => x === 'docs/**' || x === 'scripts/**')) fail('documentación/QA no debe empaquetarse como código de ejecución'); else ok('carpeta histórica y scripts QA fuera del paquete runtime');
+if (!pkg.build?.nsis || pkg.build.nsis.perMachine !== false || pkg.build.nsis.allowElevation !== false) fail('NSIS no está configurado para instalación por usuario sin elevación'); else ok('NSIS por usuario sin elevación');
+if (fs.existsSync(path.join(root, 'build'))) fail('carpeta build histórica activa en raíz'); else ok('recursos antiguos NSIS no se consumen accidentalmente');
+const releaseNotes = fs.readdirSync(root).filter(x => /^RELEASE_NOTES_.*\.md$/i.test(x));
+if (releaseNotes.length !== 1 || releaseNotes[0] !== 'RELEASE_NOTES_6.2.2.md') fail('las notas de versión actuales en raíz no están aisladas'); else ok('notas activas correctas; el historial queda en docs/history');
 const home = fs.readFileSync(path.join(root, 'shell/newtab.html'), 'utf8');
-if (!home.includes('Nova 6.2.1 · Portable Stability')) fail('versión de nueva pestaña incorrecta'); else ok('versión de interfaz');
-const all = [];
-(function walk(dir) {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (['node_modules', '.git', 'dist'].includes(entry.name)) continue;
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) walk(full); else all.push(path.relative(root, full));
-  }
-})(root);
-if (all.length < 50) fail(`inventario pequeño (${all.length} archivos)`); else ok(`inventario de ${all.length} archivos útiles`);
-if (process.exitCode) process.exit(1);
+if (!home.includes('Nova 6.2.2 · Next Evolution')) fail('pie de nueva pestaña no muestra 6.2.2');
+if (!home.includes('id="newsSection"') || !home.includes('state.showNews!==false')) fail('control de noticias desactivables no está integrado'); else ok('nueva pestaña admite ocultar noticias');
+const ui = fs.readFileSync(path.join(root, 'shell/nova.js'), 'utf8');
+for (const [needle, label] of [["id=\"newsToggle\"",'control de noticias'],['Crear / asignar grupo','grupos de pestañas'],['permission-sites-list','permisos por sitio'],['migration-scan','importación de perfiles'],['detailed-download','gestor de descargas']]) {
+  if (!ui.includes(needle)) fail(`falta la implementación de ${label}`); else ok(`${label} integrado`);
+}
+if (failures.length) { for (const message of failures) console.error('FAIL', message); process.exit(1); }

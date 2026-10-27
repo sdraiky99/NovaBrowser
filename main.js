@@ -13,6 +13,7 @@ try {
 const APP_ID = 'com.nova.browser';
 app.setName('Nova');
 const { configurePortableUserData } = require('./portable-user-data.js');
+const { normalizeHttpOrigin, isHttpOrigin, permissionKeysForRequest, permissionDecision, permissionRequestLabel } = require('./permission-policy.js');
 const portableDataStatus = configurePortableUserData(app, process.env);
 app.setAppUserModelId(APP_ID); // imprescindible en Windows: agrupa la ventana con el acceso directo y permite cambiar el icono de la barra de tareas
 // rendimiento: rasterizado por GPU y sin el cálculo de oclusión de Windows (evita tirones al volver a la ventana)
@@ -62,6 +63,35 @@ const applyExt = (wc, ids) => {
 const web = () => session.fromPartition('persist:web'); // datos de navegación aislados de la interfaz de Nova
 
 const userFile = (...p) => path.join(app.getPath('userData'), ...p);
+const SITE_PERMISSION_KEYS = new Set(['cam','mic','geo','notif']);
+const SITE_PERMISSION_VALUES = new Set(['ask','allow','block']);
+const sitePermissionsFile = () => userFile('site-permissions.json');
+function readSitePermissions() {
+  try {
+    const data = JSON.parse(fs.readFileSync(sitePermissionsFile(), 'utf8'));
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return {};
+    const out = {};
+    for (const [host, entries] of Object.entries(data)) {
+      const origin = normalizeHttpOrigin(host);
+      if (!origin || origin !== host.toLowerCase() || !entries || typeof entries !== 'object' || Array.isArray(entries)) continue;
+      const safe = {};
+      for (const [key, value] of Object.entries(entries)) if (SITE_PERMISSION_KEYS.has(key) && ['allow','block'].includes(value)) safe[key] = value;
+      if (Object.keys(safe).length) out[origin] = safe;
+    }
+    return out;
+  } catch { return {}; }
+}
+function writeSitePermissions(value) {
+  try { atomicWrite(sitePermissionsFile(), JSON.stringify(value)); return true; }
+  catch (error) { console.warn('Nova could not save site permissions:', error?.message); return false; }
+}
+function hostFromPermissionRequest(details, wc) {
+  try {
+    const raw = details?.requestingUrl || details?.securityOrigin || wc?.getURL?.() || '';
+    const url = new URL(raw);
+    return normalizeHttpOrigin(url.href);
+  } catch { return ''; }
+}
 
 let blockerP = null, blockOn = null, blockerAt = 0, blockerRefreshBusy = false;
 const AD_CACHE = () => userFile('adblock-2.18.bin');
@@ -343,18 +373,63 @@ app.whenReady().then(() => {
     const it = dlMap.get(id), s = dlSend.get(id); if (!it) return;
     if (a === 'pause') { it.pause(); s('paused', true); } if (a === 'resume') { it.resume(); s('progressing', true); } if (a === 'cancel') it.cancel();
   });
-  // permisos de sitios: cámara, micrófono, ubicación, notificaciones
+  // Permisos por sitio: la decisión explícita se guarda por origen web y por tipo.
   let perms = { cam: 'ask', mic: 'ask', geo: 'ask', notif: 'ask' };
-  ipcMain.on('perm-policy', (e, p) => { if (denyUntrusted(e) || !p || typeof p !== 'object') return; const clean = {}; for (const k of ['cam','mic','geo','notif']) if (['ask','allow','block'].includes(p[k])) clean[k] = p[k]; perms = Object.assign(perms, clean); });
-  const PK = (perm, d) => perm === 'media' ? ((d.mediaTypes || []).includes('video') ? 'cam' : 'mic') : perm === 'geolocation' ? 'geo' : perm === 'notifications' ? 'notif' : null;
-  const LBL = { cam: 'la cámara', mic: 'el micrófono', geo: 'tu ubicación', notif: 'enviar notificaciones' }, SAFE = ['fullscreen', 'clipboard-sanitized-write', 'pointerLock'];
-  web().setPermissionRequestHandler((wc, perm, cb, d) => {
-    const k = PK(perm, d); if (!k) return cb(SAFE.includes(perm));
-    if (perms[k] === 'allow') return cb(true); if (perms[k] === 'block') return cb(false);
-    let host = ''; try { host = new URL(d.requestingUrl).hostname; } catch { }
-    dialog.showMessageBox(win, { type: 'question', buttons: ['Permitir', 'Bloquear'], defaultId: 1, cancelId: 1, title: 'Permiso del sitio', message: `${host || 'Un sitio'} quiere usar ${LBL[k]}` }).then(r => cb(r.response === 0));
+  ipcMain.on('perm-policy', (e, p) => { if (denyUntrusted(e) || !p || typeof p !== 'object') return; const clean = {}; for (const k of SITE_PERMISSION_KEYS) if (SITE_PERMISSION_VALUES.has(p[k])) clean[k] = p[k]; perms = Object.assign(perms, clean); });
+  const SAFE = ['fullscreen', 'clipboard-sanitized-write', 'pointerLock'];
+  ipcMain.handle('permission-sites-list', e => {
+    if (denyUntrusted(e)) return [];
+    return Object.entries(readSitePermissions()).map(([host, permissions]) => ({ host, permissions })).sort((a,b)=>a.host.localeCompare(b.host));
   });
-  web().setPermissionCheckHandler((wc, perm) => SAFE.includes(perm));
+  ipcMain.handle('permission-site-set', (e, payload) => {
+    if (denyUntrusted(e) || !payload || typeof payload !== 'object') return {ok:false,error:'Solicitud no válida.'};
+    const host=normalizeHttpOrigin(payload.host), key=String(payload.key||''), value=String(payload.value||'');
+    if(!isHttpOrigin(payload.host)||!host||!SITE_PERMISSION_KEYS.has(key)||!SITE_PERMISSION_VALUES.has(value)) return {ok:false,error:'Permiso no válido.'};
+    const all=readSitePermissions();all[host]=all[host]||{};
+    if(value==='ask') delete all[host][key]; else all[host][key]=value;
+    if(!Object.keys(all[host]).length) delete all[host];
+    return writeSitePermissions(all)?{ok:true}:{ok:false,error:'No se pudieron guardar los permisos.'};
+  });
+  ipcMain.handle('permission-site-reset', (e, rawHost) => {
+    if (denyUntrusted(e) || !isHttpOrigin(rawHost)) return false;
+    const all=readSitePermissions();delete all[normalizeHttpOrigin(rawHost)];return writeSitePermissions(all);
+  });
+  web().setPermissionRequestHandler((wc, perm, cb, d) => {
+    if (SAFE.includes(perm)) return cb(true);
+    const keys = permissionKeysForRequest(perm, d);
+    if (!keys.length) return cb(false);
+    const host = hostFromPermissionRequest(d, wc);
+    if (!host) return cb(false);
+    const site = readSitePermissions();
+    const decision = permissionDecision(keys, host, site, perms);
+    if (decision === 'allow') return cb(true);
+    if (decision === 'block') return cb(false);
+    const requestedLabel = permissionRequestLabel(keys);
+    dialog.showMessageBox(win, {
+      type: 'question',
+      buttons: ['Permitir siempre', 'Bloquear siempre', 'Ahora no'],
+      defaultId: 2,
+      cancelId: 2,
+      title: 'Permiso del sitio',
+      message: `${host} quiere usar ${requestedLabel}.`
+    }).then(result => {
+      if (result.response === 0 || result.response === 1) {
+        const all = readSitePermissions();
+        all[host] = all[host] || {};
+        for (const key of keys) all[host][key] = result.response === 0 ? 'allow' : 'block';
+        writeSitePermissions(all);
+      }
+      cb(result.response === 0);
+    }).catch(() => cb(false));
+  });
+  web().setPermissionCheckHandler((wc, perm, origin, details) => {
+    if (SAFE.includes(perm)) return true;
+    const keys = permissionKeysForRequest(perm, details);
+    if (!keys.length) return false;
+    const host = hostFromPermissionRequest({ requestingUrl: origin || details?.requestingUrl }, wc);
+    if (!host) return false;
+    return permissionDecision(keys, host, readSitePermissions(), perms) === 'allow';
+  });
   app.on('web-contents-created', (_, c) => {
     if (c.getType() === 'window') {
       c.on('will-attach-webview', (e, wp, params) => {
@@ -728,7 +803,10 @@ const newsCache = new Map();
 const NEWS_SOURCES = [
   { name: 'Ars Technica', url: 'https://feeds.arstechnica.com/arstechnica/index', site: 'https://arstechnica.com/', topics:['tecnologia','codigo'] },
   { name: 'Ars Technica Gaming', url: 'https://feeds.arstechnica.com/arstechnica/gaming', site: 'https://arstechnica.com/gaming/', topics:['videojuegos'] },
-  { name: 'The Guardian Technology', url: 'https://www.theguardian.com/technology/rss', site: 'https://www.theguardian.com/technology', topics:['tecnologia','codigo'] }
+  { name: 'The Guardian Technology', url: 'https://www.theguardian.com/technology/rss', site: 'https://www.theguardian.com/technology', topics:['tecnologia','codigo'] },
+  { name: 'The Verge', url: 'https://www.theverge.com/rss/index.xml', site: 'https://www.theverge.com/', topics:['tecnologia','codigo'] },
+  { name: 'Engadget', url: 'https://www.engadget.com/rss.xml', site: 'https://www.engadget.com/', topics:['tecnologia'] },
+  { name: 'PC Gamer', url: 'https://www.pcgamer.com/rss/', site: 'https://www.pcgamer.com/', topics:['videojuegos','codigo'] }
 ];
 const NEWS_FALLBACK = []; // Nunca presentar contenido editorial de ejemplo como si fueran noticias reales.
 const NEWS_LIVE_CACHE = () => userFile('news-live-cache.json');

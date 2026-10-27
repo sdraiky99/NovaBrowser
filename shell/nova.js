@@ -7,13 +7,13 @@ const { resolveNavigation } = require('./navigation.js');
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ACCENT_COLORS = ['#3f6df6', '#6f55df', '#188038', '#d56d12', '#c5221f'];
-const APP_VERSION = ipc.sendSync('app-version') || '6.2.1';
+const APP_VERSION = ipc.sendSync('app-version') || '6.2.2';
 let mainPrefs = ipc.sendSync('prefs-get') || {};
 const DEFAULT_STATE = {
   appearance: 'system', accent: '#3f6df6', search: 'https://www.google.com/search?q=',
   sidebarOpen: false, sidebarVisible: true, adblock: true, animations: true, energy: false,
   bookmarks: [], history: [], downloads: [], workspaces: [], currentWorkspace: '',
-  firstRun: true, showTourOnStart: true, toolbarWallpaper: '', restoreSession: true, sessionTabs: [], sessionActiveUrl: ''
+  firstRun: true, showTourOnStart: true, toolbarWallpaper: '', showNews: true, restoreSession: true, sessionTabs: [], sessionActiveUrl: ''
 };
 let state = loadState();
 let tabs = [], activeTab = null, internalView = null, closedTabs = [], omniboxTimer = null;
@@ -27,9 +27,10 @@ function loadState() {
   const history=Array.isArray(raw.history)?raw.history.filter(x=>x&&typeof x.url==='string'&&/^https?:/i.test(x.url)).slice(0,300).map(x=>({url:x.url,title:String(x.title||x.url).slice(0,200),ts:Number(x.ts)||Date.now()})):[];
   const workspaces=Array.isArray(raw.workspaces)?raw.workspaces.filter(x=>x&&typeof x.name==='string'&&Array.isArray(x.tabs)).slice(0,20).map(x=>({name:x.name.slice(0,40),tabs:x.tabs.filter(u=>typeof u==='string'&&(/^https?:/i.test(u)||isNewTabUrl(u))).slice(0,50)})):[];
   const toolbarWallpaper = typeof raw.toolbarWallpaper === 'string' ? raw.toolbarWallpaper : '';
-  const sessionTabs = Array.isArray(raw.sessionTabs) ? raw.sessionTabs.filter(x => typeof x === 'string' && /^https?:\/\//i.test(x)).slice(-10) : [];
+  const sessionTabs = Array.isArray(raw.sessionTabs) ? raw.sessionTabs.slice(-10).map(x => { const url = typeof x === 'string' ? x : String(x?.url || ''); return /^https?:\/\//i.test(url) ? { url, group: String(typeof x === 'object' && x ? x.group || '' : '').slice(0, 32) } : null; }).filter(Boolean) : [];
   const sessionActiveUrl = typeof raw.sessionActiveUrl === 'string' && /^https?:\/\//i.test(raw.sessionActiveUrl) ? raw.sessionActiveUrl : '';
-  return {...DEFAULT_STATE, appearance:ap, accent, search, bookmarks, history, workspaces, toolbarWallpaper, restoreSession:raw.restoreSession!==false, sessionTabs, sessionActiveUrl, sidebarOpen:!!raw.sidebarOpen, sidebarVisible:raw.sidebarVisible!==false, adblock:raw.adblock!==false, animations:raw.animations!==false, energy:!!raw.energy, firstRun:raw.firstRun!==false, showTourOnStart:raw.showTourOnStart!==false};
+  const downloads = Array.isArray(raw.downloads) ? raw.downloads.slice(0, 100).filter(x => x && typeof x === 'object').map(x => ({ id: null, name: String(x.name || 'archivo').slice(0, 250), path: String(x.path || '').slice(0, 2000), state: ['done','completed'].includes(x.state) ? 'done' : ['cancelled','interrupted','paused','progressing'].includes(x.state) ? (x.state === 'progressing' ? 'interrupted' : x.state) : String(x.state || 'interrupted'), recv: Number(x.recv) || 0, total: Number(x.total) || 0, ts: Number(x.ts) || Date.now() })) : [];
+  return {...DEFAULT_STATE, appearance:ap, accent, search, bookmarks, history, workspaces, downloads, toolbarWallpaper, showNews:raw.showNews!==false, restoreSession:raw.restoreSession!==false, sessionTabs, sessionActiveUrl, sidebarOpen:!!raw.sidebarOpen, sidebarVisible:raw.sidebarVisible!==false, adblock:raw.adblock!==false, animations:raw.animations!==false, energy:!!raw.energy, firstRun:raw.firstRun!==false, showTourOnStart:raw.showTourOnStart!==false};
 }
 function saveState() {
   try { localStorage.setItem('nova-state', JSON.stringify(state)); } catch {}
@@ -38,7 +39,7 @@ let restoringSession = false;
 function persistSession() {
   if (restoringSession) return;
   if (!state.restoreSession) { state.sessionTabs=[]; state.sessionActiveUrl=''; saveState(); return; }
-  const urls = tabs.map(t => getTabUrl(t)).filter(u => typeof u === 'string' && /^https?:\/\//i.test(u));
+  const urls = tabs.map(t => ({ url: getTabUrl(t), group: String(t.group || '').slice(0, 32) })).filter(x => typeof x.url === 'string' && /^https?:\/\//i.test(x.url));
   state.sessionTabs = urls.slice(-10);
   const activeUrl = activeTab ? getTabUrl(activeTab) : '';
   state.sessionActiveUrl = /^https?:\/\//i.test(activeUrl) ? activeUrl : '';
@@ -106,7 +107,7 @@ function loadTabUrl(t, target) {
 }
 function newTabUrl() {
   const file = pathToFileURL(path.join(__dirname, 'newtab.html'));
-  const qp = new URLSearchParams({ state: JSON.stringify({ appearance:state.appearance, accent:state.accent, search:state.search, bookmarks:state.bookmarks.slice(0,20) }) });
+  const qp = new URLSearchParams({ state: JSON.stringify({ appearance:state.appearance, accent:state.accent, search:state.search, bookmarks:state.bookmarks.slice(0,20), showNews:state.showNews }) });
   return `${file.href}?${qp.toString()}`;
 }
 function isNewTabUrl(url) { return typeof url === 'string' && url.split(/[?#]/, 1)[0] === pathToFileURL(path.join(__dirname, 'newtab.html')).href; }
@@ -120,7 +121,7 @@ const SIDEBAR_ICONS=['home','star','grid','download','extensions','bolt','settin
 function mkButton(cls, label, title, extra='') { return `<button class="${cls}" title="${esc(title || label)}" ${extra}>${label}</button>`; }
 
 function renderTab(t) {
-  t.el.innerHTML = `<img class="tab-fav" src="../assets/brand/nova-icon.png" alt=""><span class="tab-title">${esc(t.title || 'Nueva pestaña')}</span><button class="icon-btn tab-close" title="Cerrar">${iconSvg('close')}</button>`;
+  t.el.innerHTML = `<img class="tab-fav" src="../assets/brand/nova-icon.png" alt=""><span class="tab-title">${esc(t.title || 'Nueva pestaña')}</span>${t.group ? `<span class="tab-group-badge" title="Grupo: ${esc(t.group)}">${esc(t.group)}</span>` : ''}<button class="icon-btn tab-close" title="Cerrar">${iconSvg('close')}</button>`;
   const close = t.el.querySelector('.tab-close'); close.onclick = e => { e.stopPropagation(); closeTab(t); };
   t.el.onclick = () => selectTab(t);
   t.el.oncontextmenu = e => { e.preventDefault(); e.stopPropagation(); showTabMenu(t); };
@@ -147,9 +148,9 @@ function refreshTabIcon(t) {
       }).catch(() => {});
   } catch { }
 }
-function createTab(url) {
+function createTab(url, group = '') {
   const target = safeUrl(url || newTabUrl()) || newTabUrl();
-  const t = { id: crypto.randomUUID?.() || String(Date.now() + Math.random()), title: 'Nueva pestaña', wv: null, el: null };
+  const t = { id: crypto.randomUUID?.() || String(Date.now() + Math.random()), title: 'Nueva pestaña', group: String(group || '').trim().slice(0, 32), wv: null, el: null };
   t.el = document.createElement('div');
   t.el.className = 'tab';
   t.wv = document.createElement('webview');
@@ -202,7 +203,7 @@ function createTab(url) {
   persistSession();
   return t;
 }
-function newTab(url) { return createTab(url || undefined); }
+function newTab(url, group = '') { return createTab(url || undefined, group); }
 function selectTab(t) {
   if (!t) return;
   // Volver a la pestaña web elimina la vista interna anterior; dejarla en el DOM
@@ -260,10 +261,11 @@ function toggleBookmark(){if(!activeTab)return;const u=getTabUrl(activeTab);if(!
 function refreshAllNewTabs(){tabs.filter(t=>isNewTabUrl(getTabUrl(t))).forEach(t=>{const u=newTabUrl();loadTabUrl(t,u).catch(err=>{console.error('No se pudo actualizar la nueva pestaña:',err?.message||err);})})}
 function applyBuiltinsToTab(t){const enabled=mainPrefs.ext||{};for(const x of CATALOG){if(enabled[x.id]){try{t.wv.executeJavaScript(require('./extensions.js').on(x.id))}catch{}}}}
 
-function duplicateTab(t){ if(!t)return; const u=getTabUrl(t); if(u)newTab(u); }
+function duplicateTab(t){ if(!t)return; const u=getTabUrl(t); if(u)newTab(u, t.group || ''); }
+function setTabGroup(t){ if(!t)return; const value=prompt('Nombre del grupo de pestañas (deja vacío para quitarlo)', t.group || 'Trabajo'); if(value===null)return; t.group=String(value).trim().slice(0,32); renderTab(t); persistSession(); toast(t.group?`Pestaña añadida al grupo «${t.group}»`:'Grupo quitado de la pestaña'); }
 function reopenClosedTab(){ const last=closedTabs.shift(); if(!last){toast('No hay pestañas cerradas para reabrir');return;} newTab(last.url); }
 function showTabMenu(t){
-  const items=[['Duplicar pestaña',()=>duplicateTab(t)],['Silenciar pestaña',()=>{try{t.wv.setAudioMuted(!t.wv.isAudioMuted());toast(t.wv.isAudioMuted()?'Pestaña silenciada':'Sonido activado')}catch{toast('Esta pestaña no permite controlar el audio')}}],['Fijar pestaña',()=>{t.pinned=!t.pinned; t.el.classList.toggle('pinned',!!t.pinned);toast(t.pinned?'Pestaña fijada':'Pestaña liberada')}],['Cerrar pestaña',()=>closeTab(t)],['Cerrar las demás',()=>tabs.slice().filter(x=>x!==t).forEach(x=>closeTab(x))]];
+  const items=[['Duplicar pestaña',()=>duplicateTab(t)],['Crear / asignar grupo',()=>setTabGroup(t)],...(t.group?[['Quitar del grupo',()=>{t.group='';renderTab(t);persistSession();toast('Pestaña sin grupo')}]]:[]),['Silenciar pestaña',()=>{try{t.wv.setAudioMuted(!t.wv.isAudioMuted());toast(t.wv.isAudioMuted()?'Pestaña silenciada':'Sonido activado')}catch{toast('Esta pestaña no permite controlar el audio')}}],['Fijar pestaña',()=>{t.pinned=!t.pinned; t.el.classList.toggle('pinned',!!t.pinned);toast(t.pinned?'Pestaña fijada':'Pestaña liberada')}],['Cerrar pestaña',()=>closeTab(t)],['Cerrar las demás',()=>tabs.slice().filter(x=>x!==t).forEach(x=>closeTab(x))]];
   showDrawer('Pestaña',items.map((x,i)=>`<button class="menu-item" data-tabmenu="${i}"><span>${esc(x[0])}</span><span class="muted">›</span></button>`).join(''));
   document.querySelectorAll('[data-tabmenu]').forEach(b=>b.onclick=()=>{const a=items[+b.dataset.tabmenu];hideDrawer();a&&a[1]()});
 }
@@ -310,7 +312,7 @@ function renderInternal(r, view){
   }
   if(view==='workspaces'){renderWorkspaces(r);return;}
   if(view==='history'){const groups={};state.history.forEach(x=>{const d=new Date(x.ts||Date.now()).toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});(groups[d]??=[]).push(x)});r.innerHTML=panelHeader('Historial','Tus páginas recientes, organizadas por día y con búsqueda rápida.')+`<div class="section-card"><div class="row"><input class="field" id="historySearch" placeholder="Buscar en historial…"><button class="btn" id="clearHistory">Limpiar</button></div></div><div id="historyList"></div>`;const list=r.querySelector('#historyList');const paint=q=>{q=String(q||'').toLowerCase();const rows=Object.entries(groups).map(([d,items])=>`<div class="section-card"><h2>${esc(d)}</h2>${items.filter(x=>!q||String(x.title+' '+x.url).toLowerCase().includes(q)).map(x=>`<div class="bookmark-item"><img class="ext-icon" src="${esc(getFavicon(x.url))}" onerror="this.src='../assets/brand/nova-icon.png'" alt=""><div class="stack"><strong>${esc(x.title||x.url)}</strong><small class="truncate">${esc(x.url)}</small></div><button class="btn" data-hu="${esc(x.url)}">Abrir</button></div>`).join('')}</div>`).join('');list.innerHTML=rows||'<div class="empty">No hay resultados.</div>';list.querySelectorAll('[data-hu]').forEach(b=>b.onclick=()=>navigate(b.dataset.hu))};paint('');r.querySelector('#historySearch').oninput=e=>paint(e.target.value);r.querySelector('#clearHistory').onclick=()=>{if(!state.history.length){toast('El historial ya está vacío');return;}state.history=[];saveState();renderInternal(r,view);toast('Historial limpiado')};return;}
-  if(view==='downloads'){r.innerHTML=panelHeader('Descargas','Archivos de la sesión y acceso a la carpeta de descargas.')+`<div class="section-card"><div class="row"><div><strong>Carpeta de descargas</strong><div class="sub">Abre la carpeta configurada por el sistema.</div></div><button class="btn primary" id="openDownloads">Abrir carpeta</button></div></div><div class="section-card">${state.downloads.length?state.downloads.map((x,i)=>`<div class="download-item"><div class="ext-icon">${iconSvg('download')}</div><div class="stack"><strong>${esc(x.name)}</strong><small class="truncate">${esc(x.path||x.state)}</small></div>${x.path?`<button class="btn" data-showdl="${i}">Mostrar</button>`:''}</div>`).join(''):'<div class="empty">Todavía no hay descargas en esta sesión.</div>'}</div>`;r.querySelector('#openDownloads').onclick=()=>ipc.invoke('open-downloads-folder').then(ok=>toast(ok?'Carpeta abierta':'No se pudo abrir la carpeta'));r.querySelectorAll('[data-showdl]').forEach(b=>b.onclick=()=>ipc.invoke('show-in-folder',state.downloads[+b.dataset.showdl]?.path||'').then(ok=>toast(ok?'Archivo mostrado':'No se pudo localizar el archivo')));return;}
+  if(view==='downloads'){const bytes=n=>{n=Number(n)||0;if(n<1024)return `${n} B`;if(n<1048576)return `${(n/1024).toFixed(1)} KB`;if(n<1073741824)return `${(n/1048576).toFixed(1)} MB`;return `${(n/1073741824).toFixed(2)} GB`};r.innerHTML=panelHeader('Descargas','Consulta el progreso, controla las descargas activas y abre los archivos terminados.')+`<div class="section-card"><div class="row"><div><strong>Carpeta de descargas</strong><div class="sub">Destino de las descargas de Nova.</div></div><button class="btn primary" id="openDownloads">Abrir carpeta</button></div></div><div class="section-card">${state.downloads.length?state.downloads.map((x,i)=>{const pct=x.total>0?Math.min(100,Math.round((x.recv||0)/x.total*100)):0;const active=['progressing','paused','interrupted'].includes(x.state);const label=({progressing:'Descargando',paused:'Pausada',interrupted:'Interrumpida',done:'Completada',completed:'Completada',cancelled:'Cancelada'})[x.state]||x.state||'Estado desconocido';return `<div class="download-item detailed-download"><div class="ext-icon">${iconSvg('download')}</div><div class="stack"><strong>${esc(x.name)}</strong><small class="truncate">${esc(x.path||label)}</small><small class="sub">${esc(label)}${x.total?` · ${bytes(x.recv)} / ${bytes(x.total)} (${pct}%)`:x.recv?` · ${bytes(x.recv)}`:''}</small>${x.total&&x.state==='progressing'?`<div class="download-progress"><span style="width:${pct}%"></span></div>`:''}</div><div class="row download-actions">${x.id!==null&&x.state==='progressing'?`<button class="btn" data-dlctl="pause" data-dlid="${esc(x.id)}">Pausar</button>`:''}${x.id!==null&&x.state==='paused'?`<button class="btn" data-dlctl="resume" data-dlid="${esc(x.id)}">Reanudar</button>`:''}${x.id!==null&&active?`<button class="btn danger" data-dlctl="cancel" data-dlid="${esc(x.id)}">Cancelar</button>`:''}${x.path&&['done','completed'].includes(x.state)?`<button class="btn" data-showdl="${i}">Mostrar</button>`:''}</div></div>`}).join(''):'<div class="empty">Todavía no hay descargas registradas. Cuando descargues un archivo, aparecerá aquí.</div>'}</div>`;r.querySelector('#openDownloads').onclick=()=>ipc.invoke('open-downloads-folder').then(ok=>toast(ok?'Carpeta abierta':'No se pudo abrir la carpeta'));r.querySelectorAll('[data-showdl]').forEach(b=>b.onclick=()=>ipc.invoke('show-in-folder',state.downloads[+b.dataset.showdl]?.path||'').then(ok=>toast(ok?'Archivo mostrado':'No se pudo localizar el archivo')));r.querySelectorAll('[data-dlctl]').forEach(b=>b.onclick=()=>{const id=Number(b.dataset.dlid);ipc.send('dl-ctl',{id,a:b.dataset.dlctl});});return;}
   if(view==='extensions'){renderExtensions(r);return;}
   if(view==='performance'){renderPerformance(r);return;}
   if(view==='settings'){renderSettings(r);return;}
@@ -369,9 +371,11 @@ function renderSettings(r){
   r.innerHTML=panelHeader('Ajustes de Nova','Configuración organizada por funciones activas, sin opciones heredadas.')+
   `<div class="section-card"><h2>Apariencia</h2><div class="row"><div><strong>Modo</strong><div class="sub">Claro, oscuro o seguir el sistema operativo.</div></div><select id="appearance"><option value="system">Sistema</option><option value="light">Claro</option><option value="dark">Oscuro</option></select></div><div class="row"><div><strong>Color de acento</strong><div class="sub">Cambia detalles interactivos sin crear temas completos.</div></div><div class="swatch-row">${colors.map(c=>`<button class="swatch ${state.accent===c?'active':''}" data-accent="${c}" style="background:${c}" aria-label="Acento ${c}"></button>`).join('')}</div></div></div>`+
   `<div class="section-card"><h2>Fondo de la barra superior</h2><p class="sub wallpaper-intro">Elige una imagen local para personalizar la zona de pestañas y navegación. Se guarda en este equipo.</p><div id="wallpaperPreview" class="wallpaper-preview"><span>Vista previa de la barra</span></div><div class="row wallpaper-row"><div><strong>Imagen personalizada</strong><div class="sub">PNG, JPG o WebP · máximo 12 MB.</div></div><div class="wallpaper-actions"><button class="btn primary" id="pickWallpaper">Elegir imagen</button><button class="btn" id="resetWallpaper">Restablecer</button></div></div><div id="wallpaperState" class="sub" aria-live="polite"></div></div>`+
-  `<div class="section-card"><h2>Navegación</h2><div class="row"><div><strong>Buscador</strong><div class="sub">Proveedor usado al buscar desde la barra de dirección.</div></div><select id="search"><option value="https://www.google.com/search?q=">Google</option><option value="https://duckduckgo.com/?q=">DuckDuckGo</option><option value="https://www.bing.com/search?q=">Bing</option><option value="https://search.brave.com/search?q=">Brave</option></select></div><div class="row"><div><strong>Mostrar panel lateral</strong><div class="sub">Puedes ocultarlo desde la barra superior cuando no lo necesites.</div></div><button class="toggle ${state.sidebarVisible!==false?'on':''}" id="sideVisibility"></button></div><div class="row"><div><strong>Expandir panel lateral</strong><div class="sub">Muestra texto junto a los iconos.</div></div><button class="toggle ${state.sidebarOpen?'on':''}" id="sideToggle"></button></div><div class="row"><div><strong>Animaciones</strong><div class="sub">Desactívalas para reducir movimiento.</div></div><button class="toggle ${state.animations?'on':''}" id="animToggle"></button></div></div>`+
+  `<div class="section-card"><h2>Navegación</h2><div class="row"><div><strong>Buscador</strong><div class="sub">Proveedor usado al buscar desde la barra de dirección.</div></div><select id="search"><option value="https://www.google.com/search?q=">Google</option><option value="https://duckduckgo.com/?q=">DuckDuckGo</option><option value="https://www.bing.com/search?q=">Bing</option><option value="https://search.brave.com/search?q=">Brave</option></select></div><div class="row"><div><strong>Mostrar panel lateral</strong><div class="sub">Puedes ocultarlo desde la barra superior cuando no lo necesites.</div></div><button class="toggle ${state.sidebarVisible!==false?'on':''}" id="sideVisibility"></button></div><div class="row"><div><strong>Expandir panel lateral</strong><div class="sub">Muestra texto junto a los iconos.</div></div><button class="toggle ${state.sidebarOpen?'on':''}" id="sideToggle"></button></div><div class="row"><div><strong>Animaciones</strong><div class="sub">Desactívalas para reducir movimiento.</div></div><button class="toggle ${state.animations?'on':''}" id="animToggle"></button></div><div class="row"><div><strong>Noticias en nueva pestaña</strong><div class="sub">Muestra titulares recientes de fuentes externas; puedes ocultarlos cuando quieras.</div></div><button class="toggle ${state.showNews?'on':''}" id="newsToggle" aria-pressed="${state.showNews?'true':'false'}"></button></div></div>`+
   `<div class="section-card"><h2>Pestañas y sesión</h2><div class="row"><div><strong>Restaurar sesión anterior</strong><div class="sub">Guarda localmente hasta 10 direcciones web para recuperarlas al abrir Nova.</div></div><button class="toggle ${state.restoreSession?'on':''}" id="restoreSessionToggle" aria-pressed="${state.restoreSession?'true':'false'}"></button></div><div class="row"><div><strong>Reabrir pestaña cerrada</strong><div class="sub">Conserva hasta 10 pestañas cerradas durante la sesión.</div></div><button class="btn" id="reopenTab">Reabrir</button></div><div class="row"><div><strong>Guía de inicio al arrancar</strong><div class="sub">Muestra la guía automáticamente en el próximo arranque.</div></div><button class="toggle ${state.showTourOnStart?'on':''}" id="tourStartup"></button></div></div>`+
   `<div class="section-card"><h2>Privacidad y seguridad</h2><div class="row"><div><strong>Bloqueador integrado</strong><div class="sub">Controla el bloqueador de anuncios y rastreadores.</div></div><button class="toggle ${(mainPrefs.adblock!==false)?'on':''}" id="adblockToggle"></button></div><div class="row"><div><strong>Navegador predeterminado</strong><div class="sub">Abre la configuración de aplicaciones predeterminadas de Windows.</div></div><button class="btn" id="defaultBrowser">Configurar</button></div></div>`+
+  `<div class="section-card"><h2>Permisos por sitio</h2><p class="sub">Gestiona decisiones recordadas para cámara, micrófono, ubicación y notificaciones. «Preguntar» elimina la decisión guardada y vuelve a solicitar permiso cuando proceda.</p><div id="sitePermissionList"><div class="empty">Cargando permisos guardados…</div></div><div class="row"><button class="btn" id="refreshSitePermissions">Actualizar lista</button></div></div>`+
+  `<div class="section-card"><h2>Importar datos</h2><p class="sub">Busca perfiles locales de Chrome, Edge y Firefox. Nova puede importar marcadores e historial; no copia contraseñas ni datos cifrados.</p><div class="row"><div><strong>Perfiles detectados</strong><div class="sub">Cierra el navegador de origen si la importación del historial falla.</div></div><button class="btn primary" id="scanImport">Buscar navegadores</button></div><div id="importProfiles" class="import-profiles-list"><div class="empty">Pulsa «Buscar navegadores» para detectar perfiles disponibles.</div></div></div>`+
   `<div class="section-card"><h2>Ayuda</h2><div class="row"><div><strong>Guía de inicio</strong><div class="sub">Consulta las funciones principales cuando quieras.</div></div><button class="btn" id="tour">Repetir guía</button></div><div class="row"><div><strong>Novedades</strong><div class="sub">Abre la presentación de la versión actual.</div></div><button class="btn" id="news">Ver novedades</button></div><div class="row"><div><strong>Diagnóstico</strong><div class="sub">Comprueba el estado de la sesión y configuración.</div></div><button class="btn" id="diag">Ejecutar</button></div></div>`+
   `<div class="section-card"><h2>Datos de Nova</h2><div class="row"><div><strong>${esc(dataMode)}</strong><div class="sub" style="overflow-wrap:anywhere">${esc(dataLocation)}</div>${portableInfo.reason?`<small class="sub">No se pudo activar la carpeta portable: ${esc(portableInfo.reason)}. Los datos siguen en la carpeta de Windows.</small>`:''}</div></div><div class="sub">En modo portable, puedes mover el ejecutable junto a su carpeta User Data. Cierra Nova antes de copiar o actualizar.</div></div>`+
   `<div class="section-card"><h2>Acerca de Nova</h2><div class="row"><div><strong>Nova ${esc(APP_VERSION)}</strong><div class="sub">Chromium ${esc(process.versions.chrome)} · Electron ${esc(process.versions.electron)}</div></div><button class="btn" id="update">Buscar actualizaciones</button></div></div>`;
@@ -390,6 +394,51 @@ function renderSettings(r){
   });
   settingsLayout.append(settingsNav, settingsContent); r.appendChild(settingsLayout);
   $('#appearance').value=state.appearance;$('#search').value=state.search;
+  const sitePermBox=r.querySelector('#sitePermissionList');
+  const permissionLabels={cam:'Cámara',mic:'Micrófono',geo:'Ubicación',notif:'Notificaciones'};
+  const paintSitePermissions=async()=>{
+    sitePermBox.innerHTML='<div class="empty">Cargando permisos guardados…</div>';
+    try{
+      const entries=await ipc.invoke('permission-sites-list');
+      if(!Array.isArray(entries)||!entries.length){sitePermBox.innerHTML='<div class="empty">Todavía no hay permisos recordados por sitio. Al elegir «Permitir siempre» o «Bloquear siempre» en una solicitud, aparecerán aquí.</div>';return;}
+      sitePermBox.innerHTML=entries.map((entry,i)=>`<div class="site-permission"><div class="site-permission-head"><strong>${esc(entry.host)}</strong><button class="btn danger" data-site-reset="${i}">Borrar sitio</button></div>${Object.entries(entry.permissions||{}).map(([key,value])=>`<div class="row site-permission-row"><span>${esc(permissionLabels[key]||key)}</span><select data-site-host="${esc(entry.host)}" data-site-key="${esc(key)}"><option value="ask">Preguntar</option><option value="allow" ${value==='allow'?'selected':''}>Permitir siempre</option><option value="block" ${value==='block'?'selected':''}>Bloquear siempre</option></select></div>`).join('')}</div>`).join('');
+      sitePermBox.querySelectorAll('[data-site-host]').forEach(select=>select.onchange=async()=>{const result=await ipc.invoke('permission-site-set',{host:select.dataset.siteHost,key:select.dataset.siteKey,value:select.value});if(result?.ok){toast('Permiso actualizado');paintSitePermissions()}else toast(result?.error||'No se pudo actualizar el permiso')});
+      sitePermBox.querySelectorAll('[data-site-reset]').forEach(button=>button.onclick=async()=>{const entry=entries[Number(button.dataset.siteReset)];if(!entry)return;const ok=await ipc.invoke('permission-site-reset',entry.host);if(ok){toast('Permisos del sitio borrados');paintSitePermissions()}else toast('No se pudieron borrar los permisos')});
+    }catch{sitePermBox.innerHTML='<div class="empty">No se pudo leer la lista de permisos.</div>';}
+  };
+  r.querySelector('#refreshSitePermissions').onclick=paintSitePermissions;paintSitePermissions();
+  const importBox=r.querySelector('#importProfiles');
+  r.querySelector('#scanImport').onclick=async()=>{
+    const btn=r.querySelector('#scanImport');btn.disabled=true;btn.textContent='Buscando…';importBox.innerHTML='<div class="empty">Analizando perfiles locales…</div>';
+    try{
+      const sources=await ipc.invoke('migration-scan');
+      if(!Array.isArray(sources)||!sources.length){importBox.innerHTML='<div class="empty">No se han encontrado perfiles compatibles. Asegúrate de que existen datos locales en Chrome, Edge o Firefox.</div>';return;}
+      importBox.innerHTML=sources.map((source,i)=>`<div class="import-profile"><div class="stack"><strong>${esc(source.browserName||source.browser)} · ${esc(source.profileName||'Perfil')}</strong><small class="sub">${source.bookmarks?'Marcadores disponibles':'Sin marcadores'} · ${source.history?'Historial disponible':'Sin historial'}</small></div><label class="import-choice"><input type="checkbox" data-import-bookmarks="${i}" ${source.bookmarks?'checked':''} ${source.bookmarks?'':'disabled'}> Marcadores</label><label class="import-choice"><input type="checkbox" data-import-history="${i}" ${source.history?'checked':''} ${source.history?'':'disabled'}> Historial</label><button class="btn primary" data-import-run="${i}">Importar</button></div>`).join('');
+      importBox.querySelectorAll('[data-import-run]').forEach(button=>button.onclick=async()=>{
+        const index=Number(button.dataset.importRun),source=sources[index];if(!source)return;
+        const bookmarks=!!importBox.querySelector(`[data-import-bookmarks="${index}"]`)?.checked;
+        const history=!!importBox.querySelector(`[data-import-history="${index}"]`)?.checked;
+        if(!bookmarks&&!history){toast('Selecciona al menos una categoría para importar.');return;}
+        button.disabled=true;button.textContent='Importando…';
+        try{
+          const result=await ipc.invoke('migration-read',{id:source.id,bookmarks,history});
+          if(result?.error)throw new Error(result.error);
+          let addedBookmarks=0,addedHistory=0;
+          if(bookmarks&&Array.isArray(result?.bookmarks?.items)){
+            const seen=new Set(state.bookmarks.map(x=>x.url));
+            for(const item of result.bookmarks.items){if(state.bookmarks.length>=100)break;const url=String(item.u||'');if(!/^https?:\/\//i.test(url)||seen.has(url))continue;state.bookmarks.push({url,title:String(item.t||url).slice(0,200)});seen.add(url);addedBookmarks++;}
+          }
+          if(history&&Array.isArray(result?.history)){
+            const seen=new Set(state.history.map(x=>x.url));
+            for(const item of result.history){if(state.history.length>=300)break;const url=String(item.u||'');if(!/^https?:\/\//i.test(url)||seen.has(url))continue;state.history.push({url,title:String(item.t||url).slice(0,200),ts:Number(item.d)||Date.now()});seen.add(url);addedHistory++;}
+            state.history.sort((a,b)=>(b.ts||0)-(a.ts||0));state.history=state.history.slice(0,300);
+          }
+          saveState();refreshAllNewTabs();button.textContent='Importado';button.disabled=true;toast(`Importación completada: ${addedBookmarks} marcadores y ${addedHistory} entradas de historial.`);
+        }catch(error){button.disabled=false;button.textContent='Reintentar';toast(String(error?.message||'No se pudo importar el perfil.').slice(0,220));}
+      });
+    }catch(error){importBox.innerHTML=`<div class="empty">No se pudo examinar el equipo: ${esc(error?.message||'error desconocido')}</div>`;}
+    finally{btn.disabled=false;btn.textContent='Volver a buscar';}
+  };
   const wpUrl=toolbarWallpaperUrl(), wpPreview=r.querySelector('#wallpaperPreview'), wpState=r.querySelector('#wallpaperState');
   if(wpUrl){wpPreview.style.backgroundImage=`linear-gradient(rgba(255,255,255,.48),rgba(255,255,255,.48)),url("${wpUrl}")`;wpState.textContent='Hay un fondo personalizado activo.';}else{wpPreview.style.backgroundImage='';wpState.textContent='Se está usando el fondo predeterminado.';}
   r.querySelector('#pickWallpaper').onclick=async()=>{const d=await ipc.invoke('toolbar-wallpaper-pick').catch(()=>({ok:false,error:'No se pudo abrir el selector de imágenes.'}));if(d?.ok){state.toolbarWallpaper=d.url;saveState();applyToolbarWallpaper();renderSettings(r);toast('Fondo de barra actualizado.');}else if(!d?.canceled)toast(d?.error||'No se pudo aplicar el fondo.');};
@@ -400,6 +449,7 @@ function renderSettings(r){
   $('#sideToggle').onclick=()=>{state.sidebarOpen=!state.sidebarOpen;saveState();applyAppearance();renderSettings(r)};
   r.querySelector('#sideVisibility').onclick=()=>{state.sidebarVisible=state.sidebarVisible===false;saveState();applyAppearance();renderSettings(r)};
   $('#animToggle').onclick=()=>{state.animations=!state.animations;saveState();applyAppearance();renderSettings(r)};
+  r.querySelector('#newsToggle').onclick=()=>{state.showNews=!state.showNews;saveState();refreshAllNewTabs();renderSettings(r);toast(state.showNews?'Noticias activadas en nuevas pestañas':'Noticias ocultas en nuevas pestañas')};
   $('#reopenTab').onclick=reopenClosedTab;
   r.querySelector('#restoreSessionToggle').onclick=()=>{state.restoreSession=!state.restoreSession;if(!state.restoreSession){state.sessionTabs=[];state.sessionActiveUrl='';}else persistSession();saveState();renderSettings(r);toast(state.restoreSession?'Se restaurará la sesión anterior al iniciar Nova':'La sesión anterior ya no se guardará')};
   $('#tourStartup').onclick=()=>{state.showTourOnStart=!state.showTourOnStart;saveState();renderSettings(r);toast(state.showTourOnStart?'La guía aparecerá al iniciar':'La guía automática está desactivada')};
@@ -445,14 +495,14 @@ document.querySelectorAll('[data-window]').forEach(b=>b.addEventListener('click'
 $('#address').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();hideOmniboxSuggestions();navigate(e.target.value)}};$('#address').onfocus=e=>{e.target.select();renderOmniboxSuggestions(e.target.value)};$('#address').oninput=e=>{clearTimeout(omniboxTimer);omniboxTimer=setTimeout(()=>renderOmniboxSuggestions(e.target.value),40)};document.addEventListener('click',e=>{if(!e.target.closest('#addressWrap'))hideOmniboxSuggestions()});
 $('.side-item[data-view="home"]').onclick=()=>backToBrowser();document.querySelectorAll('.side-item[data-view]:not([data-view="home"])').forEach(b=>b.onclick=()=>setInternal(b.dataset.view));
 window.addEventListener('keydown',e=>{if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==='t'){e.preventDefault();reopenClosedTab()}else if(e.ctrlKey&&e.key.toLowerCase()==='t'){e.preventDefault();newTab()}else if(e.ctrlKey&&e.key.toLowerCase()==='w'){e.preventDefault();closeTab(activeTab)}else if(e.ctrlKey&&e.key.toLowerCase()==='l'){e.preventDefault();$('#address').focus()}else if(e.ctrlKey&&e.key.toLowerCase()==='d'){e.preventDefault();toggleBookmark()}else if(e.ctrlKey&&e.key.toLowerCase()==='k'){e.preventDefault();showCommand()}else if(e.key==='Escape'){hideDrawer();document.querySelectorAll('.modal.on').forEach(x=>x.remove())}});
-ipc.on('open-tab',(_,url)=>newTab(url)); ipc.on('open-tour',()=>showTour()); ipc.on('open-command',()=>showCommand());ipc.on('blocked',(_,n)=>toast(`${n} solicitudes bloqueadas`));ipc.on('dl',(_,d)=>{state.downloads=[{name:String(d?.name||'archivo'),path:String(d?.path||''),state:String(d?.state||''),ts:Date.now()},...state.downloads].slice(0,100);saveState();toast(d?.state==='done'?`Descarga completada: ${d.name||'archivo'}`:`Descarga: ${d.name||'archivo'}`)});ipc.on('tab-health',(_,d)=>{if(d?.type==='unresponsive')toast('Una pestaña no responde');if(d?.type==='responsive')toast('Pestaña recuperada')});
+ipc.on('open-tab',(_,url)=>newTab(url)); ipc.on('open-tour',()=>showTour()); ipc.on('open-command',()=>showCommand());ipc.on('blocked',(_,n)=>toast(`${n} solicitudes bloqueadas`));ipc.on('dl',(_,d)=>{const entry={id:d?.id??null,name:String(d?.name||'archivo'),path:String(d?.path||''),state:String(d?.state||''),recv:Number(d?.recv)||0,total:Number(d?.total)||0,ts:Date.now()};const idx=entry.id!==null?state.downloads.findIndex(x=>String(x.id)===String(entry.id)):-1;if(idx>=0)state.downloads[idx]={...state.downloads[idx],...entry};else state.downloads.unshift(entry);state.downloads=state.downloads.slice(0,100);saveState();if(internalView==='downloads'){const p=$('#internalPanel');if(p)renderInternal(p,'downloads')}if(['done','completed'].includes(entry.state))toast(`Descarga completada: ${entry.name}`)});ipc.on('tab-health',(_,d)=>{if(d?.type==='unresponsive')toast('Una pestaña no responde');if(d?.type==='responsive')toast('Pestaña recuperada')});
 function showCommand(){showDrawer('Nova Command',`<input class="field" id="cmd" placeholder="Busca pestañas, favoritos, ajustes o acciones…"><div id="cmdResults" style="margin-top:10px"></div>`);const input=$('#cmd');const data=()=>{const q=input.value.trim().toLowerCase();const out=[];tabs.forEach((t,i)=>{if(!q||String(t.title+' '+getTabUrl(t)).toLowerCase().includes(q))out.push(['Pestaña: '+(t.title||'Nueva pestaña'),()=>selectTab(t)]);});state.bookmarks.forEach(b=>{if(!q||String(b.title+' '+b.url).toLowerCase().includes(q))out.push(['Favorito: '+(b.title||b.url),()=>navigate(b.url)])});[['Historial',()=>setInternal('history')],['Ajustes',()=>setInternal('settings')],['Extensiones',()=>setInternal('extensions')],['Rendimiento',()=>setInternal('performance')],['Workspaces',()=>setInternal('workspaces')],['Novedades',()=>showWhatsNew(true)]].forEach(x=>{if(!q||x[0].toLowerCase().includes(q))out.push([x[0],x[1]])});return out.slice(0,12)};function paint(){const box=$('#cmdResults');const arr=data();box.innerHTML=arr.length?arr.map((x,i)=>`<button class="menu-item" data-cmd="${i}">${esc(x[0])}</button>`).join(''):'<div class="empty">Sin resultados.</div>';box.querySelectorAll('[data-cmd]').forEach(b=>b.onclick=()=>{arr[+b.dataset.cmd][1]();hideDrawer()})}input.oninput=paint;paint();input.focus();}
 
 applyAppearance();
-const initialSession = state.restoreSession && Array.isArray(state.sessionTabs) ? state.sessionTabs.filter(u=>/^https?:\/\//i.test(u)).slice(-10) : [];
+const initialSession = state.restoreSession && Array.isArray(state.sessionTabs) ? state.sessionTabs.slice(-10).filter(x=>x&&/^https?:\/\//i.test(typeof x==='string'?x:x.url||'')) : [];
 if (initialSession.length) {
   restoringSession = true;
-  initialSession.forEach(url => newTab(url));
+  initialSession.forEach(item => newTab(typeof item==='string'?item:item.url, typeof item==='object'?item.group||'':''));
   const preferred = state.sessionActiveUrl && tabs.find(t=>getTabUrl(t)===state.sessionActiveUrl);
   if (preferred) selectTab(preferred);
   restoringSession = false;

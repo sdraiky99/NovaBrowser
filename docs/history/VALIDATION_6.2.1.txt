@@ -1,0 +1,20 @@
+Nova 6.2.1 — Portable Stability Update
+
+VERIFICADO EN ESTE ENTORNO
+- npm run check: PASS después del hotfix de GitHub Actions.
+- Preflight check:portable-config confirma versión 6.2.1, target Windows portable-only, nombre de artefacto y ausencia de configuración NSIS: PASS.
+- Sintaxis de 21 archivos JavaScript: PASS.
+- Comprobación de estructura, versión 6.2.1 y recursos gráficos: PASS.
+- Prueba de arranque no portable: mantiene la ruta predeterminada.
+- Prueba de migración del perfil anterior y los datos de sesión, sin copiar cachés: PASS.
+- Prueba de conservación del perfil User Data portable existente: PASS.
+- Prueba de fallback al perfil de Windows cuando la carpeta junto al ejecutable no permite escribir: PASS.
+- Prueba de migración si el portable se encuentra dentro del antiguo directorio del perfil: PASS.
+- GitHub Actions ejecuta el preflight y compila/publica solo Nova-Portable-6.2.1.exe: PASS en revisión de configuración.
+- El workflow ya no modifica package.json ni accede a build.nsis.include.
+- ZIP comprobado después de crearlo.
+
+NO VERIFICADO
+- No se ha compilado ni ejecutado Nova-Portable-6.2.1.exe en Windows.
+- La instalación de dependencias se intentó, pero npm no pudo resolver registry.npmjs.org (EAI_AGAIN). Por ello no se pudo ejecutar electron-builder aquí.
+- Hace falta comprobar el arranque real y el movimiento de User Data entre carpetas en Windows. Este ZIP contiene el proyecto preparado para GitHub, no el ejecutable portable compilado.

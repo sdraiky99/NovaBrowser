@@ -1,5 +1,15 @@
 # Changelog de Nova
 
+## 6.2.2 — Next Evolution
+- Recupera la distribución dual Setup NSIS por usuario + Portable con compilaciones separadas.
+- Elimina mutaciones de `package.json` dentro de GitHub Actions y valida los dos nombres de artefacto.
+- Separa perfiles: el Portable nuevo no copia silenciosamente el perfil de Windows; se conserva el perfil `User Data` existente.
+- Incorpora grupos de pestañas persistentes, gestor de descargas con controles, interfaz de importación y gestión de permisos por sitio.
+- Añade configuración para ocultar noticias y amplía las fuentes RSS.
+- Actualiza QA, documentación de distribución y criterios de aceptación.
+
+# Changelog de Nova
+
 ## 6.2.1 — Portable Stability Update
 - Se elimina el setup de la publicación: Windows compila únicamente `Nova-Portable-6.2.1.exe`.
 - El perfil del portable se guarda en `User Data/` junto al ejecutable, con fallback automático al perfil de Windows si la carpeta no permite escribir.
