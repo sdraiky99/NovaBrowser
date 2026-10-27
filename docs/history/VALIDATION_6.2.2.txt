@@ -1,0 +1,41 @@
+NOVA 6.2.2 — INFORME DE VALIDACIÓN
+=================================
+Base de trabajo: Nova-6.2.1-Portable-CI-Hotfix-GitHub-Ready.zip
+Resultado: validaciones locales de estática y QA PASS; ejecutables Windows pendientes de GitHub Actions.
+
+VERIFICACIONES EJECUTADAS EN ESTA COPIA
+---------------------------------------
+PASS  package.json parseable y versión 6.2.2.
+PASS  Configuración de distribución: objetivos NSIS + Portable.
+PASS  Setup: instalador asistido, per-user, allowElevation=false y ruta controlada.
+PASS  Artefactos configurados con nombres Nova-Setup-6.2.2.exe y Nova-Portable-6.2.2.exe.
+PASS  Salidas de compilación separadas: dist/setup y dist/portable.
+PASS  Workflows de build/release no contienen la mutación problemática p.build.nsis.include ni reescritura temporal de package.json.
+PASS  Sintaxis de 24 archivos JavaScript.
+PASS  Pruebas QA de versión, artefactos, gestión de perfil Portable, copia optativa de perfil, fallback, URLs/esquemas y lógica de permisos.
+PASS  La política de permisos no concede cámara y micrófono como permiso combinado sin evaluarlos, y no mezcla permisos entre HTTP y HTTPS.
+PASS  Controles integrados para noticias desactivables, grupos de pestañas, gestor de descargas, importación y permisos por sitio (comprobación estática).
+PASS  JavaScript en línea de la nueva pestaña parseable.
+PASS  Recursos del instalador e iconos locales: comprobación automática superada; 19 iconos SVG.
+PASS  El plan técnico y las notas de versión describen los límites conocidos.
+
+NO EJECUTADO / REQUIERE WINDOWS O CI
+-----------------------------------
+PENDIENTE  npm install de dependencias dentro de GitHub Actions. La resolución local de npm excedió el límite disponible; no se ha generado package-lock.json. El workflow usa npm install y resolverá las dependencias transitivas durante el build.
+PENDIENTE  Compilación real de Nova-Setup-6.2.2.exe y Nova-Portable-6.2.2.exe con electron-builder.
+PENDIENTE  Verificar instalación NSIS en Windows sin solicitar elevación/UAC.
+PENDIENTE  Arranque e interacción real de la interfaz en Windows.
+PENDIENTE  Verificar persistencia de cookies, sesiones, extensiones, descargas y perfiles tras reinicio.
+PENDIENTE  Verificar publicación de artefactos y SHA256SUMS.txt en un tag de release.
+
+LIMITACIONES CONOCIDAS
+---------------------
+- Las comprobaciones de UI incluidas son estáticas; no sustituyen pruebas interactivas en una máquina Windows.
+- Electron no garantiza compatibilidad total con la API de extensiones de Chrome. El centro de extensiones debe tratar como compatibles solo las extensiones probadas/soportadas; no se promete instalación directa de paquetes .crx ni compatibilidad universal con Chrome Web Store.
+- La importación implementada se limita a marcadores e historial de perfiles detectables de Chrome, Edge y Firefox. No importa contraseñas.
+- El perfil Portable solo permanece junto al ejecutable si la carpeta permite escritura. Si no, Nova recurre al perfil de Windows y debe indicar esa condición.
+- Las noticias utilizan fuentes RSS externas; la disponibilidad depende de la conexión y de que los feeds sigan accesibles.
+
+CONCLUSIÓN
+----------
+La configuración, sintaxis y QA local de Nova 6.2.2 han pasado. No se afirma que los instaladores estén compilados ni probados en Windows: esa verificación debe ocurrir en el workflow Windows y en pruebas de usuario antes de publicar una release. Para builds más reproducibles, conviene añadir y revisar un package-lock.json en un entorno con resolución npm funcional antes de una release final.

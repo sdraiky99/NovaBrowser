@@ -26,7 +26,7 @@ const { createMigrationService } = require('./migration.js');
 const migration = createMigrationService(app);
 const { createAccountService } = require('./account-service.js');
 const accounts = createAccountService({ app, safeStorage, fetch });
-const LOGOS = ['quantum'], SPLASH_MS = 1400;
+const LOGOS = ['quantum'], SPLASH_MS = 500;
 const logoId = id => (LOGOS.includes(id) ? id : 'quantum');
 const logoIco = id => path.join(__dirname, 'assets/brand/nova.ico');      // único icono Nova dentro del paquete
 const logoImg = id => { const i = nativeImage.createFromPath(process.platform === 'win32' ? logoIco(id) : path.join(__dirname, 'assets/brand/nova-icon.png')); return i.isEmpty() ? nativeImage.createFromPath(path.join(__dirname, 'assets/brand/nova-icon.png')) : i; };

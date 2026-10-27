@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '..');
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 const build = pkg.build || {};
-assert.equal(pkg.version, '6.2.2', 'La versión debe ser 6.2.2.');
+assert.equal(pkg.version, '6.3.0', 'La versión debe ser 6.3.0.');
 assert.deepEqual(build.win?.target, ['nsis', 'portable'], 'Windows debe declarar Setup y Portable.');
 assert.equal(build.nsis?.oneClick, false, 'Setup debe usar instalador asistido.');
 assert.equal(build.nsis?.perMachine, false, 'Setup debe instalar por usuario.');
@@ -31,4 +31,4 @@ for (const name of ['.github/workflows/build.yml', '.github/workflows/release.ym
 assert.ok(build.files.includes('portable-user-data.js'));
 assert.ok(build.files.includes('migration.js'));
 assert.ok(build.files.includes('permission-policy.js'));
-console.log('DISTRIBUTION CONFIG OK: Nova 6.2.2, NSIS per-user + Portable, workflows sin mutación de package.json.');
+console.log('DISTRIBUTION CONFIG OK: Nova 6.3.0, NSIS per-user + Portable, workflows sin mutación de package.json.');

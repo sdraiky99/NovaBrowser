@@ -1,8 +1,8 @@
 {
   "name": "nova-browser",
   "productName": "Nova",
-  "version": "6.2.2",
-  "description": "Nova 6.2.2 Next Evolution: actualización dual Setup por usuario y Portable, perfiles independientes y mejoras de estabilidad.",
+  "version": "6.3.0",
+  "description": "Nova 6.3 Deluxe Edition — Velocidades Locas: rendimiento medible, identidad renovada, sesiones ampliadas y mejoras de estabilidad.",
   "author": "Nova",
   "main": "main.js",
   "scripts": {
@@ -11,12 +11,13 @@
     "dist:setup": "electron-builder --win nsis --publish never -c.directories.output=dist/setup",
     "dist:portable": "electron-builder --win portable --publish never -c.directories.output=dist/portable",
     "dist:win": "npm run dist:setup && npm run dist:portable",
-    "check": "npm run check:distribution-config && npm run check:project && npm run check:syntax && npm run qa:6.2.2 && npm run check:build-assets",
+    "check": "npm run check:distribution-config && npm run check:project && npm run check:syntax && npm run qa:6.3 && npm run check:build-assets && npm run check:performance",
     "check:syntax": "node scripts/check-syntax-all.js",
     "check:project": "node scripts/check-project.js",
     "check:build-assets": "node scripts/check-build-assets.js",
-    "qa:6.2.2": "node scripts/qa-6.2.2.js",
-    "check:distribution-config": "node scripts/check-distribution-config.js"
+    "check:distribution-config": "node scripts/check-distribution-config.js",
+    "qa:6.3": "node scripts/qa-6.3.js",
+    "check:performance": "node scripts/performance-smoke.js"
   },
   "dependencies": {
     "@ghostery/adblocker-electron": "2.18.2",

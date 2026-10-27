@@ -1,0 +1,45 @@
+NOVA 6.3.0 — DELUXE EDITION — INFORME DE VALIDACIÓN
+==================================================
+
+Base de trabajo: Nova 6.2.2 / fuente de Nova 6.3.0 disponible en el entorno.
+Identidad de entrega: Nova 6.3 Deluxe Edition — Velocidades Locas.
+Entorno de validación local: Node.js v22.16.0, Linux.
+
+COMPROBACIONES EJECUTADAS Y SUPERADAS
+-------------------------------------
+PASS  npm run check completo: configuración de distribución, estructura, sintaxis, QA, recursos y microbenchmark.
+PASS  package.json parseable y versión semántica 6.3.0.
+PASS  Setup NSIS por usuario y Portable configurados como objetivos separados.
+PASS  Carpetas de salida independientes para Setup y Portable.
+PASS  GitHub Actions no modifica package.json para preparar la compilación.
+PASS  26 archivos JavaScript pasan node --check.
+PASS  QA lógico: separación de perfiles, importación opt-in del perfil heredado, fallback de Portable, política de permisos por origen y resolución URL/búsqueda.
+PASS  Persistencia/restauración de sesión configurada para hasta 50 pestañas web.
+PASS  Marca SVG nueva integrada en favicon, barra superior, nueva pestaña, splash y configuración de Windows.
+PASS  PNG del icono en 512 × 512 RGBA y con píxeles transparentes.
+PASS  ICO leído correctamente con variantes 16, 24, 32, 48, 64, 128 y 256 px.
+PASS  19 iconos SVG locales verificados en assets/icons/.
+PASS  Solo queda un archivo RELEASE_NOTES activo en la raíz; las notas 6.2.2 permanecen en docs/history/.
+PASS  Workflows build.yml, release.yml y security.yml parseables como YAML.
+PASS  Microbenchmark de resolución pura de URL/búsqueda: 7 rondas de 10.000 operaciones; mediana observada en esta ejecución: 5,22 ms por ronda (aprox. 1,91 millones de operaciones/s).
+
+ALCANCE DEL MICROBENCHMARK
+--------------------------
+El test solo mide una función JavaScript pura que decide cómo resolver una URL o una consulta de búsqueda. No mide el arranque completo de Electron, la carga de páginas, el uso de CPU/RAM de contenidos web ni la velocidad de la conexión. La cifra es específica de esta ejecución y equipo.
+
+PENDIENTE DE VALIDACIÓN EN WINDOWS / GITHUB ACTIONS
+--------------------------------------------------
+PENDIENTE  Instalar las dependencias npm en un runner Windows limpio.
+PENDIENTE  Generar realmente Nova-Setup-6.3.0.exe y Nova-Portable-6.3.0.exe.
+PENDIENTE  Abrir y probar Setup: instalación por usuario, actualización, accesos directos y desinstalación.
+PENDIENTE  Abrir y probar Portable en carpeta escribible y ubicación protegida/sin escritura.
+PENDIENTE  Pruebas manuales con navegación web real, descargas, extensiones compatibles, tema claro/oscuro y búsqueda.
+PENDIENTE  Comparar inicio real y uso de RAM/CPU contra 6.2.2 en el mismo PC y bajo el mismo escenario.
+
+LIMITACIONES CONOCIDAS
+----------------------
+- Este paquete contiene el proyecto fuente; no se afirma que los ejecutables EXE se hayan compilado en este entorno.
+- No se garantiza compatibilidad universal con Chrome Web Store ni con todas las APIs de extensiones.
+- El renderer local principal conserva nodeIntegration: true y contextIsolation: false por dependencias heredadas; una migración segura requiere una refactorización y pruebas de regresión específicas.
+- No se incluye package-lock.json; para reproducibilidad estricta debe generarse y revisarse en un entorno con acceso a npm.
+- Las pruebas estáticas y lógicas no sustituyen la ejecución interactiva del navegador en Windows.

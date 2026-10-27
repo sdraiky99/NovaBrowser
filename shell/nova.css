@@ -31,7 +31,7 @@ body.dark{color-scheme:dark;--bg:#202124;--surface:#292a2d;--surface-2:#303134;-
 
 body.dark .nova-icon{filter:invert(.82) brightness(1.15)}
 
-/* Nova 6.2.2: tab groups, durable download progress and import controls. */
+/* Nova 6.3: tab groups, durable download progress and import controls. */
 .tab-group-badge{flex:none;max-width:74px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:4px;padding:2px 5px;border-radius:5px;background:var(--accent-soft);color:var(--accent);font-size:9px;font-weight:650;line-height:1.25}
 .download-progress{height:4px;overflow:hidden;margin-top:7px;border-radius:999px;background:var(--border)}
 .download-progress span{display:block;height:100%;border-radius:inherit;background:var(--accent);transition:width .12s}
