@@ -1,0 +1,35 @@
+NOVA 6.3.1 — MINIMAL REBORN — INFORME DE VALIDACIÓN
+===================================================
+
+Base inspeccionada: ZIP de Nova 6.3.0 Deluxe Edition disponible en este entorno.
+Versión del paquete: 6.3.1.
+Entorno local de validación: Node.js v22.16.0, npm 10.9.0, Linux.
+
+COMPROBACIONES AUTOMÁTICAS EJECUTADAS
+-------------------------------------
+PASS  `npm run check` completado sin errores.
+PASS  Configuración de distribución: Setup NSIS por usuario y Portable con directorios de salida separados.
+PASS  Workflows de GitHub Actions: las dos ediciones se generan/verifican usando la versión de package.json, sin mutar package.json.
+PASS  26 archivos JavaScript pasan la comprobación de sintaxis.
+PASS  QA lógico: separación de perfiles Setup/Portable, preservación del perfil Portable, importación opt-in, política de permisos y navegación URL/búsqueda.
+PASS  Identidad Minimal Reborn: SVG del logo, nueva pestaña, splash y recursos Windows revisados.
+PASS  PNG del logo 512 × 512 en RGBA con transparencia en las esquinas.
+PASS  ICO multi-resolución de Windows generado desde el mismo SVG.
+PASS  Nova Assist, ruta de Ollama local fija, paleta de acentos, modo Eclipse, Quick Actions y nueva pestaña enlazada están comprobados estáticamente por QA.
+PASS  JavaScript inline de la nueva pestaña parseable.
+PASS  Microbenchmark de resolución URL/búsqueda ejecutado: 7 rondas de 10.000 operaciones; mediana observada en esta ejecución: 4,52 ms por ronda (aprox. 2,21 millones de operaciones/s).
+
+LÍMITES DE ESTA VALIDACIÓN
+--------------------------
+- El microbenchmark solo mide una función JavaScript pura para resolver URL o consulta; no mide tiempo de arranque, carga de páginas, CPU/RAM total ni rendimiento comparado de la versión anterior.
+- No se ejecutó una conversación de IA real: no se presupone que Ollama, un modelo local o un servicio online estén disponibles en este entorno.
+- No se instalaron las dependencias de la aplicación en este entorno ni se abrió una ventana Electron interactiva.
+- No se generaron ni probaron EXE de Windows aquí. Los workflows de GitHub Actions están configurados para compilar y comprobar Setup y Portable en un runner Windows.
+- Este paquete no incluye `package-lock.json`; las dependencias transitivas se resolverán al ejecutar `npm install`.
+
+LIMITACIONES CONOCIDAS
+----------------------
+- Nova Assist local requiere Ollama y un modelo instalado por separado. El proveedor online transmite las consultas a un servicio externo.
+- La lectura del texto de la página está limitada al momento en el que el usuario activa la casilla de contexto; el usuario puede también insertar texto seleccionado explícitamente.
+- El renderer principal conserva `nodeIntegration: true` y `contextIsolation: false` por la arquitectura heredada. La integración de IA no corrige ese problema de arquitectura, y no se afirma que Nova sea completamente segura.
+- La compatibilidad con extensiones Chromium/Web Store continúa limitada por la implementación de Electron.
