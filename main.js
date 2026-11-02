@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, session, dialog, Menu, clipboard, safeStorage, shell, webContents, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, session, dialog, Menu, clipboard, shell, webContents, nativeImage } = require('electron');
 const path = require('path'), fs = require('fs'), { execFile } = require('child_process');
 const fetch = require('cross-fetch');
 let autoUpdater = null;
@@ -24,8 +24,6 @@ let win, splash, splashAt = 0, pendingUrl = null;
 const EXT = require('./shell/extensions.js');
 const { createMigrationService } = require('./migration.js');
 const migration = createMigrationService(app);
-const { createAccountService } = require('./account-service.js');
-const accounts = createAccountService({ app, safeStorage, fetch });
 const LOGOS = ['quantum'], SPLASH_MS = 500;
 const logoId = id => (LOGOS.includes(id) ? id : 'quantum');
 const logoIco = id => path.join(__dirname, 'assets/brand/nova.ico');      // único icono Nova dentro del paquete
@@ -222,7 +220,7 @@ function createMain() {
     frame: false, show: false, title: 'Nova',
     icon: logoImg(prefs.logo),
     backgroundColor: '#0d0b1a',
-    webPreferences: { nodeIntegration: true, contextIsolation: false, webviewTag: true, webSecurity: true, allowRunningInsecureContent: false }
+    webPreferences: { preload: path.join(__dirname, 'shell', 'preload.js'), nodeIntegration: false, contextIsolation: true, sandbox: true, webviewTag: true, webSecurity: true, allowRunningInsecureContent: false }
   });
   win.loadFile('shell/index.html');
   win.once('ready-to-show', () => {
@@ -333,8 +331,12 @@ ipcMain.handle('extension-unload', async (e,data)=>{
 });
 
 app.whenReady().then(() => {
+  if (portableDataStatus.isPortable && !portableDataStatus.active) { dialog.showErrorBox('Nova Portable no puede iniciar', 'La carpeta User Data no permite escribir. Nova se ha detenido para no utilizar ni mezclar el perfil de la instalación normal.\n\n' + String(portableDataStatus.reason || 'Comprueba los permisos de la carpeta.')); app.quit(); return; }
   if (!gotLock) return;
-  loadPrefs(); pendingUrl = extUrl(process.argv.slice(1));
+  loadPrefs();
+  // Retira claves de proveedores externos heredadas: Nova Assist 6.4 es exclusivamente local.
+  for (const legacyKey of ['nova.key', 'supercat-openai.key', 'nova-account-token.bin', 'nova-account.json']) { try { fs.rmSync(userFile(legacyKey), { force: true }); } catch {} }
+  pendingUrl = extUrl(process.argv.slice(1));
   restoreRealExtensions('persist:web').catch(() => {});
   Menu.setApplicationMenu(null);
   const ua = web().getUserAgent()
@@ -506,12 +508,12 @@ app.whenReady().then(() => {
         { label: 'Adelante', enabled: nav.canGoForward(), click: () => nav.goForward() },
         { label: 'Recargar', click: () => c.reload() }, { type: 'separator' },
         { label: 'Copiar dirección de la página', click: () => clipboard.writeText(c.getURL()) },
-        { label: 'Captura de pantalla', click: () => send('key', 'shot') },
+        { label: 'Captura de pantalla', click: async () => { try { const shot = await c.capturePage(); const result = await dialog.showSaveDialog(win, { defaultPath: 'Nova-Captura.png', filters: [{ name: 'Imagen PNG', extensions: ['png'] }] }); if (!result.canceled && result.filePath) fs.writeFileSync(result.filePath, shot.toPNG()); } catch (error) { console.warn('[Nova] No se pudo guardar la captura:', error?.message); } } },
         { label: 'Inspeccionar elemento', click: () => c.inspectElement(p.x, p.y) });
       Menu.buildFromTemplate(T).popup({ window: win });
     });
     c.on('before-input-event', (e, i) => {
-      if (i.control && i.type === 'keyDown' && ('twlfdhjkTrRDB '.includes(i.key) || i.key === 'Tab')) {
+      if (i.control && !i.alt && !i.meta && i.type === 'keyDown' && (['t','w','l','d','k','r','h','j','b'].includes(String(i.key || '').toLowerCase()) || i.key === 'Tab')) {
         e.preventDefault(); win.webContents.send('key', i.key === 'Tab' ? (i.shift ? 'shift-tab' : 'tab') : i.key);
       }
     });
@@ -539,6 +541,8 @@ ipcMain.on('win', (e, a) => {
   if (a === 'close') win.close();
   if (a === 'full') win.setFullScreen(!win.isFullScreen());
 });
+ipcMain.on('extension-catalog', e => { if (denyUntrusted(e)) return; e.returnValue = EXT.CATALOG.map(({id,name,cat,desc}) => ({id,name,cat,desc})); });
+ipcMain.on('extension-script', (e, id) => { if (denyUntrusted(e) || typeof id !== 'string' || !EXT.byId(id)) return; e.returnValue = EXT.on(id); });
 ipcMain.on('app-version', e => { if (denyUntrusted(e)) return; e.returnValue = app.getVersion(); });
 ipcMain.on('prefs-get', e => { if (denyUntrusted(e)) return; e.returnValue = JSON.parse(JSON.stringify(prefs)); });
 ipcMain.on('prefs-set', (e, p) => {
@@ -663,81 +667,6 @@ ipcMain.handle('save-docx', async (e, payload) => {
   } catch { return null; }
 });
 
-const keyFile = () => userFile('nova.key');
-const superCatKeyFile = () => userFile('supercat-openai.key');
-const getSuperCatKey = () => { try { return safeStorage.isEncryptionAvailable() ? safeStorage.decryptString(fs.readFileSync(superCatKeyFile())) : null; } catch { return null; } };
-ipcMain.handle('supercat-key-set', (e, k) => {
-  try {
-    if (denyUntrusted(e) || typeof k !== 'string' || k.length > 2048) return false;
-    if (!k) { fs.rmSync(superCatKeyFile(), { force: true }); return true; }
-    if (!safeStorage.isEncryptionAvailable()) return false;
-    atomicWrite(superCatKeyFile(), safeStorage.encryptString(k));
-    return true;
-  } catch { return false; }
-});
-ipcMain.handle('supercat-key-has', e => denyUntrusted(e) ? false : !!getSuperCatKey());
-ipcMain.handle('supercat-chat', async (e, data) => {
-  if (denyUntrusted(e) || !data || typeof data !== 'object') return { error: 'Solicitud no válida.' };
-  const { messages, system, model, page } = data;
-  if (!Array.isArray(messages) || messages.length > 20 || typeof system !== 'string' || system.length > 12000) return { error: 'Solicitud no válida.' };
-  if (messages.some(m => !m || typeof m !== 'object' || !['user','assistant'].includes(m.role) || typeof m.content !== 'string' || m.content.length > 12000)) return { error: 'Solicitud no válida.' };
-  const key = getSuperCatKey();
-  if (!key) return { error: 'CHATGPT_KEY_MISSING' };
-  const post = async (url, headers, body) => {
-    const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body), signal: AbortSignal.timeout(60000) });
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(d?.error?.message || ('HTTP ' + r.status));
-    return d;
-  };
-  try {
-    let input = messages.slice(-20);
-    if (typeof page === 'string' && page.length) {
-      input = [...input, { role: 'user', content: 'Contexto de la pestaña actual:\n' + page.slice(0, 12000) }];
-    }
-    const d = await post('https://api.openai.com/v1/responses', { authorization: 'Bearer ' + key }, {
-      model: typeof model === 'string' && model.trim() ? model.trim() : 'gpt-5.6-luna',
-      instructions: system,
-      input,
-      max_output_tokens: 1200
-    });
-    return { text: String(d.output_text || ''), model: d.model || model || 'gpt-5.6-luna', src: 'openai' };
-  } catch (err) {
-    return { error: String(err?.message || err || 'Error desconocido') };
-  }
-});
-const getKey = () => { try { return safeStorage.isEncryptionAvailable() ? safeStorage.decryptString(fs.readFileSync(keyFile())) : null; } catch { return null; } };
-ipcMain.handle('key-set', (e, k) => { try { if (denyUntrusted(e) || typeof k !== 'string' || k.length > 2048) return false; if (!k) { fs.rmSync(keyFile(), { force: true }); return true; } if (!safeStorage.isEncryptionAvailable()) return false; atomicWrite(keyFile(), safeStorage.encryptString(k)); return true; } catch { return false; } });
-ipcMain.handle('key-has', e => denyUntrusted(e) ? false : !!getKey());
-ipcMain.handle('nova-ai', async (e, data) => {
-  if (denyUntrusted(e) || !data || typeof data !== 'object') return { ok:false, error:'Solicitud no válida.' };
-  const { messages, system, model } = data;
-  if (!Array.isArray(messages) || messages.length < 1 || messages.length > 20 || typeof system !== 'string' || system.length > 12000) return { ok:false, error:'Solicitud no válida.' };
-  if (messages.some(m => !m || typeof m !== 'object' || !['user','assistant'].includes(m.role) || typeof m.content !== 'string' || m.content.length > 12000)) return { ok:false, error:'Solicitud no válida.' };
-  const key = getKey();
-  if (!key) return { ok:false, error:'NOVA_KEY_MISSING' };
-  try {
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{
-        'content-type':'application/json',
-        'x-api-key':key,
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
-      },
-      body:JSON.stringify({
-        model:typeof model==='string' && model.trim() ? model.trim() : 'claude-sonnet-4-6',
-        max_tokens:1200,
-        system,
-        messages
-      }),
-      signal:AbortSignal.timeout(60000)
-    });
-    const d=await r.json().catch(()=>({}));
-    if(!r.ok) return { ok:false, error:String(d?.error?.message || ('HTTP '+r.status)) };
-    return { ok:true, text:String((d.content||[]).map(c=>c?.text||'').join('')), model:d.model||model||'claude-sonnet-4-6' };
-  } catch (err) { return { ok:false, error:String(err?.message||err||'Error desconocido') }; }
-});
-let stateBackupAt = 0;
 ipcMain.handle('state-save', (e, raw) => {
   if (denyUntrusted(e) || typeof raw !== 'string' || raw.length > 8 * 1024 * 1024) return false;
   try {
@@ -912,12 +841,6 @@ ipcMain.handle('update-install',async e=>{
   try{autoUpdater.quitAndInstall(false,true);return {ok:true};}catch(err){return {ok:false,error:String(err?.message||err)};}
 });
 /* ---------- Cuenta Nova: registro, inicio de sesión y sincronización ---------- */
-ipcMain.handle('account-status', e => denyUntrusted(e) ? { loggedIn:false, id:'', username:'' } : accounts.status());
-ipcMain.handle('account-register', async (e, data) => { if (denyUntrusted(e) || !data || typeof data !== 'object') return { ok:false, error:'Solicitud no válida.' }; return accounts.register(data.username, data.password); });
-ipcMain.handle('account-login', async (e, data) => { if (denyUntrusted(e) || !data || typeof data !== 'object') return { ok:false, error:'Solicitud no válida.' }; return accounts.login(data.username, data.password); });
-ipcMain.handle('account-logout', e => denyUntrusted(e) ? { ok:false, error:'Solicitud no válida.' } : accounts.logout());
-ipcMain.handle('account-sync', async (e, data) => { if (denyUntrusted(e) || !data || typeof data !== 'object') return { ok:false, error:'Datos no válidos.' }; return accounts.sync(data); });
-
 ipcMain.handle('migration-scan', e => { if (denyUntrusted(e)) return []; try { return migration.scan(); } catch { return []; } });
 ipcMain.handle('migration-read', async (e, data) => {
   if (denyUntrusted(e) || !data || typeof data !== 'object' || typeof data.id !== 'string' || data.id.length > 64) return { error: 'Solicitud no válida.' };
@@ -984,19 +907,40 @@ ipcMain.handle('security-state', e => {
   if (denyUntrusted(e)) return {};
   return { popupBlocked: true, insecureContentBlocked: true, webSecurity: true, webviewSandbox: true, webviewNodeIntegration: false, fileAccessFromFileUrls: false, universalAccessFromFileUrls: false, singleInstance: !!gotLock, adblock: blockOn === true, csp: true };
 });
-ipcMain.handle('ai-ask', async (e, data) => {
-  if (denyUntrusted(e) || !data || typeof data !== 'object') return { error: 'Solicitud no válida.' };
-  const { msgs, system, model } = data;
-  if (!Array.isArray(msgs) || msgs.length > 30 || typeof system !== 'string' || system.length > 50000 || (model !== undefined && typeof model !== 'string')) return { error: 'Solicitud no válida.' };
-  if (msgs.some(m => !m || typeof m !== 'object' || !['user','assistant'].includes(m.role) || typeof m.content !== 'string' || m.content.length > 20000)) return { error: 'Solicitud no válida.' };
-  const post = async (url, headers, body) => { const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body), signal: AbortSignal.timeout(60000) }); if (!r.ok && r.status !== 400) throw new Error('HTTP ' + r.status); return r.json(); };
+// Nova Assist: local Ollama support. Only fixed loopback endpoints are called; no arbitrary URL is accepted.
+ipcMain.handle('ollama-models', async e => {
+  if (denyUntrusted(e)) return { ok:false, error:'Solicitud no válida.' };
   try {
-    const k = getKey();
-    if (k) { const d = await post('https://api.anthropic.com/v1/messages', { 'x-api-key': k, 'anthropic-version': '2023-06-01' }, { model: model || 'claude-sonnet-4-6', max_tokens: 1500, system, messages: msgs }); if (d.error) return { error: d.error.message }; return { text: d.content.map(c => c.text || '').join(''), src: 'claude' }; }
-    const d = await post('https://text.pollinations.ai/openai', {}, { model: 'openai', messages: [{ role: 'system', content: system }, ...msgs] });
-    return { text: d.choices?.[0]?.message?.content || 'Sin respuesta.', src: 'free' };
-  } catch (e) { return { error: e.message }; }
+    const r = await fetch('http://127.0.0.1:11434/api/tags', { signal: AbortSignal.timeout(3000) });
+    if (!r.ok) return { ok:false, error:`Ollama respondió HTTP ${r.status}.` };
+    const data = await r.json().catch(() => ({}));
+    const models = Array.isArray(data.models) ? data.models.map(x => String(x?.name || '').trim()).filter(Boolean).slice(0,100) : [];
+    return { ok:true, models };
+  } catch {
+    return { ok:false, error:'No se encuentra Ollama en este equipo. Instálalo, inicia Ollama y descarga un modelo compatible.' };
+  }
 });
+ipcMain.handle('ollama-ai', async (e, data) => {
+  if (denyUntrusted(e) || !data || typeof data !== 'object') return { ok:false, error:'Solicitud no válida.' };
+  const { messages, system, model } = data;
+  if (!Array.isArray(messages) || messages.length < 1 || messages.length > 20 || typeof system !== 'string' || system.length > 12000 || typeof model !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,99}$/.test(model)) return { ok:false, error:'Parámetros de IA local no válidos.' };
+  if (messages.some(m => !m || typeof m !== 'object' || !['user','assistant'].includes(m.role) || typeof m.content !== 'string' || m.content.length > 16000)) return { ok:false, error:'El mensaje supera los límites admitidos.' };
+  try {
+    const r = await fetch('http://127.0.0.1:11434/api/chat', {
+      method:'POST', headers:{'content-type':'application/json'},
+      body:JSON.stringify({ model, stream:false, messages:[{role:'system',content:system}, ...messages.slice(-16)], options:{num_ctx:4096} }),
+      signal:AbortSignal.timeout(90000)
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) return { ok:false, error:String(d?.error || `Ollama respondió HTTP ${r.status}`).slice(0,500) };
+    const text = String(d?.message?.content || '').trim();
+    return text ? { ok:true, text, model:String(d?.model || model), src:'ollama' } : { ok:false, error:'El modelo local no devolvió una respuesta. Comprueba que esté descargado y vuelve a intentarlo.' };
+  } catch (err) {
+    const msg = String(err?.message || err || 'Error desconocido');
+    return { ok:false, error:msg.includes('timeout') ? 'El modelo tardó demasiado en responder. Prueba uno más pequeño.' : 'No se pudo conectar con Ollama. Comprueba que esté instalado y ejecutándose.' };
+  }
+});
+
 ipcMain.handle('clear-data', async (e, o) => {
   if (denyUntrusted(e) || !o || typeof o !== 'object') return false;
   const s = web(), st = []; if (o.cookies) st.push('cookies'); if (o.storage) st.push('localstorage', 'indexdb', 'serviceworkers', 'cachestorage', 'websql', 'filesystem');
@@ -1020,7 +964,7 @@ ipcMain.handle('nova51-diagnostics', e => {
     prefs:{ ok:prefsOk, path:pf, logo:'quantum' },
     state:{ ok:stateOk, backup:backupOk, backupPath:bak },
     prime:{ iconPng:exists(path.join(__dirname,'assets','brand','nova-icon.png')), iconIco:exists(path.join(__dirname,'assets','brand','nova.ico')), legacyLogoDir:false, legacyThemeFile:false },
-    renderer:{ nodeIntegration:true, contextIsolation:false, note:'Legacy renderer compatibility; migration is intentionally separated from this stability release.' },
+    renderer:{ nodeIntegration:false, contextIsolation:true, preload:'shell/preload.js', note:'Renderer aislado mediante NovaAPI.' },
   };
 });
 ipcMain.handle('nova51-restore-backup', e => {

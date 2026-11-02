@@ -49,3 +49,54 @@ body.dark .nova-icon{filter:invert(.82) brightness(1.15)}
 .site-permission-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
 .site-permission-row{padding:5px 0}
 .site-permission-row select{min-width:150px}
+
+/* Nova 6.4.0 — Minimal Reborn: flatter surfaces, sharper hierarchy and discreet separators. */
+#windowbar{height:40px;min-height:40px;border-bottom-color:color-mix(in srgb,var(--border) 76%,transparent)}
+#brand{width:76px;gap:6px;font-size:12px;letter-spacing:-.015em;border-radius:7px;cursor:pointer}
+#brand:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+#brand img{width:21px;height:21px;filter:none}
+#toolbar{height:50px;min-height:50px;padding-top:6px;padding-bottom:6px;gap:7px}
+#addressWrap{border-radius:11px}
+#sidebar{background:color-mix(in srgb,var(--surface) 97%,var(--bg));border-right-color:color-mix(in srgb,var(--border) 75%,transparent)}
+.side-item{border-radius:9px}
+.section-card{border-radius:12px;box-shadow:none}
+.btn,.field,select{border-radius:9px}
+.swatch-row{gap:10px}
+.custom-accent-control{display:flex;align-items:center;gap:8px}
+.custom-accent-control input[type=color]{width:42px;height:36px;padding:3px;border:1px solid var(--border);border-radius:9px;background:var(--surface);cursor:pointer}
+#brand .nova-icon{width:21px;height:21px}
+body.eclipse-theme{--bg:#171820;--surface:#1e202a;--surface-2:#272a38;--surface-3:#33364a;--fg:#ecebff;--muted:#b6b4d0;--border:#3b3d56;--hover:#2a2c3e;--active:rgba(139,124,255,.15);--chrome-overlay:rgba(19,18,34,.05);--accent:#8b7cff;--accent-soft:rgba(139,124,255,.15);--danger:#ff7e96}
+body.eclipse-theme #windowbar,body.eclipse-theme #toolbar,body.eclipse-theme #sidebar{background-color:var(--surface)}
+body.eclipse-theme .tab.active{background:var(--surface-2);border-color:var(--border)}
+body.focus-mode #sidebar{display:none!important}
+body.focus-mode #windowbar{height:34px;min-height:34px}
+body.focus-mode #toolbar{height:46px;min-height:46px}
+.assistant-layout{display:grid;grid-template-columns:minmax(240px,.85fr) minmax(300px,1.3fr);gap:15px;align-items:start}
+.assistant-controls .row{align-items:flex-start}
+.assistant-tools{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.assistant-notice{margin-top:16px;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}
+.assistant-notice p{margin:6px 0 0;color:var(--muted);font-size:11px;line-height:1.55}
+.assistant-chat-card{min-width:0}
+.assistant-chat{min-height:340px;max-height:52vh;overflow:auto;display:flex;flex-direction:column;gap:11px;padding:2px 1px 14px;scroll-behavior:smooth}
+.assistant-empty{min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;color:var(--muted);padding:22px}
+.assistant-empty img{width:42px;height:42px;object-fit:contain}
+.assistant-empty strong{font-size:16px;color:var(--fg)}
+.assistant-empty span{max-width:300px;line-height:1.55}
+.assistant-prompt-chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:7px}
+.assistant-prompt-chips .btn{font-size:11px}
+.assistant-message{max-width:96%;padding:11px 13px;border-radius:12px;border:1px solid var(--border);overflow-wrap:anywhere;line-height:1.6;font-size:12px}
+.assistant-question{align-self:flex-end;background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 28%,var(--border))}
+.assistant-answer{align-self:flex-start;background:var(--surface-2)}
+.assistant-message-role{font-size:10px;font-weight:700;color:var(--accent);margin-bottom:5px}
+.assistant-message-content{white-space:normal;user-select:text}
+.assistant-form{border-top:1px solid var(--border);padding-top:12px;display:flex;flex-direction:column;gap:9px}
+.assistant-form textarea{width:100%;min-height:78px;resize:vertical;padding:11px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--fg);font:inherit;font-size:12px;line-height:1.5;outline:0}
+.assistant-form textarea:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.assistant-page-toggle{display:flex;gap:7px;align-items:flex-start;font-size:11px;color:var(--muted);line-height:1.45}
+.assistant-page-toggle input{accent-color:var(--accent);margin:2px 0 0}
+.assistant-form-actions{display:flex;align-items:center;gap:8px}
+.assistant-spacer{flex:1}
+#assistantSend:disabled{opacity:.65;cursor:wait}
+@media(max-width:900px){.assistant-layout{grid-template-columns:1fr}.assistant-chat{max-height:46vh}}
+@media(prefers-reduced-motion:reduce){.assistant-chat{scroll-behavior:auto}}
+

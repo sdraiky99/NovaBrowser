@@ -1,17 +1,19 @@
-# Nova 6.3 Deluxe Edition — Velocidades Locas
+# Nova 6.4.0 — Minimal Reborn
 
-Nova es un navegador de escritorio basado en Electron/Chromium. La edición Deluxe de 6.3 combina una identidad visual renovada con mejoras de continuidad, distribución y validación. Mantiene una interfaz compacta, iconos locales y temas claro/oscuro/sistema.
+Nova es un navegador de escritorio basado en Electron/Chromium. La versión 6.4.0 — Minimal Reborn combina una interfaz más limpia, acentos personalizables, un tema secreto y un asistente de IA opcional con mejoras de continuidad y distribución. Mantiene temas claro/oscuro/sistema e iconos locales.
 
 ## Lo más destacado
 
-- **Nueva marca Nova:** N geométrica 3D, con fondo transparente, usada en la interfaz, el splash, el favicon y los recursos de Windows.
+- **Nueva marca Nova:** N geométrica minimalista con profundidad sutil y fondo transparente, usada en la interfaz, el splash, el favicon y los recursos de Windows.
 - **Navegación y nueva pestaña:** búsqueda por URL o consulta, accesos rápidos editables y noticias opcionales desde fuentes identificables.
 - **Continuidad:** preferencias guardadas, restauración de hasta 50 pestañas web y grupos en los casos compatibles con el estado almacenado.
 - **Herramientas:** marcadores, historial, panel lateral, gestor de descargas, importador de marcadores/historial, permisos por sitio y gestión de extensiones Chromium desempaquetadas.
 - **Setup y Portable:** configurados con directorios de compilación independientes y perfiles separados.
+- **IA integrada:** Nova Assist admite Ollama local o el proveedor online preexistente; el contenido de una página se incluye únicamente cuando el usuario lo marca explícitamente.
+- **Personalización:** nueve acentos, color personalizado, tema secreto Eclipse y modo Focus.
 - **Validación:** comprobaciones del proyecto, sintaxis JavaScript, lógica de distribución, recursos gráficos y un microbenchmark acotado de resolución de URL/búsqueda.
 
-Las limitaciones de compatibilidad de Electron y las verificaciones pendientes se describen en `RELEASE_NOTES_6.3.0.md` y `VALIDATION_6.3.0.txt`.
+Las limitaciones de compatibilidad de Electron y las verificaciones pendientes se describen en `RELEASE_NOTES_6.4.0.md` y `VALIDATION_6.4.0.txt`.
 
 ## Distribuciones de Windows
 
@@ -19,13 +21,13 @@ Las limitaciones de compatibilidad de Electron y las verificaciones pendientes s
 
 El instalador NSIS es asistido y está configurado para el usuario actual, sin solicitar elevación como comportamiento normal: `oneClick: false`, `perMachine: false`, `allowElevation: false`. Crea accesos directos en Escritorio y menú Inicio. No borra de forma silenciosa los datos personales al desinstalar.
 
-Ruta esperada: `dist/setup/Nova-Setup-6.3.0.exe`.
+Ruta esperada: `dist/setup/Nova-Setup-6.4.0.exe`.
 
 ### Portable
 
 No requiere instalación. Cuando la carpeta permite escritura, guarda el perfil en `User Data` junto al ejecutable. Si la carpeta no es escribible, la aplicación usa el perfil de Windows como alternativa e informa del modo de funcionamiento. Un Portable nuevo no copia automáticamente los datos de Setup.
 
-Ruta esperada: `dist/portable/Nova-Portable-6.3.0.exe`.
+Ruta esperada: `dist/portable/Nova-Portable-6.4.0.exe`.
 
 ## Compilar
 
@@ -60,3 +62,11 @@ Las pruebas estáticas y de lógica no equivalen a abrir y probar el navegador c
 - El renderer local principal aún conserva `nodeIntegration: true` y `contextIsolation: false` por dependencias heredadas; la migración completa requiere una refactorización específica y pruebas de regresión.
 - Las mediciones del script de rendimiento solo cubren la función pura de resolución de navegación, no el arranque completo, la red, las páginas remotas ni el consumo de RAM.
 - No se entrega `package-lock.json` en este paquete.
+
+## Nova Assist (6.4.0)
+
+La IA puede funcionar en modo local con Ollama instalado por separado o en modo online mediante el proveedor integrado. El modo online envía las consultas a un servicio externo. El contexto de la página actual solo se incluye si marcas esa opción en Nova Assist.
+
+**Para probar el modo local:** instala e inicia Ollama por separado, ejecuta `ollama pull qwen2.5:3b`, abre Nova Assist y pulsa «Comprobar conexión local». Si tienes otro modelo instalado, escribe su nombre exacto. Nova usa únicamente `127.0.0.1:11434`; no hay un campo para enviar la app a un endpoint arbitrario. Si Ollama no está instalado, puedes elegir el modo online o seguir usando Nova como navegador normal.
+
+**Modo online:** cuando se usa, la consulta se envía a un servicio externo. No incluyas la página actual ni información privada si no quieres compartirla con ese proveedor.

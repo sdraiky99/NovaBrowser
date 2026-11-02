@@ -12,7 +12,7 @@ try {
 
 if (isNovaNewTab) {
   const sendAction = (type, value) => {
-    if (!['navigate', 'open-tour', 'open-command', 'open-whats-new', 'open-settings', 'add-shortcut'].includes(type)) return;
+    if (!['navigate', 'open-tour', 'open-command', 'open-whats-new', 'open-settings', 'open-assistant', 'add-shortcut'].includes(type)) return;
     const payload = { type };
     if (type === 'navigate') {
       if (typeof value !== 'string' || value.length > 2048) return;
@@ -31,6 +31,7 @@ if (isNovaNewTab) {
     openCommand: () => sendAction('open-command'),
     openWhatsNew: () => sendAction('open-whats-new'),
     openSettings: () => sendAction('open-settings'),
+    openAssistant: () => sendAction('open-assistant'),
     addShortcut: (title, url) => sendAction('add-shortcut', { title, url }),
     newsFeed: payload => {
       const topic = ['todas', 'tecnologia', 'videojuegos', 'codigo'].includes(payload?.topic) ? payload.topic : 'todas';

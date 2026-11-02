@@ -1,8 +1,8 @@
 {
   "name": "nova-browser",
   "productName": "Nova",
-  "version": "6.3.0",
-  "description": "Nova 6.3 Deluxe Edition — Velocidades Locas: rendimiento medible, identidad renovada, sesiones ampliadas y mejoras de estabilidad.",
+  "version": "6.4.0",
+  "description": "Nova 6.4.0 FLOW — navegador Chromium renovado, seguro y con asistente local.",
   "author": "Nova",
   "main": "main.js",
   "scripts": {
@@ -11,13 +11,14 @@
     "dist:setup": "electron-builder --win nsis --publish never -c.directories.output=dist/setup",
     "dist:portable": "electron-builder --win portable --publish never -c.directories.output=dist/portable",
     "dist:win": "npm run dist:setup && npm run dist:portable",
-    "check": "npm run check:distribution-config && npm run check:project && npm run check:syntax && npm run qa:6.3 && npm run check:build-assets && npm run check:performance",
+    "check": "npm run check:distribution-config && npm run check:project && npm run check:syntax && npm run qa:6.3 && npm run check:build-assets && npm run check:performance && npm run check:security",
     "check:syntax": "node scripts/check-syntax-all.js",
     "check:project": "node scripts/check-project.js",
     "check:build-assets": "node scripts/check-build-assets.js",
     "check:distribution-config": "node scripts/check-distribution-config.js",
     "qa:6.3": "node scripts/qa-6.3.js",
-    "check:performance": "node scripts/performance-smoke.js"
+    "check:performance": "node scripts/performance-smoke.js",
+    "check:security": "node scripts/check-security.js"
   },
   "dependencies": {
     "@ghostery/adblocker-electron": "2.18.2",
@@ -43,8 +44,7 @@
       "shell/**",
       "assets/**",
       "package.json",
-      "account-service.js",
-      "account-config.json"
+      "shell/preload.js"
     ],
     "win": {
       "target": [

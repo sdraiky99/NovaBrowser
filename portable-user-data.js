@@ -138,7 +138,7 @@ function configurePortableUserData(app, env = process.env, deps = {}) {
   } catch (error) {
     try { app.setPath('userData', defaultUserData); } catch {}
     try { app.setPath('sessionData', defaultSessionData); } catch {}
-    logger.warn?.(`[Nova] No se pudo usar el perfil portable; se mantiene el perfil de Windows: ${error.message}`);
+    logger.warn?.(`[Nova] No se pudo usar el perfil portable; el inicio debe detenerse para proteger la separación de perfiles: ${error.message}`);
     return { ...fallback, reason: error.message || 'La carpeta portable no permite escribir.' };
   }
 }

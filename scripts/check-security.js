@@ -1,0 +1,18 @@
+'use strict';
+const fs = require('node:fs');
+const path = require('node:path');
+const root = path.resolve(__dirname, '..');
+const main = fs.readFileSync(path.join(root, 'main.js'), 'utf8');
+const renderer = fs.readFileSync(path.join(root, 'shell/nova.js'), 'utf8');
+const preload = fs.readFileSync(path.join(root, 'shell/preload.js'), 'utf8');
+const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+const errors = [];
+const requireText = (ok, msg) => { if (!ok) errors.push(msg); else console.log('OK', msg); };
+requireText(/nodeIntegration:\s*false/.test(main) && /contextIsolation:\s*true/.test(main), 'renderer principal aislado');
+requireText(/preload:\s*path\.join\(__dirname, 'shell', 'preload\.js'\)/.test(main), 'preload principal configurado');
+requireText(!/require\(['"]electron['"]\)/.test(renderer) && !/require\(['"]\.\/extensions\.js['"]\)/.test(renderer), 'renderer sin acceso directo a Node/Electron');
+requireText(preload.includes('contextBridge.exposeInMainWorld') && preload.includes('const INVOKE = new Set') && preload.includes('const SEND = new Set'), 'NovaAPI expone operaciones permitidas explícitamente');
+requireText(!/pollinations|api\.anthropic\.com|ai-ask/.test(main + renderer), 'sin proveedores de IA externos');
+requireText(!/account-service|account-config|accounts\.nova\.com|account-register|account-login/.test(main + renderer + JSON.stringify(pkg)), 'infraestructura de cuentas eliminada');
+requireText(pkg.version === '6.4.0', 'versión SemVer 6.4.0');
+if (errors.length) { errors.forEach(x => console.error('FAIL', x)); process.exit(1); }

@@ -1,0 +1,19 @@
+NOVA 6.4.0 FLOW — VALIDACIÓN ESTÁTICA
+
+Ejecutado en entorno Linux:
+- node --check de 17 archivos JavaScript: OK
+- check:security: OK
+- check:distribution-config: OK
+- check:project: OK
+- qa:6.3 (suite heredada adaptada a 6.4): OK
+- check:build-assets: OK
+- check:performance: OK (microbenchmark de resolución URL/búsqueda; no es una medición de RAM/CPU del navegador)
+- ZIP source file count target: <=100
+
+No ejecutado:
+- npm ci (no se ha podido generar package-lock.json: el registro npm no está accesible desde este entorno)
+- Electron runtime / interfaz gráfica
+- Compilación Windows NSIS / Portable
+- Pruebas de Windows 11, UAC, SmartScreen, perfiles, escalado y lectores de pantalla
+
+No afirmar que los instaladores están construidos o que el navegador está probado en Windows.
