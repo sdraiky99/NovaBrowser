@@ -1,8 +1,8 @@
 {
   "name": "nova-browser",
-  "productName": "Nova",
-  "version": "6.4.1",
-  "description": "Nova 6.4.1 FLOW Reborn \u2014 navegador Chromium renovado, personalizable y con asistente local.",
+  "productName": "NOVA 7",
+  "version": "7.0.0",
+  "description": "NOVA 7 FLOW — navegador Chromium personalizable con privacidad, herramientas y servicios integrados.",
   "author": "Nova",
   "main": "main.js",
   "scripts": {
@@ -11,12 +11,12 @@
     "dist:setup": "electron-builder --win nsis --publish never -c.directories.output=dist/setup",
     "dist:portable": "electron-builder --win portable --publish never -c.directories.output=dist/portable",
     "dist:win": "npm run dist:setup && npm run dist:portable",
-    "check": "npm run check:distribution-config && npm run check:project && npm run check:syntax && npm run qa:6.3 && npm run check:build-assets && npm run check:performance && npm run check:security",
+    "check": "npm run check:distribution-config && npm run check:project && npm run check:syntax && npm run qa:7 && npm run check:build-assets && npm run check:performance && npm run check:security",
     "check:syntax": "node scripts/check-syntax-all.js",
     "check:project": "node scripts/check-project.js",
     "check:build-assets": "node scripts/check-build-assets.js",
     "check:distribution-config": "node scripts/check-distribution-config.js",
-    "qa:6.3": "node scripts/qa-6.3.js",
+    "qa:7": "node scripts/qa-7.js",
     "check:performance": "node scripts/performance-smoke.js",
     "check:security": "node scripts/check-security.js"
   },
@@ -32,7 +32,7 @@
   },
   "build": {
     "appId": "com.nova.browser",
-    "productName": "Nova",
+    "productName": "NOVA 7",
     "directories": {
       "output": "dist"
     },
@@ -54,7 +54,7 @@
       "icon": "assets/brand/nova.ico"
     },
     "portable": {
-      "artifactName": "Nova-Portable-${version}.exe"
+      "artifactName": "NOVA-7-Portable-${version}.exe"
     },
     "publish": [
       {
@@ -63,9 +63,9 @@
         "repo": "NovaBrowser"
       }
     ],
-    "copyright": "Copyright \u00a9 2026 Nova",
+    "copyright": "Copyright © 2026 Nova",
     "nsis": {
-      "artifactName": "Nova-Setup-${version}.${ext}",
+      "artifactName": "NOVA-7-Setup-${version}.${ext}",
       "oneClick": false,
       "perMachine": false,
       "allowElevation": false,

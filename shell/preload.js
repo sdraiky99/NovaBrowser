@@ -9,14 +9,14 @@ const INVOKE = new Set([
   'permission-sites-list','permission-site-set','permission-site-reset','default-browser',
   'install-cfg','adblock','save-shot','pick-wp','toolbar-wallpaper-pick','toolbar-wallpaper-clear',
   'save-docx',
-  'state-save','state-load','open-external','open-downloads-folder','show-in-folder','save-text',
-  'launch-web-app','news-feed','update-check','update-state','update-download','update-install',
+  'state-save','state-load','backup-export','backup-import','open-external','open-downloads-folder','show-in-folder','save-text',
+  'launch-web-app','news-feed','cloud-translate','media-pick-files','media-open-external','update-check','update-state','update-download','update-install',
   'migration-scan','migration-read','performance-info','performance-mode','performance-cache',
   'security-state','ollama-models','ollama-ai','clear-data','clear','nova51-diagnostics',
   'nova51-restore-backup','nova51-export-state'
 ]);
 const SEND = new Set(['dl-ctl','prefs-set','win','fullscreen','perm-policy']);
-const SYNC = new Set(['app-version','prefs-get','userdata','portable-data-status']);
+const SYNC = new Set(['app-version','runtime-info','prefs-get','userdata','portable-data-status']);
 const EVENTS = new Set(['open-tab','open-tour','open-command','blocked','dl','tab-health','key','ctx-search','ask-ai','zoom-changed','update-state']);
 const listeners = new Map();
 const api = Object.freeze({

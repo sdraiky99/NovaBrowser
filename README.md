@@ -1,37 +1,27 @@
-# Nova 6.4.1 — FLOW Reborn
+# NOVA 7 — 7.0.0
 
-Nova es un navegador de escritorio basado en Electron/Chromium. La versión 6.4.1 — FLOW Reborn combina una interfaz más limpia, acentos personalizables, un tema secreto y un asistente de IA opcional con mejoras de continuidad y distribución. Mantiene temas claro/oscuro/sistema e iconos locales.
+NOVA 7 es un navegador de escritorio basado en Electron/Chromium, construido sobre el proyecto Nova FLOW Reborn. Esta etapa prioriza la navegación diaria, privacidad visible, personalización, productividad y herramientas integradas.
 
-## Lo más destacado
+## Funciones de esta entrega
 
-- **Nueva marca Nova:** N geométrica minimalista con profundidad sutil y fondo transparente, usada en la interfaz, el splash, el favicon y los recursos de Windows.
-- **Navegación y nueva pestaña:** búsqueda por URL o consulta, accesos rápidos editables y noticias opcionales desde fuentes identificables.
-- **Continuidad:** preferencias guardadas, restauración de hasta 50 pestañas web y grupos en los casos compatibles con el estado almacenado.
-- **Herramientas:** marcadores, historial, panel lateral, gestor de descargas, importador de marcadores/historial, permisos por sitio y gestión de extensiones Chromium desempaquetadas.
-- **Setup y Portable:** configurados con directorios de compilación independientes y perfiles separados.
-- **IA integrada:** Nova Assist utiliza exclusivamente Ollama local; el contenido de una página se incluye únicamente cuando el usuario lo marca explícitamente.
-- **Personalización:** nueve acentos, color personalizado, tema secreto Eclipse y modo Focus.
-- **Validación:** comprobaciones del proyecto, sintaxis JavaScript, lógica de distribución, recursos gráficos y un microbenchmark acotado de resolución de URL/búsqueda.
+- Barra de marcadores persistente y pestañas horizontales o verticales.
+- Pantalla dividida con dos pestañas y Reader Mode.
+- Nova Shield visible en la barra y control del bloqueador Ghostery.
+- Noticias mediante RSS y API de Steam News, con instalaciones nuevas mostrando noticias por defecto.
+- Nova Media: selección manual de archivos locales, reproducción Chromium y apertura con el reproductor del sistema.
+- Nova Translate: traducción cloud mediante MyMemory bajo acción explícita del usuario.
+- Nova Focus: temporizador local con sesiones completadas.
+- Nova Assist local con Ollama, sin proveedor cloud de IA.
+- Importación de marcadores e historial desde perfiles compatibles.
+- Copias automáticas locales del estado y exportación/importación manual JSON.
+- Setup por usuario y Portable en perfiles de datos separados.
 
-Las limitaciones de compatibilidad de Electron y las verificaciones pendientes se describen en `RELEASE_NOTES_6.4.1.md` y `VALIDATION_6.4.1.txt`.
+## Distribución Windows
 
-## Distribuciones de Windows
+- `NOVA-7-Setup-7.0.0.exe`: instalador asistido por usuario. `perMachine: false`, `allowElevation: false`.
+- `NOVA-7-Portable-7.0.0.exe`: edición portable, con datos independientes.
 
-### Setup — instalación por usuario
-
-El instalador NSIS es asistido y está configurado para el usuario actual, sin solicitar elevación como comportamiento normal: `oneClick: false`, `perMachine: false`, `allowElevation: false`. Crea accesos directos en Escritorio y menú Inicio. No borra de forma silenciosa los datos personales al desinstalar.
-
-Ruta esperada: `dist/setup/Nova-Setup-6.4.1.exe`.
-
-### Portable
-
-No requiere instalación. Cuando la carpeta permite escritura, guarda el perfil en `User Data` junto al ejecutable. Si la carpeta no es escribible, la aplicación usa el perfil de Windows como alternativa e informa del modo de funcionamiento. Un Portable nuevo no copia automáticamente los datos de Setup.
-
-Ruta esperada: `dist/portable/Nova-Portable-6.4.1.exe`.
-
-## Compilar
-
-Requisitos declarados: Windows para generar los ejecutables de Windows, Node.js `>=22.12.0` y npm. Las dependencias directas están fijadas en `package.json`. Este paquete no incluye `package-lock.json`; npm resolverá dependencias transitivas al instalar. Para una publicación reproducible conviene generar y revisar un lockfile en un entorno conectado antes de publicar.
+Requisitos de compilación: Windows, Node.js `>=22.12.0` y npm.
 
 ```powershell
 npm install --no-audit --no-fund --engine-strict
@@ -40,33 +30,17 @@ npm run dist:setup
 npm run dist:portable
 ```
 
-`npm run dist` compila las dos ediciones en secuencia. Los artefactos se escriben en carpetas distintas para que la compilación Portable no sobrescriba el Setup.
+## Privacidad y limitaciones
 
-## Comprobaciones
+- Nova Assist usa Ollama exclusivamente en `127.0.0.1:11434`.
+- Nova Translate transmite al proveedor MyMemory el texto que el usuario envía explícitamente. El límite anónimo publicado por el proveedor es de 5.000 caracteres al día; la API admite segmentos de hasta 500 bytes. Véase la documentación oficial enlazada en las notas de versión.
+- La biblioteca multimedia no escanea el disco. Solo registra archivos elegidos manualmente.
+- Los backups excluyen recursivamente campos habituales de contraseñas, cookies, credenciales, secretos y tokens; tampoco incluyen archivos multimedia originales.
+- La compatibilidad de extensiones Chromium y códecs varía. La Chrome Web Store no garantiza instalación universal dentro de Electron.
+- Esta entrega no incluye sincronización, perfiles multiusuario completamente aislados, Bitwarden integrado de forma nativa ni Quick Notes.
 
-```powershell
-npm run check:distribution-config
-npm run check:project
-npm run check:syntax
-npm run qa:6.3
-npm run check:build-assets
-npm run check:performance
-```
+## Archivos del proyecto
 
-Las pruebas estáticas y de lógica no equivalen a abrir y probar el navegador con páginas reales. En esta entrega no se afirma que los `.exe` se hayan compilado o probado en Windows; los workflows de GitHub Actions deben completar esa parte.
+El paquete contiene el código fuente, recursos, workflows de GitHub Actions, scripts de validación y documentación. No incluye `node_modules`, credenciales ni datos personales.
 
-## Seguridad y límites conocidos
-
-- No se promete compatibilidad universal con Chrome Web Store ni con todos los APIs de extensiones.
-- La importación no intenta descifrar contraseñas ni extraer secretos.
-- El renderer local principal aún conserva `nodeIntegration: true` y `contextIsolation: false` por dependencias heredadas; la migración completa requiere una refactorización específica y pruebas de regresión.
-- Las mediciones del script de rendimiento solo cubren la función pura de resolución de navegación, no el arranque completo, la red, las páginas remotas ni el consumo de RAM.
-- No se entrega `package-lock.json` en este paquete.
-
-## Nova Assist (6.4.1)
-
-Nova Assist funciona exclusivamente en local mediante Ollama. No hay proveedores de IA externos ni envío de consultas a servicios remotos. El contexto de la página actual solo se incluye si marcas esa opción en Nova Assist.
-
-**Para probar el modo local:** instala e inicia Ollama por separado, ejecuta `ollama pull qwen2.5:3b`, abre Nova Assist y pulsa «Comprobar conexión local». Si tienes otro modelo instalado, escribe su nombre exacto. Nova usa únicamente `127.0.0.1:11434`; no hay un campo para enviar la app a un endpoint arbitrario. Si Ollama no está instalado, Nova Assist permanecerá sin conexión; el navegador seguirá funcionando con normalidad.
-
-**Privacidad:** las consultas se dirigen únicamente al servicio local de Ollama en este equipo.
+Consulta `RELEASE_NOTES_7.0.0.md` y `VALIDATION_7.0.0.txt` para el alcance y el estado de verificación.

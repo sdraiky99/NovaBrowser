@@ -1,3 +1,12 @@
+# Changelog NOVA 7
+
+## 7.0.0 — NOVA 7 FLOW Recovery
+- Major update from 6.4.1; browser rebranded as NOVA 7.
+- Dual tab layouts, persistent bookmarks bar, split view and Reader Mode.
+- Nova Shield toolbar entry, Nova Media, cloud Translate, Focus timer and JSON backups.
+- Spanish-first RSS feeds plus Steam News API integration.
+- Setup/Portable artifact branding and CI validation for 7.0.0.
+
 # Nova — Changelog
 
 ## 6.4.1 — FLOW Reborn

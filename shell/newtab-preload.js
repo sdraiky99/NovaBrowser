@@ -34,7 +34,7 @@ if (isNovaNewTab) {
     openAssistant: () => sendAction('open-assistant'),
     addShortcut: (title, url) => sendAction('add-shortcut', { title, url }),
     newsFeed: payload => {
-      const topic = ['todas', 'tecnologia', 'videojuegos', 'codigo'].includes(payload?.topic) ? payload.topic : 'todas';
+      const topic = ['todas','tecnologia','videojuegos','codigo','ciencia','actualidad','entretenimiento','informatica','ia'].includes(payload?.topic) ? payload.topic : 'todas';
       return ipcRenderer.invoke('news-feed', { topic, force: payload?.force === true });
     }
   }));

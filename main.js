@@ -11,7 +11,7 @@ try {
   }
 } catch (e) { console.warn('Nova updater unavailable:', e.message); }
 const APP_ID = 'com.nova.browser';
-app.setName('Nova');
+app.setName('NOVA 7');
 const { configurePortableUserData } = require('./portable-user-data.js');
 const { normalizeHttpOrigin, isHttpOrigin, permissionKeysForRequest, permissionDecision, permissionRequestLabel } = require('./permission-policy.js');
 const portableDataStatus = configurePortableUserData(app, process.env);
@@ -154,12 +154,12 @@ async function registerBrowser(force) {
   const rows = [
     ['Software\\Classes\\NovaURL', '', 'Nova URL'], ['Software\\Classes\\NovaURL', 'URL Protocol', ''], ['Software\\Classes\\NovaURL\\DefaultIcon', '', ico], ['Software\\Classes\\NovaURL\\shell\\open\\command', '', cmd],
     ['Software\\Classes\\NovaHTML', '', 'Nova HTML Document'], ['Software\\Classes\\NovaHTML\\DefaultIcon', '', ico], ['Software\\Classes\\NovaHTML\\shell\\open\\command', '', cmd],
-    [C, '', 'Nova'], [C + '\\DefaultIcon', '', ico], [C + '\\shell\\open\\command', '', `"${exe}"`],
-    [C + '\\Capabilities', 'ApplicationName', 'Nova'], [C + '\\Capabilities', 'ApplicationIcon', ico],
+    [C, '', 'NOVA 7'], [C + '\\DefaultIcon', '', ico], [C + '\\shell\\open\\command', '', `"${exe}"`],
+    [C + '\\Capabilities', 'ApplicationName', 'NOVA 7'], [C + '\\Capabilities', 'ApplicationIcon', ico],
     [C + '\\Capabilities', 'ApplicationDescription', 'Navegador web moderno basado en Chromium'],
     [C + '\\Capabilities\\URLAssociations', 'http', 'NovaURL'], [C + '\\Capabilities\\URLAssociations', 'https', 'NovaURL'],
     [C + '\\Capabilities\\FileAssociations', '.html', 'NovaHTML'], [C + '\\Capabilities\\FileAssociations', '.htm', 'NovaHTML'],
-    ['Software\\RegisteredApplications', 'Nova', C + '\\Capabilities']
+    ['Software\\RegisteredApplications', 'NOVA 7', C + '\\Capabilities']
   ];
   for (const [k, n, v] of rows) await regAdd(k, n, v);
   prefs.reg = sig; savePrefs();
@@ -217,7 +217,7 @@ const isTrustedNewTabContents = contents => {
 function createMain() {
   win = new BrowserWindow({
     width: 1280, height: 800, minWidth: 720, minHeight: 480,
-    frame: false, show: false, title: 'Nova',
+    frame: false, show: false, title: 'NOVA 7',
     icon: logoImg(prefs.logo),
     backgroundColor: '#0d0b1a',
     webPreferences: { preload: path.join(__dirname, 'shell', 'preload.js'), nodeIntegration: false, contextIsolation: true, sandbox: true, webviewTag: true, webSecurity: true, allowRunningInsecureContent: false }
@@ -340,7 +340,7 @@ app.whenReady().then(() => {
   restoreRealExtensions('persist:web').catch(() => {});
   Menu.setApplicationMenu(null);
   const ua = web().getUserAgent()
-    .replace(/\s?Electron\/\S+/i, '').replace(/\s?nova-browser\/\S+/i, '').replace(/\s?Nova\/\S+/i, '') + ' Nova/' + app.getVersion();
+    .replace(/\s?Electron\/\S+/i, '').replace(/\s?nova-browser\/\S+/i, '').replace(/\s?Nova\/\S+/i, '') + ' NOVA7/' + app.getVersion();
   web().setUserAgent(ua);
   // Restaura la preferencia de privacidad al arrancar, sin bloquear la apertura de la ventana.
   setAdblock(prefs.adblock !== false).catch(() => {});
@@ -544,6 +544,7 @@ ipcMain.on('win', (e, a) => {
 ipcMain.on('extension-catalog', e => { if (denyUntrusted(e)) return; e.returnValue = EXT.CATALOG.map(({id,name,cat,desc}) => ({id,name,cat,desc})); });
 ipcMain.on('extension-script', (e, id) => { if (denyUntrusted(e) || typeof id !== 'string' || !EXT.byId(id)) return; e.returnValue = EXT.on(id); });
 ipcMain.on('app-version', e => { if (denyUntrusted(e)) return; e.returnValue = app.getVersion(); });
+ipcMain.on('runtime-info', e => { if (denyUntrusted(e)) return; e.returnValue = { version: app.getVersion(), chromium: process.versions.chrome, electron: process.versions.electron, node: process.versions.node, platform: process.platform, arch: process.arch, product: 'NOVA 7' }; });
 ipcMain.on('prefs-get', e => { if (denyUntrusted(e)) return; e.returnValue = JSON.parse(JSON.stringify(prefs)); });
 ipcMain.on('prefs-set', (e, p) => {
   if (denyUntrusted(e)) return;
@@ -667,12 +668,19 @@ ipcMain.handle('save-docx', async (e, payload) => {
   } catch { return null; }
 });
 
+const cleanBackupData = value => {
+  if (Array.isArray(value)) return value.map(cleanBackupData);
+  if (!value || typeof value !== 'object') return value;
+  const out = {};
+  const sensitive = /(?:password|passwd|credential|cookie|secret|token|api[_-]?key|^key$)/i;
+  for (const [key, item] of Object.entries(value)) if (!sensitive.test(key)) out[key] = cleanBackupData(item);
+  return out;
+};
 ipcMain.handle('state-save', (e, raw) => {
   if (denyUntrusted(e) || typeof raw !== 'string' || raw.length > 8 * 1024 * 1024) return false;
   try {
-    const obj = JSON.parse(raw);
-    if (!obj || typeof obj !== 'object') return false;
-    delete obj.key; // nunca guardar claves API en el backup de estado
+    const obj = cleanBackupData(JSON.parse(raw));
+    if (!obj || typeof obj !== 'object') return false; // nunca guardar credenciales, cookies ni claves en el backup
     const f = userFile('state-backup.json'), bak = userFile('state-backup.json.bak');
     const data = JSON.stringify(obj);
     // Mantén siempre la última versión válida como respaldo: si el siguiente guardado falla, se puede volver atrás.
@@ -681,10 +689,29 @@ ipcMain.handle('state-save', (e, raw) => {
     return true;
   } catch { return false; }
 });
+ipcMain.handle('backup-export', async (e, raw) => {
+  if (denyUntrusted(e) || typeof raw !== 'string' || raw.length > 8 * 1024 * 1024) return {ok:false,error:'Copia no válida.'};
+  try {
+    const obj=cleanBackupData(JSON.parse(raw)); if(!obj||typeof obj!=='object'||Array.isArray(obj)) return {ok:false,error:'La copia no contiene un estado válido.'};
+    const picked=await dialog.showSaveDialog(win,{title:'Exportar copia de NOVA 7',defaultPath:path.join(app.getPath('documents'),`NOVA-7-Backup-${new Date().toISOString().slice(0,10)}.json`),filters:[{name:'Copia NOVA 7',extensions:['json']}]});
+    if(picked.canceled||!picked.filePath)return {ok:false,canceled:true};
+    delete obj.key; atomicWrite(picked.filePath,JSON.stringify(obj)); return {ok:true,path:picked.filePath};
+  } catch(error){return {ok:false,error:String(error?.message||error).slice(0,200)};}
+});
+ipcMain.handle('backup-import', async e => {
+  if (denyUntrusted(e)) return {ok:false,error:'Solicitud no válida.'};
+  try {
+    const picked=await dialog.showOpenDialog(win,{title:'Importar copia de NOVA 7',properties:['openFile'],filters:[{name:'Copia NOVA 7',extensions:['json']}]});
+    if(picked.canceled||!picked.filePaths?.[0])return {ok:false,canceled:true};
+    const stat=fs.statSync(picked.filePaths[0]); if(!stat.isFile()||stat.size>8*1024*1024)return {ok:false,error:'El archivo supera el tamaño permitido.'};
+    const raw=fs.readFileSync(picked.filePaths[0],'utf8');const obj=cleanBackupData(JSON.parse(raw));if(!obj||typeof obj!=='object'||Array.isArray(obj))return {ok:false,error:'El archivo no es una copia válida.'};
+    return {ok:true,state:JSON.stringify(obj)};
+  } catch(error){return {ok:false,error:String(error?.message||error).slice(0,220)};}
+});
 ipcMain.handle('state-load', e => {
   if (denyUntrusted(e)) return null;
   for (const f of [userFile('state-backup.json'), userFile('state-backup.json.bak')]) {
-    try { const obj = JSON.parse(fs.readFileSync(f, 'utf8')); delete obj.key; return JSON.stringify(obj); } catch { }
+    try { const obj = cleanBackupData(JSON.parse(fs.readFileSync(f, 'utf8'))); return JSON.stringify(obj); } catch { }
   }
   return null;
 });
@@ -703,6 +730,19 @@ ipcMain.handle('open-downloads-folder', async e => {
   }
 });
 
+ipcMain.handle('media-pick-files', async e => {
+  if (denyUntrusted(e)) return { ok:false, error:'Solicitud no válida.' };
+  try {
+    const picked=await dialog.showOpenDialog(win,{title:'Añadir archivos a Nova Media',properties:['openFile','multiSelections'],filters:[{name:'Audio y vídeo',extensions:['mp3','m4a','aac','wav','flac','ogg','opus','mp4','m4v','mov','webm','ogv','mkv','avi','wmv','3gp']} ]});
+    if (picked.canceled) return { ok:false, canceled:true, items:[] };
+    const items=picked.filePaths.slice(0,200).filter(file=>{try{return fs.statSync(file).isFile()}catch{return false}}).map(file=>({path:file,url:pathToFileURL(file).href,name:path.basename(file),extension:path.extname(file).slice(1).toLowerCase()}));
+    return {ok:true,items};
+  } catch(error) { return {ok:false,error:String(error?.message||error).slice(0,220)}; }
+});
+ipcMain.handle('media-open-external', async (e, raw) => {
+  if (denyUntrusted(e) || typeof raw !== 'string' || raw.length > 4096) return false;
+  try { const file=path.resolve(raw); if (!fs.existsSync(file) || !fs.statSync(file).isFile()) return false; const result=await shell.openPath(file); return !result; } catch { return false; }
+});
 ipcMain.handle('show-in-folder', (e, raw) => {
   if (denyUntrusted(e) || typeof raw !== 'string' || raw.length > 4096) return false;
   try { const f = path.resolve(raw); if (!fs.existsSync(f)) return false; shell.showItemInFolder(f); return true; } catch { return false; }
@@ -730,12 +770,19 @@ ipcMain.handle('launch-web-app', async (e, payload) => {
 // ---------- Live news for Nova New Tab ----------
 const newsCache = new Map();
 const NEWS_SOURCES = [
-  { name: 'Ars Technica', url: 'https://feeds.arstechnica.com/arstechnica/index', site: 'https://arstechnica.com/', topics:['tecnologia','codigo'] },
+  { name: 'Xataka', url: 'https://www.xataka.com/index.xml', site: 'https://www.xataka.com/', topics:['tecnologia','informatica','ia','ciencia'] },
+  { name: 'Genbeta', url: 'https://www.genbeta.com/index.xml', site: 'https://www.genbeta.com/', topics:['tecnologia','codigo','informatica','ia'] },
+  { name: 'MuyComputer', url: 'https://www.muycomputer.com/feed/', site: 'https://www.muycomputer.com/', topics:['tecnologia','informatica','ciencia'] },
+  { name: 'Ars Technica', url: 'https://feeds.arstechnica.com/arstechnica/index', site: 'https://arstechnica.com/', topics:['tecnologia','codigo','ciencia'] },
   { name: 'Ars Technica Gaming', url: 'https://feeds.arstechnica.com/arstechnica/gaming', site: 'https://arstechnica.com/gaming/', topics:['videojuegos'] },
-  { name: 'The Guardian Technology', url: 'https://www.theguardian.com/technology/rss', site: 'https://www.theguardian.com/technology', topics:['tecnologia','codigo'] },
-  { name: 'The Verge', url: 'https://www.theverge.com/rss/index.xml', site: 'https://www.theverge.com/', topics:['tecnologia','codigo'] },
-  { name: 'Engadget', url: 'https://www.engadget.com/rss.xml', site: 'https://www.engadget.com/', topics:['tecnologia'] },
-  { name: 'PC Gamer', url: 'https://www.pcgamer.com/rss/', site: 'https://www.pcgamer.com/', topics:['videojuegos','codigo'] }
+  { name: 'The Verge', url: 'https://www.theverge.com/rss/index.xml', site: 'https://www.theverge.com/', topics:['tecnologia','codigo','ia'] },
+  { name: 'PC Gamer', url: 'https://www.pcgamer.com/rss/', site: 'https://www.pcgamer.com/', topics:['videojuegos'] }
+];
+const NEWS_API_SOURCES = [
+  { appid: 730, name: 'Steam · Counter-Strike 2' },
+  { appid: 570, name: 'Steam · Dota 2' },
+  { appid: 440, name: 'Steam · Team Fortress 2' },
+  { appid: 1172470, name: 'Steam · Apex Legends' }
 ];
 const NEWS_FALLBACK = []; // Nunca presentar contenido editorial de ejemplo como si fueran noticias reales.
 const NEWS_LIVE_CACHE = () => userFile('news-live-cache.json');
@@ -748,7 +795,12 @@ const newsPick = (items, topic) => {
   const terms = {
     tecnologia: /AI|artificial|browser|web|internet|chip|memory|GPU|software|privacy|security|Microsoft|Apple|Google|Mozilla|Firefox|Linux|Windows/i,
     videojuegos: /game|gaming|Steam|Valve|Nintendo|PlayStation|Xbox|GPU|VR|console|Doom|Minecraft|Fortnite|GTA/i,
-    codigo: /developer|programming|code|software|open source|Linux|GitHub|browser|API|AI|security|MCP|web/i
+    codigo: /developer|programming|code|software|open source|Linux|GitHub|browser|API|AI|security|MCP|web|desarrollador|programación|código/i,
+    ciencia: /science|space|NASA|research|scientist|climate|ciencia|investigación|espacio|universidad/i,
+    actualidad: /politics|world|economy|policy|election|actualidad|economía|gobierno|Europa/i,
+    entretenimiento: /film|movie|series|music|entertainment|película|cine|serie|música|entretenimiento/i,
+    informatica: /PC|Windows|Linux|hardware|CPU|GPU|memory|computer|ordenador|informática|portátil/i,
+    ia: /AI|artificial intelligence|machine learning|LLM|model|inteligencia artificial|modelo|aprendizaje automático/i
   };
   if(topic==='todas') return items.sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,8);
   const srcFiltered=items.filter(x=>Array.isArray(x.topics)&&x.topics.includes(topic));
@@ -780,16 +832,36 @@ async function fetchNewsFeed(url, source) {
     return title&&/^https?:/i.test(link)?{source:source.name,title,summary:desc.slice(0,360),url:link,image:/^https?:/i.test(image)?image:'',date:ts?new Date(ts).toISOString():'',ts,kind:'live',topics:source.topics||[]}:null;
   }).filter(Boolean);
 }
+async function fetchSteamNews(source) {
+  const url = `https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=${source.appid}&count=5&maxlength=420&format=json&l=spanish`;
+  const response = await fetch(url, { headers:{'user-agent':'NOVA7/'+app.getVersion()}, signal:AbortSignal.timeout(7000) });
+  if (!response.ok) throw new Error('Steam API HTTP '+response.status);
+  const data = await response.json();
+  const rows = Array.isArray(data?.appnews?.newsitems) ? data.appnews.newsitems : [];
+  return rows.map(item => ({
+    source: source.name,
+    title: String(item?.title || '').slice(0,220),
+    summary: newsStripHtml(item?.contents || '').slice(0,360),
+    url: /^https?:/i.test(String(item?.url || '')) ? item.url : '',
+    image: '',
+    date: Number(item?.date) ? new Date(Number(item.date)*1000).toISOString() : '',
+    ts: Number(item?.date)*1000 || 0,
+    kind: 'api', topics:['videojuegos']
+  })).filter(x => x.title && x.url);
+}
 ipcMain.handle('news-feed', async (e, payload) => {
   if (denyUntrusted(e) && !isTrustedNewTabContents(e.sender)) return { ok:false, items:[], live:false, stale:false, sources:[], error:'Origen no autorizado' };
   const requestedTopic = String(payload?.topic || 'todas').toLowerCase();
-  const topic = ['todas', 'tecnologia', 'videojuegos', 'codigo'].includes(requestedTopic) ? requestedTopic : 'todas';
+  const allowedTopics = ['todas','tecnologia','videojuegos','codigo','ciencia','actualidad','entretenimiento','informatica','ia'];
+  const topic = allowedTopics.includes(requestedTopic) ? requestedTopic : 'todas';
   const force = payload?.force === true;
   const key=topic;
   const hit=newsCache.get(key); if(!force && hit && Date.now()-hit.at<5*60*1000) return hit.value;
   const disk=readLiveNewsCache();
   const stale=disk[key];
-  const results=await Promise.allSettled(NEWS_SOURCES.map(s=>fetchNewsFeed(s.url,s)));
+  const feedJobs = NEWS_SOURCES.map(s=>fetchNewsFeed(s.url,s));
+  if (topic === 'todas' || topic === 'videojuegos') NEWS_API_SOURCES.forEach(source => feedJobs.push(fetchSteamNews(source)));
+  const results=await Promise.allSettled(feedJobs);
   const items=[]; for(const r of results) if(r.status==='fulfilled') items.push(...r.value);
   const uniq=[...new Map(items.map(x=>[x.url,x])).values()];
   const picked=newsPick(uniq,topic);
@@ -799,6 +871,54 @@ ipcMain.handle('news-feed', async (e, payload) => {
   }
   if(stale?.items?.length){ const value={ok:true,items:stale.items,live:true,stale:true,sources:stale.sources||[]}; newsCache.set(key,{at:Date.now(),value}); return value; }
   const value={ok:true,items:[],live:false,stale:false,sources:[],error:'Las fuentes de noticias no están disponibles y no hay caché local.'}; newsCache.set(key,{at:Date.now(),value}); return value;
+});
+
+// NOVA 7 Translate: MyMemory cloud service. Text is sent only after an explicit user action.
+function splitTranslationText(input, maxBytes = 440) {
+  const chunks=[]; let current='';
+  const pieces=String(input).split(/(?<=[.!?。！？])\s+|\n+/u).filter(Boolean);
+  for (const piece of pieces) {
+    const candidate=current ? current+' '+piece : piece;
+    if (Buffer.byteLength(candidate,'utf8') <= maxBytes) current=candidate;
+    else {
+      if (current) chunks.push(current);
+      let part='';
+      for (const word of piece.split(/\s+/u)) {
+        const next=part ? part+' '+word : word;
+        if (Buffer.byteLength(next,'utf8') > maxBytes) { if (part) chunks.push(part); part=word; }
+        else part=next;
+      }
+      current=part;
+    }
+  }
+  if (current) chunks.push(current);
+  return chunks;
+}
+ipcMain.handle('cloud-translate', async (e, payload) => {
+  if (denyUntrusted(e) || !payload || typeof payload !== 'object') return { ok:false, error:'Solicitud no válida.' };
+  const text=String(payload.text || '').trim();
+  const source=String(payload.source || 'en').toLowerCase();
+  const target=String(payload.target || 'es').toLowerCase();
+  const langs=new Set(['en','es','fr','de','it','pt','nl','ru','ja','zh-CN','ca','eu']);
+  if (!text) return { ok:false, error:'Escribe o pega un texto para traducir.' };
+  if (text.length > 4500) return { ok:false, error:'La versión gratuita anónima admite hasta 4.500 caracteres por operación en Nova. Divide el texto para continuar.' };
+  if (!langs.has(source) || !langs.has(target) || source===target) return { ok:false, error:'Selecciona dos idiomas distintos compatibles.' };
+  try {
+    const chunks=splitTranslationText(text);
+    const translated=[];
+    for (const chunk of chunks) {
+      const url=new URL('https://api.mymemory.translated.net/get');
+      url.searchParams.set('q',chunk); url.searchParams.set('langpair',`${source}|${target}`); url.searchParams.set('mt','1');
+      const response=await fetch(url.href,{headers:{'user-agent':'NOVA7/'+app.getVersion()},signal:AbortSignal.timeout(15000)});
+      const data=await response.json().catch(()=>({}));
+      if (!response.ok || Number(data?.responseStatus)!==200 || !data?.responseData?.translatedText) throw new Error(String(data?.responseDetails || `El proveedor respondió HTTP ${response.status}`).slice(0,240));
+      translated.push(String(data.responseData.translatedText));
+    }
+    const decode = value => String(value).replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+    return { ok:true, text:translated.map(decode).join(' '), provider:'MyMemory', source, target, notice:'Proveedor externo: el texto se ha enviado a MyMemory para traducirlo.' };
+  } catch (error) {
+    return { ok:false, error:`No se pudo traducir con MyMemory: ${String(error?.message || error).slice(0,240)}` };
+  }
 });
 
 let updateState = { status:'idle', current:app.getVersion(), available:false, version:'', downloaded:false, progress:0, error:'' };
@@ -984,8 +1104,8 @@ ipcMain.handle('nova51-restore-backup', e => {
   const backup=userFile('state-backup.json.bak');
   try {
     if (!fs.existsSync(backup)) return {ok:false,error:'No hay una copia de seguridad disponible.'};
-    const obj=JSON.parse(fs.readFileSync(backup,'utf8')); if(!obj||typeof obj!=='object'||Array.isArray(obj)) return {ok:false,error:'La copia no es válida.'};
-    delete obj.key; atomicWrite(userFile('state-backup.json'),JSON.stringify(obj));
+    const obj=cleanBackupData(JSON.parse(fs.readFileSync(backup,'utf8'))); if(!obj||typeof obj!=='object'||Array.isArray(obj)) return {ok:false,error:'La copia no es válida.'};
+    atomicWrite(userFile('state-backup.json'),JSON.stringify(obj));
     return {ok:true,state:JSON.stringify(obj)};
   } catch(err){ return {ok:false,error:String(err?.message||err)}; }
 });
