@@ -5,7 +5,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 const bad = [];
-if (pkg.version !== '6.4.0') bad.push('package version');
+if (pkg.version !== '6.4.1') bad.push('package version');
 if (JSON.stringify(pkg.build?.win?.target) !== JSON.stringify(['nsis','portable'])) bad.push('Windows target must include NSIS and Portable');
 if (pkg.build?.nsis?.artifactName !== 'Nova-Setup-${version}.${ext}') bad.push('setup artifact name');
 if (pkg.build?.nsis?.perMachine !== false || pkg.build?.nsis?.allowElevation !== false || pkg.build?.nsis?.oneClick !== false || pkg.build?.nsis?.allowToChangeInstallationDirectory !== false) bad.push('setup must be assisted, per-user, and avoid protected path selection');

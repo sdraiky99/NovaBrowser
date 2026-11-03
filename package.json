@@ -1,8 +1,8 @@
 {
   "name": "nova-browser",
   "productName": "Nova",
-  "version": "6.4.0",
-  "description": "Nova 6.4.0 FLOW — navegador Chromium renovado, seguro y con asistente local.",
+  "version": "6.4.1",
+  "description": "Nova 6.4.1 FLOW Reborn \u2014 navegador Chromium renovado, personalizable y con asistente local.",
   "author": "Nova",
   "main": "main.js",
   "scripts": {
@@ -63,7 +63,7 @@
         "repo": "NovaBrowser"
       }
     ],
-    "copyright": "Copyright © 2026 Nova",
+    "copyright": "Copyright \u00a9 2026 Nova",
     "nsis": {
       "artifactName": "Nova-Setup-${version}.${ext}",
       "oneClick": false,

@@ -1,0 +1,16 @@
+NOVA 6.4.1 FLOW REBORN — VALIDACIÓN
+
+Diseño: Chrome moderno, densidad equilibrada, temas claros y oscuros.
+ZIP: máximo 100 archivos (el paquete fuente contiene 64).
+
+Validación estática ejecutada: npm run check — PASS.
+Incluye configuración Setup per-user + Portable, sintaxis JS, QA de regresión, recursos, seguridad y un microbenchmark de resolución URL.
+
+Limitaciones no verificadas en este entorno:
+- No se ejecutó Electron en Windows.
+- No se compilaron Setup ni Portable.
+- No se probó Ollama real porque requiere un servicio local y un modelo instalado en el equipo de destino.
+- El microbenchmark no mide consumo real de RAM/CPU, arranque de Electron ni carga de páginas.
+
+Ollama esperado: http://127.0.0.1:11434, con endpoints /api/version, /api/tags y /api/chat.
+Modelo de ejemplo: ollama pull qwen2.5:3b

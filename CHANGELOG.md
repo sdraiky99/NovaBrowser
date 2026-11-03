@@ -1,13 +1,13 @@
 # Nova — Changelog
 
-## 6.4.0 — Minimal Reborn
+## 6.4.1 — FLOW Reborn
 - Renovación visual minimalista y nuevo símbolo N con fondo transparente.
 - Nueve colores de acento, selector de color personalizado y persistencia.
 - Tema secreto Nova Eclipse: desbloqueo con diez clics en el logo; activación posterior en Ajustes.
-- Nova Assist en el panel lateral: Ollama local y proveedor online opcional.
+- Nova Assist en el panel lateral: Ollama local exclusivo.
 - El contenido de página solo se comparte con Nova Assist cuando el usuario marca explícitamente esa opción.
 - Modo Focus y Quick Actions en Ctrl+Shift+P (Ctrl+K también sigue disponible).
-- Actualización de checks de proyecto, configuración de distribución y workflows a 6.4.0.
+- Actualización de checks de proyecto, configuración de distribución y workflows a 6.4.1.
 
 # Changelog de Nova
 

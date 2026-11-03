@@ -911,13 +911,18 @@ ipcMain.handle('security-state', e => {
 ipcMain.handle('ollama-models', async e => {
   if (denyUntrusted(e)) return { ok:false, error:'Solicitud no válida.' };
   try {
-    const r = await fetch('http://127.0.0.1:11434/api/tags', { signal: AbortSignal.timeout(3000) });
-    if (!r.ok) return { ok:false, error:`Ollama respondió HTTP ${r.status}.` };
-    const data = await r.json().catch(() => ({}));
-    const models = Array.isArray(data.models) ? data.models.map(x => String(x?.name || '').trim()).filter(Boolean).slice(0,100) : [];
-    return { ok:true, models };
-  } catch {
-    return { ok:false, error:'No se encuentra Ollama en este equipo. Instálalo, inicia Ollama y descarga un modelo compatible.' };
+    const base = 'http://127.0.0.1:11434';
+    const versionResponse = await fetch(`${base}/api/version`, { signal:AbortSignal.timeout(2500) });
+    if (!versionResponse.ok) return { ok:false, error:`El servicio de Ollama respondió HTTP ${versionResponse.status} al consultar su versión.` };
+    const versionData = await versionResponse.json().catch(() => ({}));
+    const tagsResponse = await fetch(`${base}/api/tags`, { signal:AbortSignal.timeout(5000) });
+    if (!tagsResponse.ok) return { ok:false, error:`Ollama está activo, pero no se pudo consultar la lista de modelos (HTTP ${tagsResponse.status}).` };
+    const data = await tagsResponse.json().catch(() => ({}));
+    const models = Array.isArray(data.models) ? data.models.map(x => String(x?.name || x?.model || '').trim()).filter(Boolean).slice(0,100) : [];
+    return { ok:true, version:String(versionData.version||''), models };
+  } catch (err) {
+    const detail = String(err?.cause?.code || err?.code || err?.message || 'conexión rechazada');
+    return { ok:false, error:`No se puede conectar con Ollama en 127.0.0.1:11434 (${detail}). Abre Ollama y espera a que el servicio esté iniciado. Si no está instalado, instálalo desde ollama.com.` };
   }
 });
 ipcMain.handle('ollama-ai', async (e, data) => {
@@ -926,18 +931,25 @@ ipcMain.handle('ollama-ai', async (e, data) => {
   if (!Array.isArray(messages) || messages.length < 1 || messages.length > 20 || typeof system !== 'string' || system.length > 12000 || typeof model !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,99}$/.test(model)) return { ok:false, error:'Parámetros de IA local no válidos.' };
   if (messages.some(m => !m || typeof m !== 'object' || !['user','assistant'].includes(m.role) || typeof m.content !== 'string' || m.content.length > 16000)) return { ok:false, error:'El mensaje supera los límites admitidos.' };
   try {
-    const r = await fetch('http://127.0.0.1:11434/api/chat', {
+    const base='http://127.0.0.1:11434';
+    const tags=await fetch(`${base}/api/tags`,{signal:AbortSignal.timeout(5000)});
+    if(!tags.ok) return {ok:false,error:`Ollama no pudo listar los modelos (HTTP ${tags.status}).`};
+    const tagData=await tags.json().catch(()=>({}));
+    const installed=Array.isArray(tagData.models)?tagData.models.map(x=>String(x?.name||x?.model||'')):[];
+    if(!installed.includes(model)) return {ok:false,error:`El modelo «${model}» no está instalado con ese nombre. Modelos disponibles: ${installed.slice(0,12).join(', ')||'ninguno'}.`};
+    const r = await fetch(`${base}/api/chat`, {
       method:'POST', headers:{'content-type':'application/json'},
       body:JSON.stringify({ model, stream:false, messages:[{role:'system',content:system}, ...messages.slice(-16)], options:{num_ctx:4096} }),
-      signal:AbortSignal.timeout(90000)
+      signal:AbortSignal.timeout(180000)
     });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) return { ok:false, error:String(d?.error || `Ollama respondió HTTP ${r.status}`).slice(0,500) };
     const text = String(d?.message?.content || '').trim();
-    return text ? { ok:true, text, model:String(d?.model || model), src:'ollama' } : { ok:false, error:'El modelo local no devolvió una respuesta. Comprueba que esté descargado y vuelve a intentarlo.' };
+    return text ? { ok:true, text, model:String(d?.model || model), src:'ollama' } : { ok:false, error:'Ollama recibió la petición, pero el modelo no devolvió una respuesta. Revisa que el modelo sea compatible con /api/chat.' };
   } catch (err) {
-    const msg = String(err?.message || err || 'Error desconocido');
-    return { ok:false, error:msg.includes('timeout') ? 'El modelo tardó demasiado en responder. Prueba uno más pequeño.' : 'No se pudo conectar con Ollama. Comprueba que esté instalado y ejecutándose.' };
+    const code=String(err?.cause?.code||err?.code||'');
+    const msg=String(err?.message||err||'Error desconocido');
+    return { ok:false, error:msg.toLowerCase().includes('timeout')||msg.toLowerCase().includes('aborted')?'Ollama tardó más de 3 minutos. Prueba un modelo más pequeño o reduce el contexto.':`Error al conectar con Ollama (${code||msg.slice(0,120)}). Comprueba que sigue activo en 127.0.0.1:11434.` };
   }
 });
 

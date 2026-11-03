@@ -8,7 +8,7 @@ const root = path.resolve(__dirname, '..');
 const read = rel => fs.readFileSync(path.join(root, rel), 'utf8');
 const pkg = JSON.parse(read('package.json'));
 const ok = message => console.log('OK', message);
-assert.equal(pkg.version, '6.4.0');
+assert.equal(pkg.version, '6.4.1');
 assert.match(pkg.description, /FLOW/);
 assert.ok(fs.existsSync(path.join(root, 'assets/brand/nova-mark.svg')));
 const brandSvg = read('assets/brand/nova-mark.svg');
@@ -57,7 +57,7 @@ try {
   ok('Setup/desarrollo mantiene el perfil normal de Windows');
 
   const exeDir=path.join(tempRoot,'PortableFresh'); fs.mkdirSync(exeDir,{recursive:true});
-  const exe=path.join(exeDir,'Nova-Portable-6.4.0.exe');fs.writeFileSync(exe,'fake exe');
+  const exe=path.join(exeDir,'Nova-Portable-6.4.1.exe');fs.writeFileSync(exe,'fake exe');
   const target=path.join(exeDir,'User Data');
   const freshApp=makeApp();
   const fresh=configurePortableUserData(freshApp,{PORTABLE_EXECUTABLE_FILE:exe,PORTABLE_EXECUTABLE_DIR:exeDir},{logger});
@@ -72,7 +72,7 @@ try {
   ok('actualización de Portable conserva su propio perfil');
 
   const importDir=path.join(tempRoot,'PortableImportOptIn');fs.mkdirSync(importDir,{recursive:true});
-  const importExe=path.join(importDir,'Nova-Portable-6.4.0.exe');fs.writeFileSync(importExe,'fake exe');
+  const importExe=path.join(importDir,'Nova-Portable-6.4.1.exe');fs.writeFileSync(importExe,'fake exe');
   const importApp=makeApp();const imported=configurePortableUserData(importApp,{PORTABLE_EXECUTABLE_FILE:importExe,PORTABLE_EXECUTABLE_DIR:importDir,NOVA_IMPORT_EXISTING_PROFILE:'1'},{logger});
   assert.equal(imported.active,true);assert.equal(imported.migrated,true);
   assert.equal(fs.readFileSync(path.join(importDir,'User Data','prefs.json'),'utf8'),'{"theme":"dark"}');
@@ -94,14 +94,17 @@ ok('resolución URL/búsqueda y bloqueo de esquemas de ejecución');
 const main=read('main.js'), ui=read('shell/nova.js'), home=read('shell/newtab.html'), preload=read('shell/newtab-preload.js');
 assert.ok(main.includes("ipcMain.handle('ollama-ai'") && main.includes("ipcMain.handle('ollama-models'"), 'Nova Assist must expose fixed-loopback Ollama handlers');
 assert.ok(ui.includes('renderAssistant(r)') && ui.includes('toggleEclipse') && ui.includes('applyCustomAccent'), 'Nova Assist, custom accents and Eclipse theme must be wired');
+assert.ok(ui.includes('command-ring') && ui.includes('command-node') && ui.includes('command-hub'), 'Command Center radial y centrado debe estar presente');
+assert.ok(ui.includes('themePreset') && ui.includes('uiDensity') && ui.includes('fontScale'), 'temas, densidad y escala tipográfica deben ser configurables');
+assert.ok(read('shell/nova.css').includes('body[data-theme-preset=\"midnight\"]') && read('shell/nova.css').includes('body.dark[data-theme-preset=\"lavender\"]'), 'paletas claras y oscuras deben existir');
 assert.ok(ui.includes('logoTapCount>=10') && ui.includes("e.key.toLowerCase()==='p'"), 'Easter egg and quick actions must be wired');
 assert.ok(home.includes('id="openAssistant"') && home.includes('nova?.openAssistant?.()'), 'new tab must link to Nova Assist');
 assert.ok(read('assets/icons/sparkles.svg').includes('<svg') && read('shell/index.html').includes('data-view="assistant"'), 'assistant sidebar icon and route must exist');
-assert.ok(home.includes('Nova 6.4.0 · Minimal Reborn'));
-assert.ok(home.includes('Novedades de Nova 6.4.0'));
+assert.ok(home.includes('Nova 6.4.1 · FLOW Reborn'));
+assert.ok(home.includes('Novedades de Nova 6.4.1'));
 assert.ok(read('shell/index.html').includes('../assets/brand/nova-mark.svg'));
-assert.ok(read('shell/splash.html').includes('MINIMAL REBORN · NOVA ASSIST · 6.4.0'));
-ok('identidad Minimal Reborn integrada: SVG transparente, nueva pestaña, favicon y splash');
+assert.ok(read('shell/splash.html').includes('FLOW REBORN · NOVA ASSIST · 6.4.1'));
+ok('identidad FLOW Reborn integrada: SVG transparente, nueva pestaña, favicon y splash');
 assert.ok(main.includes('permission-sites-list') && main.includes('permission-site-set') && main.includes('permission-site-reset'));
 assert.ok(main.includes('Permitir siempre') && main.includes('Bloquear siempre'));
 assert.ok(main.includes("ipcMain.handle('news-feed'") && main.includes('The Verge') && main.includes('PC Gamer')); // RSS feed handler remains present
@@ -136,4 +139,4 @@ for (const [name, content] of [['build',build],['release',release]]) {
   assert.ok(!content.includes("fs.writeFileSync(\"package.json\""));
 }
 ok('GitHub Actions compila y verifica ambos artefactos sin mutar package.json');
-console.log('QA Nova 6.4.0: PASS');
+console.log('QA Nova 6.4.1: PASS');

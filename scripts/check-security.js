@@ -14,5 +14,8 @@ requireText(!/require\(['"]electron['"]\)/.test(renderer) && !/require\(['"]\.\/
 requireText(preload.includes('contextBridge.exposeInMainWorld') && preload.includes('const INVOKE = new Set') && preload.includes('const SEND = new Set'), 'NovaAPI expone operaciones permitidas explícitamente');
 requireText(!/pollinations|api\.anthropic\.com|ai-ask/.test(main + renderer), 'sin proveedores de IA externos');
 requireText(!/account-service|account-config|accounts\.nova\.com|account-register|account-login/.test(main + renderer + JSON.stringify(pkg)), 'infraestructura de cuentas eliminada');
-requireText(pkg.version === '6.4.0', 'versión SemVer 6.4.0');
+requireText(pkg.version === '6.4.1', 'versión SemVer 6.4.1');
+requireText(renderer.includes('command-ring') && renderer.includes('command-node') && renderer.includes('Nova Command Center'), 'Command Center radial integrado en el renderer');
+requireText(renderer.includes('themePreset') && renderer.includes('uiDensity') && renderer.includes('fontScale'), 'personalización profunda de apariencia integrada');
+requireText(main.includes("const base = 'http://127.0.0.1:11434'") && main.includes('`${base}/api/version`') && main.includes('`${base}/api/chat`'), 'Nova Assist conectado exclusivamente al servicio Ollama local');
 if (errors.length) { errors.forEach(x => console.error('FAIL', x)); process.exit(1); }
