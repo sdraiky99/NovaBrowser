@@ -5,14 +5,14 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' file: data: blob:; object-src 'none'; base-uri 'none'; frame-src 'self' file:; img-src 'self' file: data: blob: https:; style-src 'self' 'unsafe-inline' file:; script-src 'self' file:; connect-src 'self' https:">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>NOVA 7 — Flow Reborn</title>
+<title>NOVA 9 — Complete Experience</title>
 <link rel="icon" type="image/svg+xml" href="../assets/brand/nova-mark.svg">
 <link rel="stylesheet" href="nova.css">
 </head>
 <body>
 <div id="app">
   <header id="windowbar" aria-label="Barra de pestañas">
-    <div id="brand" title="Pulsa diez veces para desbloquear Nova Eclipse"><img src="../assets/brand/nova-mark.svg" alt=""><span>NOVA 7</span></div>
+    <div id="brand" title="Pulsa diez veces para desbloquear Nova Eclipse"><img src="../assets/brand/nova-mark.svg" alt=""><span>NOVA 9</span></div>
     <div id="tabs" aria-label="Pestañas"></div>
     <button id="newTab" class="icon-btn tab-add" title="Nueva pestaña (Ctrl+T)" aria-label="Nueva pestaña">+</button>
     <div id="windowActions" aria-label="Ventana">
@@ -34,6 +34,7 @@
       <button id="star" class="icon-btn address-action" title="Añadir a favoritos" aria-label="Añadir a favoritos"></button>
     </div>
     <div class="toolbar-actions">
+      <button class="icon-btn nav-btn" id="companionButton" title="NOVA Companion" aria-label="NOVA Companion"></button>
       <button class="icon-btn nav-btn" id="shieldButton" title="Nova Shield · protección" aria-label="Nova Shield"><span class="shield-glyph">◆</span></button>
       <button class="icon-btn nav-btn" id="readerToggle" title="Modo lectura" aria-label="Modo lectura"></button>
       <button class="icon-btn nav-btn" id="splitToggle" title="Pantalla dividida" aria-label="Pantalla dividida"></button>
@@ -57,6 +58,9 @@
       <button class="side-item" data-view="media" title="Nova Media"><span class="sicon" data-icon="media"></span><span>Nova Media</span></button>
       <button class="side-item" data-view="translate" title="Nova Translate"><span class="sicon" data-icon="translate"></span><span>Translate</span></button>
       <button class="side-item" data-view="focus" title="Nova Focus"><span class="sicon" data-icon="timer"></span><span>Focus</span></button>
+      <button class="side-item" data-view="time-machine" title="Time Machine"><span class="sicon" data-icon="history"></span><span>Time Machine</span></button>
+      <button class="side-item" data-view="companion" title="NOVA Companion"><span class="sicon" data-icon="sparkles"></span><span>Companion</span></button>
+      <button class="side-item" data-view="gaming" title="NOVA Gaming"><span class="sicon" data-icon="bolt"></span><span>Gaming</span></button>
       <div class="side-spacer"></div>
       <button class="side-item" data-view="settings" title="Ajustes"><span class="sicon" data-icon="settings"></span><span>Ajustes</span></button>
     </aside>

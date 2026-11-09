@@ -1,8 +1,8 @@
 {
   "name": "nova-browser",
-  "productName": "NOVA 7",
-  "version": "7.0.0",
-  "description": "NOVA 7 FLOW — navegador Chromium personalizable con privacidad, herramientas y servicios integrados.",
+  "productName": "NOVA",
+  "version": "9.0.0",
+  "description": "NOVA 9 — navegador Electron/Chromium modular, personalizable y centrado en rendimiento, privacidad y productividad.",
   "author": "Nova",
   "main": "main.js",
   "scripts": {
@@ -11,14 +11,14 @@
     "dist:setup": "electron-builder --win nsis --publish never -c.directories.output=dist/setup",
     "dist:portable": "electron-builder --win portable --publish never -c.directories.output=dist/portable",
     "dist:win": "npm run dist:setup && npm run dist:portable",
-    "check": "npm run check:distribution-config && npm run check:project && npm run check:syntax && npm run qa:7 && npm run check:build-assets && npm run check:performance && npm run check:security",
+    "check": "npm run check:distribution-config && npm run check:project && npm run check:syntax && npm run qa:9 && npm run check:build-assets && npm run check:performance && npm run check:security",
     "check:syntax": "node scripts/check-syntax-all.js",
     "check:project": "node scripts/check-project.js",
     "check:build-assets": "node scripts/check-build-assets.js",
     "check:distribution-config": "node scripts/check-distribution-config.js",
-    "qa:7": "node scripts/qa-7.js",
     "check:performance": "node scripts/performance-smoke.js",
-    "check:security": "node scripts/check-security.js"
+    "check:security": "node scripts/check-security.js",
+    "qa:9": "node scripts/qa-9.js"
   },
   "dependencies": {
     "@ghostery/adblocker-electron": "2.18.2",
@@ -32,7 +32,7 @@
   },
   "build": {
     "appId": "com.nova.browser",
-    "productName": "NOVA 7",
+    "productName": "NOVA",
     "directories": {
       "output": "dist"
     },
@@ -54,7 +54,7 @@
       "icon": "assets/brand/nova.ico"
     },
     "portable": {
-      "artifactName": "NOVA-7-Portable-${version}.exe"
+      "artifactName": "NOVA-9-Portable-${version}.exe"
     },
     "publish": [
       {
@@ -65,7 +65,7 @@
     ],
     "copyright": "Copyright © 2026 Nova",
     "nsis": {
-      "artifactName": "NOVA-7-Setup-${version}.${ext}",
+      "artifactName": "NOVA-9-Setup-${version}.${ext}",
       "oneClick": false,
       "perMachine": false,
       "allowElevation": false,

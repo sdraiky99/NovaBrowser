@@ -1,11 +1,27 @@
-# Changelog NOVA 7
+## 9.0.0 — NOVA Complete Experience
 
-## 7.0.0 — NOVA 7 FLOW Recovery
+- Añadidas siete experiencias completas: NOVA Modern, Windows XP, Windows 7 Aero, Firefox clásico, Firefox 2017, Chrome 2017 y Edge Legacy.
+- Añadida NOVA Time Machine con puntos manuales, copia automática diaria y restauración local sin secretos.
+- Añadido NOVA Companion con controles multimedia de página, Picture-in-Picture compatible y lanzador de aplicaciones web.
+- Añadido NOVA Gaming con reducción de animaciones y política Chromium de imágenes animadas.
+- Añadido acceso al flujo de navegador predeterminado desde la nueva pestaña.
+- Se mantienen Setup per-user y Portable independiente.
+
+# Changelog
+
+## 7.0.1 — Start Page & Essentials Recovery
+- Reworked the new-tab hero into a photo-led dashboard with three landscape choices and more natural spacing.
+- Added a visible browser-default status check and Windows default-app handoff for the Setup build.
+- Added a dedicated Passwords & Autofill settings section with Bitwarden Vault and official extension entry points.
+- Clarified Portable limitations and Electron extension compatibility instead of implying unsupported automatic installation.
+- Kept the Setup and Portable profiles separate.
+
+## 7.0.1 — NOVA 7 FLOW Recovery
 - Major update from 6.4.1; browser rebranded as NOVA 7.
 - Dual tab layouts, persistent bookmarks bar, split view and Reader Mode.
 - Nova Shield toolbar entry, Nova Media, cloud Translate, Focus timer and JSON backups.
 - Spanish-first RSS feeds plus Steam News API integration.
-- Setup/Portable artifact branding and CI validation for 7.0.0.
+- Setup/Portable artifact branding and CI validation for 7.0.1.
 
 # Nova — Changelog
 

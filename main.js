@@ -11,7 +11,7 @@ try {
   }
 } catch (e) { console.warn('Nova updater unavailable:', e.message); }
 const APP_ID = 'com.nova.browser';
-app.setName('NOVA 7');
+app.setName('NOVA 9');
 const { configurePortableUserData } = require('./portable-user-data.js');
 const { normalizeHttpOrigin, isHttpOrigin, permissionKeysForRequest, permissionDecision, permissionRequestLabel } = require('./permission-policy.js');
 const portableDataStatus = configurePortableUserData(app, process.env);
@@ -154,12 +154,12 @@ async function registerBrowser(force) {
   const rows = [
     ['Software\\Classes\\NovaURL', '', 'Nova URL'], ['Software\\Classes\\NovaURL', 'URL Protocol', ''], ['Software\\Classes\\NovaURL\\DefaultIcon', '', ico], ['Software\\Classes\\NovaURL\\shell\\open\\command', '', cmd],
     ['Software\\Classes\\NovaHTML', '', 'Nova HTML Document'], ['Software\\Classes\\NovaHTML\\DefaultIcon', '', ico], ['Software\\Classes\\NovaHTML\\shell\\open\\command', '', cmd],
-    [C, '', 'NOVA 7'], [C + '\\DefaultIcon', '', ico], [C + '\\shell\\open\\command', '', `"${exe}"`],
-    [C + '\\Capabilities', 'ApplicationName', 'NOVA 7'], [C + '\\Capabilities', 'ApplicationIcon', ico],
+    [C, '', 'NOVA 9'], [C + '\\DefaultIcon', '', ico], [C + '\\shell\\open\\command', '', `"${exe}"`],
+    [C + '\\Capabilities', 'ApplicationName', 'NOVA 9'], [C + '\\Capabilities', 'ApplicationIcon', ico],
     [C + '\\Capabilities', 'ApplicationDescription', 'Navegador web moderno basado en Chromium'],
     [C + '\\Capabilities\\URLAssociations', 'http', 'NovaURL'], [C + '\\Capabilities\\URLAssociations', 'https', 'NovaURL'],
     [C + '\\Capabilities\\FileAssociations', '.html', 'NovaHTML'], [C + '\\Capabilities\\FileAssociations', '.htm', 'NovaHTML'],
-    ['Software\\RegisteredApplications', 'NOVA 7', C + '\\Capabilities']
+    ['Software\\RegisteredApplications', 'NOVA 9', C + '\\Capabilities']
   ];
   for (const [k, n, v] of rows) await regAdd(k, n, v);
   prefs.reg = sig; savePrefs();
@@ -217,7 +217,7 @@ const isTrustedNewTabContents = contents => {
 function createMain() {
   win = new BrowserWindow({
     width: 1280, height: 800, minWidth: 720, minHeight: 480,
-    frame: false, show: false, title: 'NOVA 7',
+    frame: false, show: false, title: 'NOVA 9',
     icon: logoImg(prefs.logo),
     backgroundColor: '#0d0b1a',
     webPreferences: { preload: path.join(__dirname, 'shell', 'preload.js'), nodeIntegration: false, contextIsolation: true, sandbox: true, webviewTag: true, webSecurity: true, allowRunningInsecureContent: false }
@@ -544,7 +544,7 @@ ipcMain.on('win', (e, a) => {
 ipcMain.on('extension-catalog', e => { if (denyUntrusted(e)) return; e.returnValue = EXT.CATALOG.map(({id,name,cat,desc}) => ({id,name,cat,desc})); });
 ipcMain.on('extension-script', (e, id) => { if (denyUntrusted(e) || typeof id !== 'string' || !EXT.byId(id)) return; e.returnValue = EXT.on(id); });
 ipcMain.on('app-version', e => { if (denyUntrusted(e)) return; e.returnValue = app.getVersion(); });
-ipcMain.on('runtime-info', e => { if (denyUntrusted(e)) return; e.returnValue = { version: app.getVersion(), chromium: process.versions.chrome, electron: process.versions.electron, node: process.versions.node, platform: process.platform, arch: process.arch, product: 'NOVA 7' }; });
+ipcMain.on('runtime-info', e => { if (denyUntrusted(e)) return; e.returnValue = { version: app.getVersion(), chromium: process.versions.chrome, electron: process.versions.electron, node: process.versions.node, platform: process.platform, arch: process.arch, product: 'NOVA 9' }; });
 ipcMain.on('prefs-get', e => { if (denyUntrusted(e)) return; e.returnValue = JSON.parse(JSON.stringify(prefs)); });
 ipcMain.on('prefs-set', (e, p) => {
   if (denyUntrusted(e)) return;
@@ -693,7 +693,7 @@ ipcMain.handle('backup-export', async (e, raw) => {
   if (denyUntrusted(e) || typeof raw !== 'string' || raw.length > 8 * 1024 * 1024) return {ok:false,error:'Copia no válida.'};
   try {
     const obj=cleanBackupData(JSON.parse(raw)); if(!obj||typeof obj!=='object'||Array.isArray(obj)) return {ok:false,error:'La copia no contiene un estado válido.'};
-    const picked=await dialog.showSaveDialog(win,{title:'Exportar copia de NOVA 7',defaultPath:path.join(app.getPath('documents'),`NOVA-7-Backup-${new Date().toISOString().slice(0,10)}.json`),filters:[{name:'Copia NOVA 7',extensions:['json']}]});
+    const picked=await dialog.showSaveDialog(win,{title:'Exportar copia de NOVA 9',defaultPath:path.join(app.getPath('documents'),`NOVA-9-Backup-${new Date().toISOString().slice(0,10)}.json`),filters:[{name:'Copia NOVA 9',extensions:['json']}]});
     if(picked.canceled||!picked.filePath)return {ok:false,canceled:true};
     delete obj.key; atomicWrite(picked.filePath,JSON.stringify(obj)); return {ok:true,path:picked.filePath};
   } catch(error){return {ok:false,error:String(error?.message||error).slice(0,200)};}
@@ -701,7 +701,7 @@ ipcMain.handle('backup-export', async (e, raw) => {
 ipcMain.handle('backup-import', async e => {
   if (denyUntrusted(e)) return {ok:false,error:'Solicitud no válida.'};
   try {
-    const picked=await dialog.showOpenDialog(win,{title:'Importar copia de NOVA 7',properties:['openFile'],filters:[{name:'Copia NOVA 7',extensions:['json']}]});
+    const picked=await dialog.showOpenDialog(win,{title:'Importar copia de NOVA 9',properties:['openFile'],filters:[{name:'Copia NOVA 9',extensions:['json']}]});
     if(picked.canceled||!picked.filePaths?.[0])return {ok:false,canceled:true};
     const stat=fs.statSync(picked.filePaths[0]); if(!stat.isFile()||stat.size>8*1024*1024)return {ok:false,error:'El archivo supera el tamaño permitido.'};
     const raw=fs.readFileSync(picked.filePaths[0],'utf8');const obj=cleanBackupData(JSON.parse(raw));if(!obj||typeof obj!=='object'||Array.isArray(obj))return {ok:false,error:'El archivo no es una copia válida.'};
@@ -873,7 +873,7 @@ ipcMain.handle('news-feed', async (e, payload) => {
   const value={ok:true,items:[],live:false,stale:false,sources:[],error:'Las fuentes de noticias no están disponibles y no hay caché local.'}; newsCache.set(key,{at:Date.now(),value}); return value;
 });
 
-// NOVA 7 Translate: MyMemory cloud service. Text is sent only after an explicit user action.
+// NOVA 9 Translate: MyMemory cloud service. Text is sent only after an explicit user action.
 function splitTranslationText(input, maxBytes = 440) {
   const chunks=[]; let current='';
   const pieces=String(input).split(/(?<=[.!?。！？])\s+|\n+/u).filter(Boolean);
@@ -1031,7 +1031,7 @@ ipcMain.handle('security-state', e => {
 ipcMain.handle('ollama-models', async e => {
   if (denyUntrusted(e)) return { ok:false, error:'Solicitud no válida.' };
   try {
-    const base = 'http://127.0.0.1:11434';
+    const base = 'http://127.0.1.1:11434';
     const versionResponse = await fetch(`${base}/api/version`, { signal:AbortSignal.timeout(2500) });
     if (!versionResponse.ok) return { ok:false, error:`El servicio de Ollama respondió HTTP ${versionResponse.status} al consultar su versión.` };
     const versionData = await versionResponse.json().catch(() => ({}));
@@ -1042,7 +1042,7 @@ ipcMain.handle('ollama-models', async e => {
     return { ok:true, version:String(versionData.version||''), models };
   } catch (err) {
     const detail = String(err?.cause?.code || err?.code || err?.message || 'conexión rechazada');
-    return { ok:false, error:`No se puede conectar con Ollama en 127.0.0.1:11434 (${detail}). Abre Ollama y espera a que el servicio esté iniciado. Si no está instalado, instálalo desde ollama.com.` };
+    return { ok:false, error:`No se puede conectar con Ollama en 127.0.1.1:11434 (${detail}). Abre Ollama y espera a que el servicio esté iniciado. Si no está instalado, instálalo desde ollama.com.` };
   }
 });
 ipcMain.handle('ollama-ai', async (e, data) => {
@@ -1051,7 +1051,7 @@ ipcMain.handle('ollama-ai', async (e, data) => {
   if (!Array.isArray(messages) || messages.length < 1 || messages.length > 20 || typeof system !== 'string' || system.length > 12000 || typeof model !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,99}$/.test(model)) return { ok:false, error:'Parámetros de IA local no válidos.' };
   if (messages.some(m => !m || typeof m !== 'object' || !['user','assistant'].includes(m.role) || typeof m.content !== 'string' || m.content.length > 16000)) return { ok:false, error:'El mensaje supera los límites admitidos.' };
   try {
-    const base='http://127.0.0.1:11434';
+    const base='http://127.0.1.1:11434';
     const tags=await fetch(`${base}/api/tags`,{signal:AbortSignal.timeout(5000)});
     if(!tags.ok) return {ok:false,error:`Ollama no pudo listar los modelos (HTTP ${tags.status}).`};
     const tagData=await tags.json().catch(()=>({}));
@@ -1069,7 +1069,7 @@ ipcMain.handle('ollama-ai', async (e, data) => {
   } catch (err) {
     const code=String(err?.cause?.code||err?.code||'');
     const msg=String(err?.message||err||'Error desconocido');
-    return { ok:false, error:msg.toLowerCase().includes('timeout')||msg.toLowerCase().includes('aborted')?'Ollama tardó más de 3 minutos. Prueba un modelo más pequeño o reduce el contexto.':`Error al conectar con Ollama (${code||msg.slice(0,120)}). Comprueba que sigue activo en 127.0.0.1:11434.` };
+    return { ok:false, error:msg.toLowerCase().includes('timeout')||msg.toLowerCase().includes('aborted')?'Ollama tardó más de 3 minutos. Prueba un modelo más pequeño o reduce el contexto.':`Error al conectar con Ollama (${code||msg.slice(0,120)}). Comprueba que sigue activo en 127.0.1.1:11434.` };
   }
 });
 
