@@ -5,53 +5,20 @@ const resolveNavigation = window.nova.resolveNavigation;
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ACCENT_COLORS = ['#2878e8', '#32b9d6', '#8b7cff', '#35a779', '#d99d38', '#e878a4', '#e05260', '#91a9c9', '#68717f'];
-const APP_VERSION = ipc.sendSync('app-version') || '9.0.0';
-const BROWSER_MODES = ['modern','xp','win7','firefox-classic','firefox-2017','chrome-2017','edge-legacy'];
-const RUNTIME_INFO = ipc.sendSync('runtime-info') || { chromium:'', electron:'', node:'', product:'NOVA 9' };
+const APP_VERSION = ipc.sendSync('app-version') || '8.0.0';
+const RUNTIME_INFO = ipc.sendSync('runtime-info') || { chromium:'', electron:'', node:'', product:'NOVA 7' };
 let mainPrefs = ipc.sendSync('prefs-get') || {};
 const DEFAULT_STATE = {
   appearance: 'system', themePreset: 'chrome', uiDensity:'balanced', fontScale:100, accent: '#2878e8', search: 'https://www.google.com/search?q=',
   sidebarOpen: false, sidebarVisible: true, adblock: true, animations: true, energy: false, tabMode:'horizontal', mediaFiles:[], focusMinutes:25, focusEndsAt:0, focusRemaining:1500, focusSessions:0,
   bookmarks: [], history: [], downloads: [], workspaces: [], currentWorkspace: '',
-  firstRun: true, showTourOnStart: true, toolbarWallpaper: '', showNews: true, restoreSession: true, sessionTabs: [], sessionActiveUrl: '', eclipseUnlocked: false, eclipseActive: false, focusMode: false, assistantProvider: 'local', assistantModel: 'qwen2.5:3b', browserMode:'modern', gamingMode:false, timeMachineSnapshots:[], lastAutoSnapshot:0
+  firstRun: true, showTourOnStart: true, toolbarWallpaper: '', showNews: true, restoreSession: true, sessionTabs: [], sessionActiveUrl: '', eclipseUnlocked: false, eclipseActive: false, focusMode: false, assistantProvider: 'local', assistantModel: 'qwen2.5:3b'
 };
 let state = loadState();
 let tabs = [], activeTab = null, splitSecondary = null, internalView = null, closedTabs = [], omniboxTimer = null;
 let assistantMessages = [];
 let logoTapCount = 0, logoTapTimer = null;
 
-function timeMachineSafeUrl(value){
-  try{
-    const u=new URL(String(value||''));
-    if(!['http:','https:'].includes(u.protocol))return '';
-    u.username='';u.password='';u.hash='';
-    for(const key of [...u.searchParams.keys()])if(/token|secret|password|passwd|auth|credential|session|api.?key/i.test(key))u.searchParams.delete(key);
-    return u.href;
-  }catch{return '';}
-}
-function sanitizeTimeMachineData(input){
-  if(!input||typeof input!=='object'||Array.isArray(input))return null;
-  const d={};
-  if(BROWSER_MODES.includes(input.browserMode))d.browserMode=input.browserMode;
-  if(['system','light','dark'].includes(input.appearance))d.appearance=input.appearance;
-  if(['chrome','graphite','midnight','lavender'].includes(input.themePreset))d.themePreset=input.themePreset;
-  if(['compact','balanced','comfortable'].includes(input.uiDensity))d.uiDensity=input.uiDensity;
-  if(Number.isFinite(Number(input.fontScale)))d.fontScale=Math.max(90,Math.min(115,Number(input.fontScale)));
-  if(/^#[0-9a-f]{6}$/i.test(input.accent||''))d.accent=input.accent;
-  const searches=['https://www.google.com/search?q=','https://duckduckgo.com/?q=','https://www.bing.com/search?q=','https://search.brave.com/search?q='];if(searches.includes(input.search))d.search=input.search;
-  for(const key of ['sidebarOpen','sidebarVisible','showNews','restoreSession','animations','energy','focusMode'])if(typeof input[key]==='boolean')d[key]=input[key];
-  if(input.tabMode==='horizontal'||input.tabMode==='vertical')d.tabMode=input.tabMode;
-  if([15,25,45,60].includes(Number(input.focusMinutes)))d.focusMinutes=Number(input.focusMinutes);
-  if(Number.isFinite(Number(input.focusSessions)))d.focusSessions=Math.max(0,Math.min(100000,Math.floor(Number(input.focusSessions))));
-  if(typeof input.currentWorkspace==='string')d.currentWorkspace=input.currentWorkspace.slice(0,80);
-  if(typeof input.toolbarWallpaper==='string')d.toolbarWallpaper=input.toolbarWallpaper.slice(0,8192);
-  if(Array.isArray(input.bookmarks))d.bookmarks=input.bookmarks.slice(0,100).map(x=>({url:timeMachineSafeUrl(x?.url),title:String(x?.title||x?.url||'').slice(0,200)})).filter(x=>x.url);
-  if(Array.isArray(input.history))d.history=input.history.slice(0,150).map(x=>({url:timeMachineSafeUrl(x?.url),title:String(x?.title||x?.url||'').slice(0,200),ts:Number(x?.ts)||Date.now()})).filter(x=>x.url);
-  if(Array.isArray(input.workspaces))d.workspaces=input.workspaces.slice(0,20).filter(x=>x&&typeof x.name==='string'&&Array.isArray(x.tabs)).map(x=>({name:x.name.slice(0,40),tabs:x.tabs.slice(0,50).map(timeMachineSafeUrl).filter(Boolean)}));
-  if(Array.isArray(input.sessionTabs))d.sessionTabs=input.sessionTabs.slice(-50).map(x=>({url:timeMachineSafeUrl(typeof x==='string'?x:x?.url),group:String(typeof x==='object'&&x?x.group||'':'').slice(0,32)})).filter(x=>x.url);
-  if(typeof input.sessionActiveUrl==='string')d.sessionActiveUrl=timeMachineSafeUrl(input.sessionActiveUrl);
-  return d;
-}
 function loadState() {
   let raw={}, recoveryNeeded=false; const stored=localStorage.getItem('nova-state');
   try { if(stored) raw=JSON.parse(stored); else recoveryNeeded=true; } catch { recoveryNeeded=true; }
@@ -60,20 +27,20 @@ function loadState() {
   const accent=/^#[0-9a-f]{6}$/i.test(raw.accent)?raw.accent:'#2878e8';
   const search=['https://www.google.com/search?q=','https://duckduckgo.com/?q=','https://www.bing.com/search?q=','https://search.brave.com/search?q='].includes(raw.search)?raw.search:DEFAULT_STATE.search;
   const bookmarks=Array.isArray(raw.bookmarks)?raw.bookmarks.filter(x=>x&&typeof x.url==='string'&&/^https?:/i.test(x.url)).slice(0,100).map(x=>({url:x.url,title:String(x.title||x.url).slice(0,200)})):[];
-  const history=Array.isArray(raw.history)?raw.history.filter(x=>x&&typeof x.url==='string'&&/^https?:/i.test(x.url)).slice(0,300).map(x=>({url:x.url,title:String(x.title||x.url).slice(0,200),ts:Number(x.ts)||Date.now()})):[];
+  const hl=[300,1000,3000].includes(Number(raw.historyLimit))?Number(raw.historyLimit):300;
+  const notes=Array.isArray(raw.notes)?raw.notes.filter(x=>x&&typeof x.text==='string').slice(0,50).map(x=>({text:String(x.text).slice(0,2000),ts:Number(x.ts)||Date.now()})):[];
+  const history=Array.isArray(raw.history)?raw.history.filter(x=>x&&typeof x.url==='string'&&/^https?:/i.test(x.url)).slice(0,hl).map(x=>({url:x.url,title:String(x.title||x.url).slice(0,200),ts:Number(x.ts)||Date.now()})):[];
   const workspaces=Array.isArray(raw.workspaces)?raw.workspaces.filter(x=>x&&typeof x.name==='string'&&Array.isArray(x.tabs)).slice(0,20).map(x=>({name:x.name.slice(0,40),tabs:x.tabs.filter(u=>typeof u==='string'&&(/^https?:/i.test(u)||isNewTabUrl(u))).slice(0,50)})):[];
   const toolbarWallpaper = typeof raw.toolbarWallpaper === 'string' ? raw.toolbarWallpaper : '';
   const sessionTabs = Array.isArray(raw.sessionTabs) ? raw.sessionTabs.slice(-50).map(x => { const url = typeof x === 'string' ? x : String(x?.url || ''); return /^https?:\/\//i.test(url) ? { url, group: String(typeof x === 'object' && x ? x.group || '' : '').slice(0, 32) } : null; }).filter(Boolean) : [];
   const sessionActiveUrl = typeof raw.sessionActiveUrl === 'string' && /^https?:\/\//i.test(raw.sessionActiveUrl) ? raw.sessionActiveUrl : '';
   const downloads = Array.isArray(raw.downloads) ? raw.downloads.slice(0, 100).filter(x => x && typeof x === 'object').map(x => ({ id: null, name: String(x.name || 'archivo').slice(0, 250), path: String(x.path || '').slice(0, 2000), state: ['done','completed'].includes(x.state) ? 'done' : ['cancelled','interrupted','paused','progressing'].includes(x.state) ? (x.state === 'progressing' ? 'interrupted' : x.state) : String(x.state || 'interrupted'), recv: Number(x.recv) || 0, total: Number(x.total) || 0, ts: Number(x.ts) || Date.now() })) : [];
-  const themePreset=['chrome','graphite','midnight','lavender'].includes(raw.themePreset)?raw.themePreset:'chrome';
+  const themePreset=['chrome','graphite','midnight','lavender','aurora','carbon','solar'].includes(raw.themePreset)?raw.themePreset:'chrome';
   const uiDensity=['compact','balanced','comfortable'].includes(raw.uiDensity)?raw.uiDensity:'balanced';
   const fontScale=Number.isFinite(Number(raw.fontScale))?Math.min(115,Math.max(90,Number(raw.fontScale))):100;
   const mediaFiles=Array.isArray(raw.mediaFiles)?raw.mediaFiles.filter(x=>x&&typeof x.path==='string'&&typeof x.url==='string'&&/^file:/i.test(x.url)).slice(0,200).map(x=>({path:x.path.slice(0,4096),url:x.url.slice(0,8192),name:String(x.name||'Archivo').slice(0,240),extension:String(x.extension||'').slice(0,12)})):[];
   const tabMode=raw.tabMode==='vertical'?'vertical':'horizontal';
-  const browserMode=BROWSER_MODES.includes(raw.browserMode)?raw.browserMode:'modern';
-  const timeMachineSnapshots=Array.isArray(raw.timeMachineSnapshots)?raw.timeMachineSnapshots.filter(x=>x&&typeof x.id==='string'&&x.data&&typeof x.data==='object').slice(0,12).map(x=>({id:x.id.slice(0,80),title:String(x.title||'Punto de restauración').slice(0,80),createdAt:Number(x.createdAt)||Date.now(),automatic:x.automatic===true,data:sanitizeTimeMachineData(x.data)})).filter(x=>x.data):[];
-  return {...DEFAULT_STATE, appearance:ap, themePreset, uiDensity, fontScale, accent, search, bookmarks, history, workspaces, downloads, mediaFiles, tabMode, focusMinutes:[15,25,45,60].includes(Number(raw.focusMinutes))?Number(raw.focusMinutes):25, focusEndsAt:Math.max(0,Number(raw.focusEndsAt)||0), focusRemaining:Math.max(0,Number(raw.focusRemaining)||1500), focusSessions:Math.max(0,Number(raw.focusSessions)||0), toolbarWallpaper, showNews:raw.showNews!==false, restoreSession:raw.restoreSession!==false, sessionTabs, sessionActiveUrl, sidebarOpen:!!raw.sidebarOpen, sidebarVisible:raw.sidebarVisible!==false, adblock:raw.adblock!==false, animations:raw.animations!==false, energy:!!raw.energy, firstRun:raw.firstRun!==false, showTourOnStart:raw.showTourOnStart!==false, eclipseUnlocked:raw.eclipseUnlocked===true, eclipseActive:raw.eclipseUnlocked===true && raw.eclipseActive===true, focusMode:raw.focusMode===true, browserMode, gamingMode:raw.gamingMode===true, timeMachineSnapshots, lastAutoSnapshot:Math.max(0,Number(raw.lastAutoSnapshot)||0), assistantProvider:'local', assistantModel:typeof raw.assistantModel==='string' && /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,99}$/.test(raw.assistantModel)?raw.assistantModel:'qwen2.5:3b'};
+  return {...DEFAULT_STATE, appearance:ap, themePreset, uiDensity, fontScale, accent, search, bookmarks, history, workspaces, downloads, mediaFiles, tabMode, historyLimit:hl, notes, hibernateMin:[0,5,10,30,60].includes(Number(raw.hibernateMin))?Number(raw.hibernateMin):10, focusMinutes:[15,25,45,60].includes(Number(raw.focusMinutes))?Number(raw.focusMinutes):25, focusEndsAt:Math.max(0,Number(raw.focusEndsAt)||0), focusRemaining:Math.max(0,Number(raw.focusRemaining)||1500), focusSessions:Math.max(0,Number(raw.focusSessions)||0), toolbarWallpaper, showNews:raw.showNews!==false, restoreSession:raw.restoreSession!==false, sessionTabs, sessionActiveUrl, sidebarOpen:!!raw.sidebarOpen, sidebarVisible:raw.sidebarVisible!==false, adblock:raw.adblock!==false, animations:raw.animations!==false, energy:!!raw.energy, firstRun:raw.firstRun!==false, showTourOnStart:raw.showTourOnStart!==false, eclipseUnlocked:raw.eclipseUnlocked===true, eclipseActive:raw.eclipseUnlocked===true && raw.eclipseActive===true, focusMode:raw.focusMode===true, assistantProvider:'local', assistantModel:typeof raw.assistantModel==='string' && /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,99}$/.test(raw.assistantModel)?raw.assistantModel:'qwen2.5:3b'};
 }
 let stateBackupTimer = null;
 function saveState() {
@@ -112,10 +79,8 @@ function applyAppearance() {
   const accent = state.eclipseActive && state.eclipseUnlocked ? '#8b7cff' : baseAccent;
   document.body.classList.toggle('eclipse-theme', !!(state.eclipseUnlocked && state.eclipseActive));
   document.body.classList.toggle('focus-mode', !!state.focusMode);
-  document.body.classList.toggle('gaming-mode', !!state.gamingMode);
-  document.body.dataset.browserMode = BROWSER_MODES.includes(state.browserMode) ? state.browserMode : 'modern';
   document.body.classList.add('minimal-reborn');
-  document.body.dataset.themePreset = ['chrome','graphite','midnight','lavender'].includes(state.themePreset) ? state.themePreset : 'chrome';
+  document.body.dataset.themePreset = ['chrome','graphite','midnight','lavender','aurora','carbon','solar'].includes(state.themePreset) ? state.themePreset : 'chrome';
   document.body.dataset.density = ['compact','balanced','comfortable'].includes(state.uiDensity) ? state.uiDensity : 'balanced';
   document.documentElement.style.setProperty('--nova-font-scale', String(Math.min(115,Math.max(90,Number(state.fontScale)||100)) / 100));
   document.documentElement.style.setProperty('--user-accent', accent);
@@ -144,6 +109,7 @@ function showDrawer(title, html) {
 function hideDrawer() { $('#drawer').classList.remove('drawer-open'); $('#drawer').setAttribute('aria-hidden','true'); }
 function safeUrl(raw) { try { const u = new URL(raw); return ['http:','https:','file:'].includes(u.protocol) ? u.href : ''; } catch { return ''; } }
 function getTabUrl(t) {
+  if (t?.sleeping) return t.sleepUrl || '';
   try {
     const current = t?.wv?.getURL?.();
     if (typeof current === 'string' && current && current !== 'about:blank') return current;
@@ -164,13 +130,13 @@ function loadTabUrl(t, target) {
 }
 function newTabUrl() {
   const file = { href: window.nova.newTabFileUrl() };
-  const qp = new URLSearchParams({ state: JSON.stringify({ appearance:state.appearance, themePreset:state.themePreset, uiDensity:state.uiDensity, fontScale:state.fontScale, accent:state.eclipseActive&&state.eclipseUnlocked?'#8b7cff':state.accent, search:state.search, bookmarks:state.bookmarks.slice(0,20), showNews:state.showNews, eclipseActive:!!(state.eclipseUnlocked&&state.eclipseActive), browserMode:state.browserMode }) });
+  const qp = new URLSearchParams({ state: JSON.stringify({ appearance:state.appearance, themePreset:state.themePreset, uiDensity:state.uiDensity, fontScale:state.fontScale, accent:state.eclipseActive&&state.eclipseUnlocked?'#8b7cff':state.accent, search:state.search, bookmarks:state.bookmarks.slice(0,20), showNews:state.showNews, eclipseActive:!!(state.eclipseUnlocked&&state.eclipseActive) }) });
   return `${file.href}?${qp.toString()}`;
 }
 function isNewTabUrl(url) { return typeof url === 'string' && url.split(/[?#]/, 1)[0] === window.nova.newTabFileUrl(); }
 
 function iconSvg(name) {
-  const allowed = new Set(['back','forward','reload','star','menu','close','search','home','download','history','extensions','sidebar','settings','grid','bolt','help','plus','sparkles','media','translate','reader','split','tabs','timer']);
+  const allowed = new Set(['back','forward','reload','star','menu','close','search','home','download','history','extensions','sidebar','settings','grid','bolt','help','plus','sparkles','media','translate','reader','split','tabs','timer','notes']);
   const key = allowed.has(name) ? name : 'help';
   return `<img class="nova-icon" src="../assets/icons/${key}.svg" alt="" aria-hidden="true">`;
 }
@@ -225,20 +191,7 @@ function refreshTabIcon(t) {
       }).catch(() => {});
   } catch { }
 }
-function createTab(url, group = '') {
-  const target = safeUrl(url || newTabUrl()) || newTabUrl();
-  const t = { id: crypto.randomUUID?.() || String(Date.now() + Math.random()), title: 'Nueva pestaña', group: String(group || '').trim().slice(0, 32), wv: null, el: null };
-  t.el = document.createElement('div');
-  t.el.className = 'tab';
-  t.wv = document.createElement('webview');
-  t.wv.className = 'browser-view';
-  t.wv.setAttribute('partition', 'persist:web');
-  t.wv.setAttribute('allowpopups', 'false');
-  t.wv.setAttribute('webpreferences', 'contextIsolation=true, nodeIntegration=false, sandbox=true');
-  // Electron decides a webview's preload during will-attach-webview. Set src
-  // BEFORE appending the element so the trusted new-tab preload is available
-  // on its first document, not only after a later reload.
-  t.wv.setAttribute('src', target);
+function attachTabEvents(t) {
   t.wv.addEventListener('did-start-loading', () => t.el.classList.add('loading'));
   t.wv.addEventListener('did-stop-loading', () => t.el.classList.remove('loading'));
   t.wv.addEventListener('did-navigate', () => syncTabFromWeb(t));
@@ -255,8 +208,6 @@ function createTab(url, group = '') {
     else if (action.type === 'open-whats-new') { selectTab(t); showWhatsNew(true); }
     else if (action.type === 'open-settings') { selectTab(t); setInternal('settings'); }
     else if (action.type === 'open-assistant') { selectTab(t); setInternal('assistant'); }
-    else if (action.type === 'open-companion') { selectTab(t); setInternal('companion'); }
-    else if (action.type === 'default-browser') { selectTab(t); ipc.invoke('default-browser',true).then(d=>{if(d?.portable)toast('La edición Portable no se puede registrar como navegador predeterminado.');else toast('Configuración de Windows abierta. Elige NOVA en Aplicaciones predeterminadas.');}).catch(()=>toast('No se pudo abrir la configuración de Windows.')); }
     else if (action.type === 'add-shortcut' && action.value && typeof action.value === 'object') {
       const title = String(action.value.title || '').trim().slice(0, 80);
       const target = safeUrl(String(action.value.url || '').trim());
@@ -275,6 +226,21 @@ function createTab(url, group = '') {
   t.wv.addEventListener('did-finish-load', () => { refreshTabIcon(t); applyBuiltinsToTab(t); });
   t.wv.addEventListener('did-fail-load', e => { if (e.errorCode !== -3) toast('No se pudo cargar la página'); });
   t.wv.addEventListener('render-process-gone', () => toast('Una pestaña dejó de responder; recárgala para continuar.'));
+}
+function createTab(url, group = '') {
+  const target = safeUrl(url || newTabUrl()) || newTabUrl();
+  const t = { id: crypto.randomUUID?.() || String(Date.now() + Math.random()), title: 'Nueva pestaña', group: String(group || '').trim().slice(0, 32), wv: null, el: null };
+  t.el = document.createElement('div');
+  t.el.className = 'tab';
+  t.wv = document.createElement('webview');
+  t.wv.className = 'browser-view';
+  t.wv.setAttribute('partition', 'persist:web');
+  t.wv.setAttribute('allowpopups', 'false');
+  t.wv.setAttribute('webpreferences', 'contextIsolation=true, nodeIntegration=false, sandbox=true');
+  // Electron decides a webview's preload during will-attach-webview. Set src
+  // BEFORE appending the element so the trusted new-tab preload is available
+  // on its first document, not only after a later reload.
+  t.wv.setAttribute('src', target);
   tabs.push(t);
   $('#views').appendChild(t.wv);
   $('#tabs').appendChild(t.el);
@@ -287,6 +253,8 @@ function createTab(url, group = '') {
 function newTab(url, group = '') { return createTab(url || undefined, group); }
 function selectTab(t) {
   if (!t) return;
+  if (t.sleeping) wakeTab(t);
+  t.lastActive = Date.now();
   // Volver a la pestaña web elimina la vista interna anterior; dejarla en el DOM
   // provocaba capas obsoletas y hacía que algunos paneles parecieran parpadear.
   $('#internalPanel')?.remove();
@@ -300,13 +268,15 @@ function selectTab(t) {
   persistSession();
 }
 function closeTab(t, remember=true) { if(t===splitSecondary)splitSecondary=null; const idx=tabs.indexOf(t); if(idx<0)return; const was=t===activeTab; const u=getTabUrl(t); if(remember && /^https?:/i.test(u)) closedTabs.unshift({url:u,title:t.title||u}); closedTabs=closedTabs.slice(0,10); try{t.wv.remove()}catch{} t.el.remove(); tabs.splice(idx,1); if(!tabs.length){newTab();return;} if(was)selectTab(tabs[Math.min(idx,tabs.length-1)]); renderTabHighlights(); persistSession(); }
+function hibernateTab(t){ if(!t||t===activeTab||t===splitSecondary||t.sleeping)return; const u=getTabUrl(t); if(!/^https?:/i.test(u)||isNewTabUrl(u))return; try{t.wv.stop()}catch{}; try{t.wv.remove()}catch{}; t.wv=null; t.sleeping=true; t.sleepUrl=u; t.el?.classList.add('sleeping'); renderTabHighlights(); persistSession(); }
+function wakeTab(t){ if(!t||!t.sleeping)return; t.sleeping=false; const u=t.sleepUrl||''; t.sleepUrl=''; t.el?.classList.remove('sleeping'); t.wv=document.createElement('webview'); t.wv.className='browser-view'; t.wv.setAttribute('partition','persist:web'); t.wv.setAttribute('allowpopups','false'); t.wv.setAttribute('webpreferences','contextIsolation=true, nodeIntegration=false, sandbox=true'); t.wv.setAttribute('src',u||newTabUrl()); attachTabEvents(t); $('#views').appendChild(t.wv); renderTab(t); renderTabHighlights(); }
 function syncTabFromWeb(t) {
   if (!t || !tabs.includes(t)) return;
   let u = ''; try { u = t.wv.getURL(); } catch { return; }
   if (t === activeTab) { syncAddress(); refreshTabIcon(t); document.title = t.title || 'Nova'; }
   if (/^https?:/i.test(u)) {
     persistSession();
-    state.history = [{ url: u, title: t.title || u, ts: Date.now() }, ...state.history.filter(x => x.url !== u)].slice(0, 300);
+    state.history = [{ url: u, title: t.title || u, ts: Date.now() }, ...state.history.filter(x => x.url !== u)].slice(0, state.historyLimit || 300);
     saveState();
   }
 }
@@ -344,7 +314,7 @@ function duplicateTab(t){ if(!t)return; const u=getTabUrl(t); if(u)newTab(u, t.g
 function setTabGroup(t){ if(!t)return; const value=prompt('Nombre del grupo de pestañas (deja vacío para quitarlo)', t.group || 'Trabajo'); if(value===null)return; t.group=String(value).trim().slice(0,32); renderTab(t); persistSession(); toast(t.group?`Pestaña añadida al grupo «${t.group}»`:'Grupo quitado de la pestaña'); }
 function reopenClosedTab(){ const last=closedTabs.shift(); if(!last){toast('No hay pestañas cerradas para reabrir');return;} newTab(last.url); }
 function showTabMenu(t){
-  const items=[['Duplicar pestaña',()=>duplicateTab(t)],['Crear / asignar grupo',()=>setTabGroup(t)],...(t.group?[['Quitar del grupo',()=>{t.group='';renderTab(t);persistSession();toast('Pestaña sin grupo')}]]:[]),['Silenciar pestaña',()=>{try{t.wv.setAudioMuted(!t.wv.isAudioMuted());toast(t.wv.isAudioMuted()?'Pestaña silenciada':'Sonido activado')}catch{toast('Esta pestaña no permite controlar el audio')}}],['Fijar pestaña',()=>{t.pinned=!t.pinned; t.el.classList.toggle('pinned',!!t.pinned);toast(t.pinned?'Pestaña fijada':'Pestaña liberada')}],['Cerrar pestaña',()=>closeTab(t)],['Cerrar las demás',()=>tabs.slice().filter(x=>x!==t).forEach(x=>closeTab(x))]];
+  const items=[['Duplicar pestaña',()=>duplicateTab(t)],['Crear / asignar grupo',()=>setTabGroup(t)],...(t.group?[['Quitar del grupo',()=>{t.group='';renderTab(t);persistSession();toast('Pestaña sin grupo')}]]:[]),['Dormir pestaña',()=>{hibernateTab(t);toast('Pestaña dormida. Ahorra memoria mientras no la uses.')}],['Silenciar pestaña',()=>{try{t.wv.setAudioMuted(!t.wv.isAudioMuted());toast(t.wv.isAudioMuted()?'Pestaña silenciada':'Sonido activado')}catch{toast('Esta pestaña no permite controlar el audio')}}],['Fijar pestaña',()=>{t.pinned=!t.pinned; t.el.classList.toggle('pinned',!!t.pinned);toast(t.pinned?'Pestaña fijada':'Pestaña liberada')}],['Cerrar pestaña',()=>closeTab(t)],['Cerrar las demás',()=>tabs.slice().filter(x=>x!==t).forEach(x=>closeTab(x))]];
   showDrawer('Pestaña',items.map((x,i)=>`<button class="menu-item" data-tabmenu="${i}"><span>${esc(x[0])}</span><span class="muted">›</span></button>`).join(''));
   document.querySelectorAll('[data-tabmenu]').forEach(b=>b.onclick=()=>{const a=items[+b.dataset.tabmenu];hideDrawer();a&&a[1]()});
 }
@@ -426,83 +396,23 @@ function renderAssistant(r){
   };
 }
 
-
-const TIME_MACHINE_KEYS = ['browserMode','appearance','themePreset','uiDensity','fontScale','accent','search','sidebarOpen','sidebarVisible','tabMode','showNews','bookmarks','history','workspaces','sessionTabs','sessionActiveUrl','restoreSession','animations','energy','focusMinutes','focusSessions','currentWorkspace','toolbarWallpaper','focusMode'];
-function makeTimeMachinePayload(){
-  const payload={};
-  for(const key of TIME_MACHINE_KEYS){
-    const value=state[key];
-    if(value!==undefined) payload[key]=JSON.parse(JSON.stringify(value));
-  }
-  return sanitizeTimeMachineData(payload)||{};
+function renderNotes(r){
+  r.innerHTML=panelHeader('Notas rápidas','Notas locales guardadas en tu perfil de Nova. No se envían a ningún servidor.')+
+  `<div class="section-card"><div class="row"><div style="flex:1;min-width:0"><textarea id="noteText" class="field" rows="4" maxlength="2000" placeholder="Escribe una nota… se guarda al pulsar Guardar nota" style="width:100%;resize:vertical;min-height:86px"></textarea></div></div><div class="row" style="justify-content:flex-end;gap:8px"><span class="pill" id="noteCount"></span><button class="btn primary" id="noteSave">Guardar nota</button></div></div><div id="noteList"></div>`;
+  const paint=()=>{ const list=r.querySelector('#noteList'); const items=(state.notes||[]).map((n,i)=>`<div class="section-card"><div class="row"><div style="flex:1;min-width:0"><strong>${esc(String(n.text).split('\n')[0].slice(0,80)||'Nota')}</strong><small class="muted" style="display:block">${new Date(n.ts||Date.now()).toLocaleString('es-ES')}</small><p class="sub" style="white-space:pre-wrap;margin:6px 0 0">${esc(String(n.text).slice(0,400))}</p></div><div style="display:flex;gap:6px;flex:none"><button class="btn" data-nedit="${i}">Editar</button><button class="btn danger" data-ndel="${i}">Eliminar</button></div></div></div>`).join(''); list.innerHTML=items||'<div class="empty">Aún no hay notas. Escribe la primera arriba.</div>'; r.querySelector('#noteCount').textContent=`${(state.notes||[]).length}/50`;
+    list.querySelectorAll('[data-ndel]').forEach(b=>b.onclick=()=>{state.notes.splice(+b.dataset.ndel,1);saveState();paint();toast('Nota eliminada')});
+    list.querySelectorAll('[data-nedit]').forEach(b=>b.onclick=()=>{const n=state.notes[+b.dataset.nedit];if(n)r.querySelector('#noteText').value=n.text;r.querySelector('#noteText').focus()});
+  };
+  r.querySelector('#noteSave').onclick=()=>{ const ta=r.querySelector('#noteText'); const text=String(ta.value||'').trim(); if(!text){toast('Escribe algo antes de guardar');return;} if((state.notes||[]).length>=50){toast('Límite de 50 notas alcanzado');return;} state.notes=[{text:text.slice(0,2000),ts:Date.now()},...(state.notes||[])]; saveState(); ta.value=''; paint(); toast('Nota guardada'); };
+  paint();
 }
-function createTimeMachineSnapshot(title='Punto de restauración manual',automatic=false){
-  const snapshot={id:crypto.randomUUID?.()||String(Date.now()),title:String(title).slice(0,80),createdAt:Date.now(),automatic:automatic===true,data:makeTimeMachinePayload()};
-  state.timeMachineSnapshots=[snapshot,...(state.timeMachineSnapshots||[])].slice(0,12);
-  if(automatic) state.lastAutoSnapshot=snapshot.createdAt;
-  saveState();
-  return snapshot;
-}
-function maybeCreateAutomaticSnapshot(){
-  const last=Number(state.lastAutoSnapshot)||0;
-  const hasUsefulState=(state.bookmarks?.length||state.history?.length||state.sessionTabs?.length||state.workspaces?.length);
-  if(hasUsefulState && Date.now()-last>24*60*60*1000) createTimeMachineSnapshot('Copia automática diaria',true);
-}
-function restoreTimeMachineSnapshot(id){
-  const snapshot=(state.timeMachineSnapshots||[]).find(x=>x.id===id);
-  if(!snapshot||!snapshot.data||typeof snapshot.data!=='object'){toast('No se encuentra ese punto de restauración.');return;}
-  if(!confirm(`Restaurar «${snapshot.title}»? Se sustituirán los ajustes, favoritos, historial y sesión guardados por los de ese momento. Las contraseñas, cookies y credenciales no forman parte de Time Machine.`))return;
-  const data=sanitizeTimeMachineData(snapshot.data);
-  if(!data){toast('El punto de restauración no contiene datos válidos.');return;}
-  for(const key of TIME_MACHINE_KEYS){if(Object.prototype.hasOwnProperty.call(data,key))state[key]=JSON.parse(JSON.stringify(data[key]));}
-  if(!BROWSER_MODES.includes(state.browserMode))state.browserMode='modern';
-  if(!['system','light','dark'].includes(state.appearance))state.appearance='system';
-  state.timeMachineSnapshots=state.timeMachineSnapshots.slice(0,12);
-  saveState();
-  toast('Punto restaurado. Reiniciando NOVA 9…');
-  setTimeout(()=>location.reload(),350);
-}
-function renderTimeMachine(r){
-  const rows=(state.timeMachineSnapshots||[]).map((x,i)=>`<article class="section-card tm-item"><div class="row"><div class="stack"><strong>${esc(x.title)}</strong><small class="sub">${esc(new Date(x.createdAt).toLocaleString('es-ES'))} · ${(x.data?.sessionTabs||[]).length} pestañas · ${(x.data?.bookmarks||[]).length} favoritos ${x.automatic?'· Automática':'· Manual'}</small></div><span class="pill">${i===0?'Más reciente':'Guardada'}</span></div><div class="row"><button class="btn primary" data-tm-restore="${esc(x.id)}">Restaurar</button><button class="btn danger" data-tm-delete="${esc(x.id)}">Eliminar</button></div></article>`).join('');
-  r.innerHTML=panelHeader('NOVA Time Machine','Puntos de restauración locales para recuperar apariencia, favoritos, historial, workspaces y sesión. No almacena contraseñas, cookies ni tokens.')+
-    `<div class="section-card"><div class="row"><div><strong>Crear punto de restauración</strong><div class="sub">Guarda el estado actual antes de un cambio importante. NOVA también crea una copia automática como máximo una vez cada 24 horas al iniciar, cuando hay datos útiles.</div></div><button class="btn primary" id="tmCreate">Crear ahora</button></div><div class="sub">Se conservan hasta 12 puntos en este perfil. Las instantáneas incluyen URLs e historial de navegación; mantenlas en un equipo de confianza.</div></div><div id="tmList">${rows||'<div class="empty">Todavía no hay puntos de restauración. Crea el primero cuando quieras guardar tu estado actual.</div>'}</div>`;
-  r.querySelector('#tmCreate').onclick=()=>{const name=prompt('Nombre del punto de restauración','Antes de cambiar la configuración');if(name===null)return;createTimeMachineSnapshot(name.trim()||'Punto manual',false);renderTimeMachine(r);toast('Punto de restauración guardado en este perfil.');};
-  r.querySelectorAll('[data-tm-restore]').forEach(b=>b.onclick=()=>restoreTimeMachineSnapshot(b.dataset.tmRestore));
-  r.querySelectorAll('[data-tm-delete]').forEach(b=>b.onclick=()=>{state.timeMachineSnapshots=state.timeMachineSnapshots.filter(x=>x.id!==b.dataset.tmDelete);saveState();renderTimeMachine(r);toast('Punto eliminado.');});
-}
-function renderCompanion(r){
-  const title=activeTab?.title||'Sin página activa';let host='';try{host=new URL(getTabUrl(activeTab)).host}catch{}
-  r.innerHTML=panelHeader('NOVA Companion','Un panel rápido dentro del navegador para controlar la página y abrir tus herramientas sin perder el contexto.')+
-    `<div class="section-card"><div class="row"><div class="stack"><strong>${esc(title)}</strong><small class="sub">${esc(host||'Nueva pestaña o página interna')}</small></div><span class="pill">Página activa</span></div><div class="row companion-actions"><button class="btn" id="companionMedia">Nova Media</button><button class="btn" id="companionFocus">Focus</button><button class="btn" id="companionDownloads">Descargas</button><button class="btn" id="companionTime">Time Machine</button></div><div class="row companion-actions"><button class="btn" id="companionPlay">Reproducir / pausar página</button><button class="btn" id="companionPip">Picture-in-Picture</button></div><p class="sub" id="companionStatus" role="status">Los controles multimedia dependen de que la página tenga un elemento de audio o vídeo compatible.</p></div>`+
-    `<div class="section-card"><h2>Abrir aplicación web</h2><p class="sub">Abre una web compatible en una ventana independiente protegida. Solo se aceptan direcciones HTTP o HTTPS.</p><form id="companionAppForm" class="companion-form"><input class="field" id="companionAppName" maxlength="80" placeholder="Nombre de la aplicación" value="Aplicación web"><input class="field" id="companionAppUrl" maxlength="2048" type="url" placeholder="https://ejemplo.com" required><button class="btn primary" type="submit">Abrir ventana</button></form></div>`;
-  r.querySelector('#companionMedia').onclick=()=>setInternal('media');r.querySelector('#companionFocus').onclick=()=>setInternal('focus');r.querySelector('#companionDownloads').onclick=()=>setInternal('downloads');r.querySelector('#companionTime').onclick=()=>setInternal('time-machine');
-  const status=r.querySelector('#companionStatus');
-  r.querySelector('#companionPlay').onclick=async()=>{try{if(!activeTab?.wv)throw new Error('No hay una pestaña web activa.');const result=await activeTab.wv.executeJavaScript(`(()=>{const items=[...document.querySelectorAll('audio,video')].filter(x=>!x.ended);if(!items.length)return 'none';const playing=items.find(x=>!x.paused);if(playing){playing.pause();return 'paused'}const target=items[0];target.play().catch(()=>{});return 'playing'})()`);status.textContent=result==='none'?'Esta página no contiene audio o vídeo controlable.':result==='paused'?'Reproducción pausada.':'Reproducción solicitada a la página.';}catch(e){status.textContent=String(e?.message||e);}};
-  r.querySelector('#companionPip').onclick=async()=>{try{if(!activeTab?.wv)throw new Error('No hay una pestaña web activa.');const result=await activeTab.wv.executeJavaScript(`(async()=>{const v=[...document.querySelectorAll('video')].find(x=>x.readyState>=2&&!x.disablePictureInPicture);if(!v)return 'none';if(!document.pictureInPictureEnabled||!v.requestPictureInPicture)return 'unsupported';await v.requestPictureInPicture();return 'ok'})()`,true);status.textContent=result==='ok'?'Picture-in-Picture activado.':result==='none'?'No se ha encontrado un vídeo compatible.':'La página o el motor no permite Picture-in-Picture.';}catch(e){status.textContent=String(e?.message||'No se pudo activar Picture-in-Picture.');}};
-  r.querySelector('#companionAppForm').onsubmit=async e=>{e.preventDefault();const name=r.querySelector('#companionAppName').value.trim()||'Aplicación web';const url=safeUrl(r.querySelector('#companionAppUrl').value.trim());if(!url||!/^https?:/i.test(url)){status.textContent='Introduce una dirección HTTP o HTTPS válida.';return;}const result=await ipc.invoke('launch-web-app',{name,url}).catch(()=>({ok:false,error:'No se pudo abrir la ventana.'}));status.textContent=result?.ok?'Aplicación abierta en una ventana independiente.':result?.error||'No se pudo abrir la aplicación.';};
-}
-async function setGamingMode(enabled){
-  const next=!!enabled;const ok=await ipc.invoke('performance-mode',next||!!state.energy).catch(()=>false);
-  if(!ok){toast('No se pudo aplicar el perfil de rendimiento.');return false;}
-  state.gamingMode=next;saveState();applyAppearance();
-  toast(next?'Perfil Gaming activado: menos movimiento de interfaz y animación de imágenes limitada.':'Perfil Gaming desactivado.');
-  return true;
-}
-function renderGaming(r){
-  r.innerHTML=panelHeader('NOVA Gaming','Un perfil ligero para sesiones de juego: reduce animaciones de la interfaz y limita animaciones de imágenes en pestañas web. No detecta juegos ni garantiza aumentos de FPS.')+
-    `<div class="section-card gaming-card"><div class="row"><div><strong>Perfil Gaming</strong><div class="sub">Estado: ${state.gamingMode?'Activado':'Desactivado'}</div></div><button class="toggle ${state.gamingMode?'on':''}" id="gamingToggle" aria-pressed="${state.gamingMode?'true':'false'}"></button></div><ul class="feature-list"><li>Reduce transiciones y animaciones del chrome de NOVA.</li><li>Configura la política de animación de imágenes de las pestañas en «una vez».</li><li>Mantiene el throttling de pestañas en segundo plano.</li></ul><div class="sub">No cierra pestañas, no cambia prioridades de procesos de Windows y no promete mejoras de rendimiento en juegos externos.</div></div><div class="section-card"><div class="row"><strong>Herramientas relacionadas</strong><button class="btn" id="gamingPerformance">Ver rendimiento</button></div><div class="row"><strong>Temporizador Focus</strong><button class="btn" id="gamingFocus">Abrir Focus</button></div></div>`;
-  r.querySelector('#gamingToggle').onclick=()=>setGamingMode(!state.gamingMode).then(()=>renderGaming(r));r.querySelector('#gamingPerformance').onclick=()=>setInternal('performance');r.querySelector('#gamingFocus').onclick=()=>setInternal('focus');
-}
-
 function renderInternal(r, view){
   if(view==='home'){backToBrowser(); return;}
   if(view==='assistant'){renderAssistant(r);return;}
+  if(view==='notes'){renderNotes(r);return;}
   if(view==='media'){renderMedia(r);return;}
   if(view==='translate'){renderTranslate(r);return;}
   if(view==='focus'){renderFocus(r);return;}
-  if(view==='time-machine'){renderTimeMachine(r);return;}
-  if(view==='companion'){renderCompanion(r);return;}
-  if(view==='gaming'){renderGaming(r);return;}
   if(view==='favorites'){r.innerHTML=panelHeader('Favoritos','Tus páginas guardadas, con el favicon real del sitio cuando está disponible.')+`<div class="section-card">${state.bookmarks.length?state.bookmarks.map((b,i)=>{let host='';try{host=new URL(b.url).hostname.replace(/^www\./,'')}catch{}return `<div class="bookmark-item"><img class="ext-icon" src="${esc(getFavicon(b.url))}" onerror="this.src='../assets/brand/nova-icon.png'" alt=""><div class="stack"><strong>${esc(b.title||host||b.url)}</strong><small class="truncate">${esc(host||b.url)}</small></div><button class="btn" data-open="${i}">Abrir</button><button class="btn danger" data-del="${i}">Eliminar</button></div>`}).join(''):'<div class="empty">Todavía no tienes favoritos. Usa la estrella de la barra para guardar una página.</div>'}</div>`;
     r.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>navigate(state.bookmarks[+b.dataset.open]?.url));
     r.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{state.bookmarks.splice(+b.dataset.del,1);saveState();renderInternal(r,view);refreshAllNewTabs()});
@@ -527,7 +437,7 @@ function toggleSplitView(){
 }
 function toggleReaderMode(){
   if(!activeTab?.wv){toast('Abre una página web para usar Reader Mode.');return;}
-  const script=`(()=>{const id='__nova9_reader';const old=document.getElementById(id);if(old){old.remove();return 'closed';}const candidates=[...document.querySelectorAll('article,main,[role="main"]')].filter(x=>x.innerText&&x.innerText.trim().length>350).sort((a,b)=>b.innerText.length-a.innerText.length);const source=candidates[0]||document.body;const text=String(source.innerText||'').trim().slice(0,60000);if(text.length<250)return 'short';const title=document.querySelector('h1')?.innerText||document.title||'Lectura';const overlay=document.createElement('div');overlay.id=id;overlay.style.cssText='position:fixed;inset:0;z-index:2147483647;overflow:auto;background:#f8f5ed;color:#202124;font:18px/1.8 Georgia,serif;padding:6vh 22px 10vh;';const article=document.createElement('article');article.style.cssText='max-width:760px;margin:0 auto;white-space:normal;';const bar=document.createElement('div');bar.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:16px;font:12px system-ui,sans-serif;color:#5f6368;margin-bottom:36px;';const label=document.createElement('span');label.textContent='NOVA 9 · READER MODE';const close=document.createElement('button');close.textContent='Salir del modo lectura';close.style.cssText='border:1px solid #c7c2b8;border-radius:999px;background:#fff;padding:9px 14px;cursor:pointer;color:#202124;';close.onclick=()=>overlay.remove();bar.append(label,close);const h=document.createElement('h1');h.textContent=title;h.style.cssText='font:700 clamp(30px,5vw,46px)/1.15 system-ui,sans-serif;letter-spacing:-.04em;margin:0 0 30px;';article.append(bar,h);for(const block of text.split(/\\n{2,}/).filter(Boolean).slice(0,350)){const p=document.createElement('p');p.textContent=block.trim();if(p.textContent)article.appendChild(p);}overlay.appendChild(article);document.documentElement.appendChild(overlay);return 'opened';})()`;
+  const script=`(()=>{const id='__nova7_reader';const rdk=matchMedia('(prefers-color-scheme:dark)').matches;const RBG=rdk?'#1d1e22':'#f8f5ed',RFG=rdk?'#e6e3da':'#202124',RMU=rdk?'#9aa0a6':'#5f6368';const old=document.getElementById(id);if(old){old.remove();return 'closed';}const candidates=[...document.querySelectorAll('article,main,[role="main"]')].filter(x=>x.innerText&&x.innerText.trim().length>350).sort((a,b)=>b.innerText.length-a.innerText.length);const source=candidates[0]||document.body;const text=String(source.innerText||'').trim().slice(0,60000);if(text.length<250)return 'short';const title=document.querySelector('h1')?.innerText||document.title||'Lectura';const overlay=document.createElement('div');overlay.id=id;overlay.style.cssText='position:fixed;inset:0;z-index:2147483647;overflow:auto;background:'+RBG+';color:'+RFG+';font:18px/1.8 Georgia,serif;padding:6vh 22px 10vh;';const article=document.createElement('article');article.style.cssText='max-width:760px;margin:0 auto;white-space:normal;';const bar=document.createElement('div');bar.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:16px;font:12px system-ui,sans-serif;color:'+RMU+';margin-bottom:36px;';const label=document.createElement('span');label.textContent='NOVA 7 · READER MODE';const close=document.createElement('button');close.textContent='Salir del modo lectura';close.style.cssText='border:1px solid '+(rdk?'#3a3b40':'#c7c2b8')+';border-radius:999px;background:'+(rdk?'#292a2d':'#fff')+';padding:9px 14px;cursor:pointer;color:'+RFG+';';close.onclick=()=>overlay.remove();const fsc=document.createElement('span');fsc.style.cssText='display:inline-flex;gap:6px;align-items:center';const fsb=document.createElement('button');fsb.textContent='A−';fsb.style.cssText='border:1px solid '+(rdk?'#3a3b40':'#c7c2b8')+';border-radius:999px;background:'+(rdk?'#292a2d':'#fff')+';padding:6px 12px;cursor:pointer;color:'+RFG+';';const fsx=document.createElement('button');fsx.textContent='A+';fsx.style.cssText=fsb.style.cssText;let rfs=18;const setFs=v=>{rfs=Math.min(28,Math.max(14,v));article.style.fontSize=rfs+'px';};fsb.onclick=()=>setFs(rfs-1);fsx.onclick=()=>setFs(rfs+1);fsc.append(fsb,fsx);bar.append(label,fsc,close);const h=document.createElement('h1');h.textContent=title;h.style.cssText='font:700 clamp(30px,5vw,46px)/1.15 system-ui,sans-serif;letter-spacing:-.04em;margin:0 0 30px;';article.append(bar,h);for(const block of text.split(/\\n{2,}/).filter(Boolean).slice(0,350)){const p=document.createElement('p');p.textContent=block.trim();if(p.textContent)article.appendChild(p);}overlay.appendChild(article);document.documentElement.appendChild(overlay);return 'opened';})()`;
   activeTab.wv.executeJavaScript(script).then(result=>{if(result==='short')toast('No se ha encontrado suficiente texto principal en esta página.');else toast(result==='opened'?'Modo lectura activado':'Modo lectura cerrado');}).catch(()=>toast('Esta página no permite activar Reader Mode.'));
 }
 function showShieldPanel(){
@@ -610,7 +520,7 @@ function renderExtensions(r){
 async function renderPerformance(r){
   r.innerHTML=panelHeader('Rendimiento','Mide la sesión actual y controla el modo Eco sin ocultar datos.')+`<div class="grid"><div class="section-card"><strong id="ram">—</strong><div class="sub">RAM de Nova</div></div><div class="section-card"><strong id="tabsCount">—</strong><div class="sub">Pestañas web</div></div><div class="section-card"><strong id="cpu">—</strong><div class="sub">CPU del proceso principal</div></div><div class="section-card"><strong id="free">—</strong><div class="sub">Memoria disponible</div></div></div><div class="section-card"><div class="row"><div><strong>Ahorro de energía</strong><div class="sub">Mantiene el throttling de fondo y reduce animaciones de recursos cuando se activa.</div></div><button class="toggle ${state.energy?'on':''}" id="eco"></button></div><div class="row"><div><strong>Limpiar caché</strong><div class="sub">Limpia la caché web persistente de Nova.</div></div><button class="btn" id="clearCache">Limpiar</button></div></div><div class="section-card"><h2>Pestañas</h2><div id="tabMetrics"></div></div>`;
   async function paint(){const d=await ipc.invoke('performance-info').catch(()=>({ok:false}));if(!d?.ok){$('#ram').textContent='—';return;}const mb=x=>Number(x)?Math.round(Number(x)/1024)+' MB':'—';$('#ram').textContent=mb(d.main.rssKB);$('#tabsCount').textContent=String(d.tabs.length);$('#cpu').textContent=(Number(d.main.cpuPercent)||0).toFixed(1)+' %';$('#free').textContent=mb(d.system.availableKB||d.system.freeKB);$('#tabMetrics').innerHTML=d.tabs.map(x=>`<div class="row"><div class="stack"><strong class="truncate">${esc(x.title||x.url||'Pestaña')}</strong><small class="truncate">${esc(x.url||'')}</small></div><span class="muted">${mb(x.workingSetKB)} · CPU ${(Number(x.cpuPercent)||0).toFixed(1)}%</span></div>`).join('')||'<div class="empty">No hay datos de pestañas.</div>'}
-  r.querySelector('#eco').onclick=async()=>{const next=!state.energy;const ok=await ipc.invoke('performance-mode',next||!!state.gamingMode);if(ok){state.energy=next;saveState();toast(next?'Ahorro activado':'Ahorro desactivado')}else toast('No se pudo cambiar el modo');renderPerformance(r)};
+  r.querySelector('#eco').onclick=async()=>{const next=!state.energy;const ok=await ipc.invoke('performance-mode',next);if(ok){state.energy=next;saveState();toast(next?'Ahorro activado':'Ahorro desactivado')}else toast('No se pudo cambiar el modo');renderPerformance(r)};
   r.querySelector('#clearCache').onclick=async()=>toast((await ipc.invoke('performance-cache'))?'Caché limpiada':'No se pudo limpiar la caché');paint();
 }
 
@@ -620,18 +530,18 @@ function renderSettings(r){
   const dataLocation = portableInfo.path || ipc.sendSync('userdata') || 'Ruta no disponible';
   const dataMode = portableInfo.isPortable ? (portableInfo.active ? 'Modo portable activo' : 'Portable usando el perfil de Windows') : 'Perfil estándar de Windows/desarrollo';
   r.innerHTML=panelHeader('Ajustes de Nova','Configuración organizada por funciones activas, sin opciones heredadas.')+
-  `<div class="section-card"><h2>Apariencia</h2><div class="row"><div><strong>Experiencia completa</strong><div class="sub">Cambia la estructura visual de barras, pestañas, controles y nueva pestaña. El motor Chromium actual se mantiene.</div></div><select id="browserMode"><option value="modern">NOVA Modern</option><option value="xp">Windows XP</option><option value="win7">Windows 7 Aero</option><option value="firefox-classic">Firefox clásico</option><option value="firefox-2017">Firefox 2017</option><option value="chrome-2017">Chrome 2017</option><option value="edge-legacy">Edge Legacy</option></select></div><div class="row"><div><strong>Tema visual</strong><div class="sub">Paletas completas para las superficies de Nova.</div></div><select id="themePreset"><option value="chrome">Chrome — clásico</option><option value="graphite">Graphite — gris neutro</option><option value="midnight">Midnight — azul noche</option><option value="lavender">Lavender — violeta suave</option></select></div><div class="row"><div><strong>Modo</strong><div class="sub">Claro, oscuro o seguir el sistema operativo.</div></div><select id="appearance"><option value="system">Sistema</option><option value="light">Claro</option><option value="dark">Oscuro</option></select></div><div class="row"><div><strong>Densidad de interfaz</strong><div class="sub">Ajusta el espacio entre controles y paneles.</div></div><select id="uiDensity"><option value="compact">Compacta</option><option value="balanced">Equilibrada</option><option value="comfortable">Cómoda</option></select></div><div class="row"><div><strong>Tamaño del texto</strong><div class="sub">Escala tipográfica global: 90–115 %.</div></div><input id="fontScale" type="range" min="90" max="115" step="5" value="${state.fontScale}" style="max-width:180px"><output id="fontScaleValue">${state.fontScale}%</output></div><div class="row"><div><strong>Color de acento</strong><div class="sub">Nueve acentos seleccionados y un color personalizado.</div></div><div class="swatch-row">${colors.map(c=>`<button class="swatch ${state.accent===c?'active':''}" data-accent="${c}" style="background:${c}" aria-label="Acento ${c}" title="${c}"></button>`).join('')}</div></div><div class="row"><div><strong>Color personalizado</strong><div class="sub">Elige cualquier color y guárdalo para toda la interfaz.</div></div><div class="custom-accent-control"><input id="customAccent" type="color" value="${esc(state.accent)}" aria-label="Elegir color de acento"><button class="btn" id="applyCustomAccent">Aplicar</button></div></div><div class="row"><div><strong>Nova Eclipse</strong><div class="sub">${state.eclipseUnlocked?'Tema secreto desbloqueado. Acentos violeta y superficies oscuras.':'Tema secreto bloqueado: pulsa diez veces el logo de Nova arriba a la izquierda.'}</div></div><button class="btn ${state.eclipseActive?'primary':''}" id="toggleEclipse" ${state.eclipseUnlocked?'':'disabled'}>${state.eclipseUnlocked?(state.eclipseActive?'Desactivar':'Activar tema'):'Bloqueado'}</button></div></div>`+
+  `<div class="section-card"><h2>Apariencia</h2><div class="row"><div><strong>Tema visual</strong><div class="sub">Paletas completas para las superficies de Nova.</div></div><select id="themePreset"><option value="chrome">Chrome — clásico</option><option value="graphite">Graphite — gris neutro</option><option value="midnight">Midnight — azul noche</option><option value="lavender">Lavender — violeta suave</option><option value="aurora">Aurora — azul glaciar</option><option value="carbon">Carbon — gris neutro</option><option value="solar">Solar — ámbar cálido</option></select></div><div class="row"><div><strong>Modo</strong><div class="sub">Claro, oscuro o seguir el sistema operativo.</div></div><select id="appearance"><option value="system">Sistema</option><option value="light">Claro</option><option value="dark">Oscuro</option></select></div><div class="row"><div><strong>Densidad de interfaz</strong><div class="sub">Ajusta el espacio entre controles y paneles.</div></div><select id="uiDensity"><option value="compact">Compacta</option><option value="balanced">Equilibrada</option><option value="comfortable">Cómoda</option></select></div><div class="row"><div><strong>Tamaño del texto</strong><div class="sub">Escala tipográfica global: 90–115 %.</div></div><input id="fontScale" type="range" min="90" max="115" step="5" value="${state.fontScale}" style="max-width:180px"><output id="fontScaleValue">${state.fontScale}%</output></div><div class="row"><div><strong>Color de acento</strong><div class="sub">Nueve acentos seleccionados y un color personalizado.</div></div><div class="swatch-row">${colors.map(c=>`<button class="swatch ${state.accent===c?'active':''}" data-accent="${c}" style="background:${c}" aria-label="Acento ${c}" title="${c}"></button>`).join('')}</div></div><div class="row"><div><strong>Color personalizado</strong><div class="sub">Elige cualquier color y guárdalo para toda la interfaz.</div></div><div class="custom-accent-control"><input id="customAccent" type="color" value="${esc(state.accent)}" aria-label="Elegir color de acento"><button class="btn" id="applyCustomAccent">Aplicar</button></div></div><div class="row"><div><strong>Nova Eclipse</strong><div class="sub">${state.eclipseUnlocked?'Tema secreto desbloqueado. Acentos violeta y superficies oscuras.':'Tema secreto bloqueado: pulsa diez veces el logo de Nova arriba a la izquierda.'}</div></div><button class="btn ${state.eclipseActive?'primary':''}" id="toggleEclipse" ${state.eclipseUnlocked?'':'disabled'}>${state.eclipseUnlocked?(state.eclipseActive?'Desactivar':'Activar tema'):'Bloqueado'}</button></div></div>`+
   `<div class="section-card"><h2>Fondo de la barra superior</h2><p class="sub wallpaper-intro">Elige una imagen local para personalizar la zona de pestañas y navegación. Se guarda en este equipo.</p><div id="wallpaperPreview" class="wallpaper-preview"><span>Vista previa de la barra</span></div><div class="row wallpaper-row"><div><strong>Imagen personalizada</strong><div class="sub">PNG, JPG o WebP · máximo 12 MB.</div></div><div class="wallpaper-actions"><button class="btn primary" id="pickWallpaper">Elegir imagen</button><button class="btn" id="resetWallpaper">Restablecer</button></div></div><div id="wallpaperState" class="sub" aria-live="polite"></div></div>`+
   `<div class="section-card"><h2>Nova Assist</h2><div class="row"><div><strong>Asistente integrado</strong><div class="sub">Asistente exclusivamente local mediante Ollama. Ninguna pregunta se envía a proveedores externos.</div></div><button class="btn primary" id="openAssistantSettings">Abrir Nova Assist</button></div><div class="sub">Necesitas Ollama ejecutándose y al menos un modelo descargado. Puedes comprobar la conexión desde Nova Assist.</div></div>`+
   `<div class="section-card"><h2>Navegación</h2><div class="row"><div><strong>Orientación de pestañas</strong><div class="sub">Cambia entre pestañas horizontales y verticales sin cerrar páginas.</div></div><select id="tabModeSetting"><option value="horizontal">Horizontales</option><option value="vertical">Verticales</option></select></div><div class="row"><div><strong>Buscador</strong><div class="sub">Proveedor usado al buscar desde la barra de dirección.</div></div><select id="search"><option value="https://www.google.com/search?q=">Google</option><option value="https://duckduckgo.com/?q=">DuckDuckGo</option><option value="https://www.bing.com/search?q=">Bing</option><option value="https://search.brave.com/search?q=">Brave</option></select></div><div class="row"><div><strong>Mostrar panel lateral</strong><div class="sub">Puedes ocultarlo desde la barra superior cuando no lo necesites.</div></div><button class="toggle ${state.sidebarVisible!==false?'on':''}" id="sideVisibility"></button></div><div class="row"><div><strong>Expandir panel lateral</strong><div class="sub">Muestra texto junto a los iconos.</div></div><button class="toggle ${state.sidebarOpen?'on':''}" id="sideToggle"></button></div><div class="row"><div><strong>Animaciones</strong><div class="sub">Desactívalas para reducir movimiento.</div></div><button class="toggle ${state.animations?'on':''}" id="animToggle"></button></div><div class="row"><div><strong>Noticias en nueva pestaña</strong><div class="sub">Muestra titulares recientes de fuentes externas; puedes ocultarlos cuando quieras.</div></div><button class="toggle ${state.showNews?'on':''}" id="newsToggle" aria-pressed="${state.showNews?'true':'false'}"></button></div></div>`+
   `<div class="section-card"><h2>Pestañas y sesión</h2><div class="row"><div><strong>Restaurar sesión anterior</strong><div class="sub">Guarda localmente hasta 50 pestañas web compatibles para recuperarlas al abrir Nova.</div></div><button class="toggle ${state.restoreSession?'on':''}" id="restoreSessionToggle" aria-pressed="${state.restoreSession?'true':'false'}"></button></div><div class="row"><div><strong>Reabrir pestaña cerrada</strong><div class="sub">Conserva hasta 10 pestañas cerradas durante la sesión.</div></div><button class="btn" id="reopenTab">Reabrir</button></div><div class="row"><div><strong>Guía de inicio al arrancar</strong><div class="sub">Muestra la guía automáticamente en el próximo arranque.</div></div><button class="toggle ${state.showTourOnStart?'on':''}" id="tourStartup"></button></div></div>`+
-  `<div class="section-card"><h2>Privacidad y seguridad</h2><div class="row"><div><strong>Bloqueador integrado</strong><div class="sub">Controla el bloqueador de anuncios y rastreadores.</div></div><button class="toggle ${(mainPrefs.adblock!==false)?'on':''}" id="adblockToggle"></button></div><div class="row"><div><strong>Navegador predeterminado</strong><div class="sub" id="defaultBrowserStatus">Comprobando el estado en Windows…</div></div><button class="btn primary" id="defaultBrowser">Elegir como predeterminado</button></div><div class="sub" id="defaultBrowserHelp">Windows 11 exige confirmar Nova desde Configuración → Aplicaciones predeterminadas. Nova no puede cambiarlo silenciosamente.</div></div>`+`<div class="section-card"><h2>Contraseñas y autocompletado</h2><p class="sub">NOVA 9 utiliza Bitwarden como gestor recomendado. No guarda contraseñas en texto plano ni incluye una bóveda propia sin auditoría de seguridad.</p><div class="row"><div><strong>Bitwarden Web Vault</strong><div class="sub">Accede a tus contraseñas cifradas desde tu cuenta.</div></div><button class="btn primary" id="openBitwarden">Abrir Bitwarden</button></div><div class="row"><div><strong>Extensión de Bitwarden</strong><div class="sub">Instálala desde la tienda oficial y cárgala en Nova si la versión es compatible con Electron.</div></div><button class="btn" id="bitwardenExtension">Ver extensión</button></div><div class="sub">La instalación automática desde Chrome Web Store no está garantizada en Electron. No importes archivos CSV sin eliminarlos de forma segura después.</div></div>`+
+  `<div class="section-card"><h2>Privacidad y seguridad</h2><div class="row"><div><strong>Bloqueador integrado</strong><div class="sub">Controla el bloqueador de anuncios y rastreadores.</div></div><button class="toggle ${(mainPrefs.adblock!==false)?'on':''}" id="adblockToggle"></button></div><div class="row"><div><strong>Navegador predeterminado</strong><div class="sub">Abre la configuración de aplicaciones predeterminadas de Windows.</div></div><button class="btn" id="defaultBrowser">Configurar</button></div><div class="row"><div><strong>Historial guardado</strong><div class="sub">Máximo de entradas de historial en tu perfil.</div></div><select id="historyLimit"><option value="300">300</option><option value="1000">1.000</option><option value="3000">3.000</option></select></div><div class="row"><div><strong>Hibernación de pestañas</strong><div class="sub">Duerme las pestañas inactivas para ahorrar memoria. 0 = desactivado.</div></div><select id="hibernateMin"><option value="0">Desactivada</option><option value="5">5 minutos</option><option value="10">10 minutos</option><option value="30">30 minutos</option><option value="60">1 hora</option></select></div></div>`+
   `<div class="section-card"><h2>Permisos por sitio</h2><p class="sub">Gestiona decisiones recordadas para cámara, micrófono, ubicación y notificaciones. «Preguntar» elimina la decisión guardada y vuelve a solicitar permiso cuando proceda.</p><div id="sitePermissionList"><div class="empty">Cargando permisos guardados…</div></div><div class="row"><button class="btn" id="refreshSitePermissions">Actualizar lista</button></div></div>`+
   `<div class="section-card"><h2>Importar datos</h2><p class="sub">Busca perfiles locales de Chrome, Edge y Firefox. Nova puede importar marcadores e historial; no copia contraseñas ni datos cifrados.</p><div class="row"><div><strong>Perfiles detectados</strong><div class="sub">Cierra el navegador de origen si la importación del historial falla.</div></div><button class="btn primary" id="scanImport">Buscar navegadores</button></div><div id="importProfiles" class="import-profiles-list"><div class="empty">Pulsa «Buscar navegadores» para detectar perfiles disponibles.</div></div></div>`+
   `<div class="section-card"><h2>Copias de seguridad</h2><p class="sub">Copia local del estado de Nova: favoritos, historial, preferencias, Workspaces, biblioteca multimedia y sesiones. No incluye contraseñas ni archivos multimedia originales.</p><div class="row"><div><strong>Exportar copia manual</strong><div class="sub">Guarda un archivo JSON que podrás importar más tarde.</div></div><button class="btn primary" id="backupExport">Exportar copia</button></div><div class="row"><div><strong>Restaurar copia</strong><div class="sub">Reemplaza el estado actual tras una confirmación.</div></div><button class="btn" id="backupImport">Importar copia</button></div></div>`+
   `<div class="section-card"><h2>Ayuda</h2><div class="row"><div><strong>Guía de inicio</strong><div class="sub">Consulta las funciones principales cuando quieras.</div></div><button class="btn" id="tour">Repetir guía</button></div><div class="row"><div><strong>Novedades</strong><div class="sub">Abre la presentación de la versión actual.</div></div><button class="btn" id="news">Ver novedades</button></div><div class="row"><div><strong>Diagnóstico</strong><div class="sub">Comprueba el estado de la sesión y configuración.</div></div><button class="btn" id="diag">Ejecutar</button></div></div>`+
   `<div class="section-card"><h2>Datos de Nova</h2><div class="row"><div><strong>${esc(dataMode)}</strong><div class="sub" style="overflow-wrap:anywhere">${esc(dataLocation)}</div>${portableInfo.reason?`<small class="sub">No se pudo activar la carpeta portable: ${esc(portableInfo.reason)}. Los datos siguen en la carpeta de Windows.</small>`:''}</div></div><div class="sub">En modo portable, puedes mover el ejecutable junto a su carpeta User Data. Cierra Nova antes de copiar o actualizar.</div></div>`+
-  `<div class="section-card"><h2>Acerca de Nova</h2><div class="row"><div><strong>NOVA 9 ${esc(APP_VERSION)}</strong><div class="sub">Chromium ${esc(RUNTIME_INFO.chromium)} · Electron ${esc(RUNTIME_INFO.electron)}</div></div><button class="btn" id="update">Buscar actualizaciones</button></div></div>`;
+  `<div class="section-card"><h2>Acerca de Nova</h2><div class="row"><div><strong>NOVA 7 ${esc(APP_VERSION)}</strong><div class="sub">Chromium ${esc(RUNTIME_INFO.chromium)} · Electron ${esc(RUNTIME_INFO.electron)}</div></div><button class="btn" id="update">Buscar actualizaciones</button></div></div>`;
   // Nova 6: give existing settings a real shared navigation shell without replacing their behavior.
   const settingCards = [...r.querySelectorAll('.section-card')];
   const settingTitle = card => card.querySelector('h2')?.textContent?.trim() || 'Ajustes';
@@ -646,8 +556,7 @@ function renderSettings(r){
     settingsNav.appendChild(link);
   });
   settingsLayout.append(settingsNav, settingsContent); r.appendChild(settingsLayout);
-  $('#browserMode').value=state.browserMode||'modern';$('#browserMode').onchange=e=>{state.browserMode=BROWSER_MODES.includes(e.target.value)?e.target.value:'modern';saveState();applyAppearance();refreshAllNewTabs();toast('Experiencia visual actualizada.');};
-  $('#appearance').value=state.appearance;$('#themePreset').value=state.themePreset||'chrome';$('#uiDensity').value=state.uiDensity||'balanced';$('#fontScale').value=state.fontScale||100;$('#search').value=state.search;
+  $('#appearance').value=state.appearance;$('#themePreset').value=state.themePreset||'chrome';$('#historyLimit').value=String(state.historyLimit||300);$('#hibernateMin').value=String(state.hibernateMin??10);$('#uiDensity').value=state.uiDensity||'balanced';$('#fontScale').value=state.fontScale||100;$('#search').value=state.search;
   const sitePermBox=r.querySelector('#sitePermissionList');
   const permissionLabels={cam:'Cámara',mic:'Micrófono',geo:'Ubicación',notif:'Notificaciones'};
   const paintSitePermissions=async()=>{
@@ -685,7 +594,7 @@ function renderSettings(r){
           if(history&&Array.isArray(result?.history)){
             const seen=new Set(state.history.map(x=>x.url));
             for(const item of result.history){if(state.history.length>=300)break;const url=String(item.u||'');if(!/^https?:\/\//i.test(url)||seen.has(url))continue;state.history.push({url,title:String(item.t||url).slice(0,200),ts:Number(item.d)||Date.now()});seen.add(url);addedHistory++;}
-            state.history.sort((a,b)=>(b.ts||0)-(a.ts||0));state.history=state.history.slice(0,300);
+            state.history.sort((a,b)=>(b.ts||0)-(a.ts||0));state.history=state.history.slice(0,state.historyLimit||300);
           }
           saveState();refreshAllNewTabs();button.textContent='Importado';button.disabled=true;toast(`Importación completada: ${addedBookmarks} marcadores y ${addedHistory} entradas de historial.`);
         }catch(error){button.disabled=false;button.textContent='Reintentar';toast(String(error?.message||'No se pudo importar el perfil.').slice(0,220));}
@@ -699,6 +608,8 @@ function renderSettings(r){
   r.querySelector('#resetWallpaper').onclick=async()=>{const ok=await ipc.invoke('toolbar-wallpaper-clear').catch(()=>false);if(ok){state.toolbarWallpaper='';saveState();applyToolbarWallpaper();renderSettings(r);toast('Fondo predeterminado restaurado.');}else toast('No se pudo restablecer el fondo.');};
   $('#appearance').onchange=e=>{state.appearance=e.target.value;saveState();applyAppearance();refreshAllNewTabs();renderSettings(r)};
   $('#themePreset').onchange=e=>{state.themePreset=e.target.value;saveState();applyAppearance();refreshAllNewTabs();renderSettings(r)};
+  $('#historyLimit').onchange=e=>{state.historyLimit=[300,1000,3000].includes(Number(e.target.value))?Number(e.target.value):300;saveState();toast('Historial: '+state.historyLimit+' entradas')};
+  $('#hibernateMin').onchange=e=>{state.hibernateMin=[0,5,10,30,60].includes(Number(e.target.value))?Number(e.target.value):10;saveState();toast(state.hibernateMin?('Pestañas inactivas dormirán tras '+state.hibernateMin+' min'):'Hibernación automática desactivada')};
   $('#uiDensity').onchange=e=>{state.uiDensity=e.target.value;saveState();applyAppearance();refreshAllNewTabs();};
   $('#fontScale').oninput=e=>{state.fontScale=Number(e.target.value);$('#fontScaleValue').textContent=state.fontScale+'%';saveState();applyAppearance();};
   $('#search').onchange=e=>{state.search=e.target.value;saveState();refreshAllNewTabs()};
@@ -715,16 +626,24 @@ function renderSettings(r){
   r.querySelector('#restoreSessionToggle').onclick=()=>{state.restoreSession=!state.restoreSession;if(!state.restoreSession){state.sessionTabs=[];state.sessionActiveUrl='';}else persistSession();saveState();renderSettings(r);toast(state.restoreSession?'Se restaurará la sesión anterior al iniciar Nova':'La sesión anterior ya no se guardará')};
   $('#tourStartup').onclick=()=>{state.showTourOnStart=!state.showTourOnStart;saveState();renderSettings(r);toast(state.showTourOnStart?'La guía aparecerá al iniciar':'La guía automática está desactivada')};
   $('#adblockToggle').onclick=async()=>{const next=mainPrefs.adblock===false;const ok=await ipc.invoke('adblock',next);if(ok){mainPrefs=ipc.sendSync('prefs-get')||mainPrefs;renderSettings(r)}else toast('No se pudo cambiar el bloqueador')};
-  const defaultStatus=r.querySelector('#defaultBrowserStatus');
-  const defaultButton=r.querySelector('#defaultBrowser');
-  const paintDefaultBrowser=async()=>{const d=await ipc.invoke('default-browser',false).catch(()=>null);if(!defaultStatus)return;if(!d){defaultStatus.textContent='No se pudo comprobar el estado.';return;}if(d.portable){defaultStatus.textContent='Portable: Windows no puede registrar esta copia como navegador predeterminado.';defaultButton.disabled=true;defaultButton.textContent='No disponible en Portable';return;}defaultStatus.textContent=d.isDefault?'NOVA 9 es el navegador predeterminado.':'NOVA 9 todavía no es el navegador predeterminado.';defaultButton.textContent=d.isDefault?'Configuración de aplicaciones':'Elegir como predeterminado';};
-  defaultButton.onclick=async()=>{const d=await ipc.invoke('default-browser',true).catch(()=>null);if(d?.portable){toast('Esta función requiere la versión Setup de NOVA 9.');return;}toast('Se ha abierto Configuración de Windows. Selecciona NOVA 9 para HTTP, HTTPS y los tipos de archivo que quieras.');setTimeout(paintDefaultBrowser,900);};paintDefaultBrowser();
-  r.querySelector('#openBitwarden').onclick=()=>ipc.invoke('open-external','https://vault.bitwarden.com').then(ok=>{if(!ok)toast('No se pudo abrir Bitwarden.');});
-  r.querySelector('#bitwardenExtension').onclick=()=>ipc.invoke('open-external','https://chromewebstore.google.com/detail/bitwarden-password-manager/nngceckbapebfimnlniiiahkandclblb').then(ok=>{if(ok)toast('Abre la ficha oficial. La compatibilidad de instalación depende de Electron.');else toast('No se pudo abrir la ficha oficial.');});
+  $('#defaultBrowser').onclick=()=>ipc.invoke('default-browser',true).then(d=>toast(d?.portable?'No disponible en modo portable':'Abre la configuración de Windows'));
   $('#tour').onclick=()=>showTour();$('#news').onclick=()=>showWhatsNew(true);$('#diag').onclick=async()=>{const d=await ipc.invoke('nova51-diagnostics').catch(()=>null);showDrawer('Diagnóstico y recuperación',`<p class="sub">Informe local de Nova. No se envía a ningún servidor.</p><pre style="white-space:pre-wrap;font-size:11px">${esc(JSON.stringify(d,null,2))}</pre><button class="btn danger" id="restoreBackup">Restaurar última copia válida</button>`);$('#restoreBackup').onclick=async()=>{if(!confirm('Se restaurará la última copia de seguridad del estado de Nova. ¿Continuar?'))return;const result=await ipc.invoke('nova51-restore-backup').catch(()=>null);if(!result?.ok){toast(result?.error||'No se pudo restaurar la copia.');return;}try{localStorage.setItem('nova-state',result.state);toast('Copia restaurada. Reiniciando Nova…');setTimeout(()=>location.reload(),250);}catch{toast('La copia se restauró en disco, pero no se pudo recargar el estado.');}}};
   r.querySelector('#backupExport').onclick=async()=>{const result=await ipc.invoke('backup-export',JSON.stringify(state)).catch(()=>({ok:false,error:'No se pudo exportar la copia.'}));toast(result?.ok?'Copia exportada correctamente.':result?.error||'Exportación cancelada o fallida.');};
-  r.querySelector('#backupImport').onclick=async()=>{if(!confirm('La restauración reemplazará los ajustes, favoritos, historial y datos locales de Nova. ¿Continuar?'))return;const result=await ipc.invoke('backup-import').catch(()=>({ok:false,error:'No se pudo importar la copia.'}));if(!result?.ok){if(!result?.canceled)toast(result?.error||'No se pudo restaurar la copia.');return;}try{localStorage.setItem('nova-state',result.state);toast('Copia restaurada. Reiniciando NOVA 9…');setTimeout(()=>location.reload(),350);}catch{toast('No se pudo aplicar la copia restaurada.');}};
-  $('#update').onclick=async()=>{const d=await ipc.invoke('update-check').catch(()=>({ok:false}));showDrawer('Nova Update Center',`<p>${d?.newer?'Hay una versión más reciente disponible.':'Nova está al día o no se pudo comprobar una versión nueva.'}</p><p class="muted">Actual: ${esc(APP_VERSION)}${d?.latest?` · Última: ${esc(d.latest)}`:''}</p><button class="btn primary" id="openReleases">Abrir releases</button>`);$('#openReleases').onclick=()=>ipc.invoke('open-external','https://github.com/sdraiky99/NovaBrowser/releases')};
+  r.querySelector('#backupImport').onclick=async()=>{if(!confirm('La restauración reemplazará los ajustes, favoritos, historial y datos locales de Nova. ¿Continuar?'))return;const result=await ipc.invoke('backup-import').catch(()=>({ok:false,error:'No se pudo importar la copia.'}));if(!result?.ok){if(!result?.canceled)toast(result?.error||'No se pudo restaurar la copia.');return;}try{localStorage.setItem('nova-state',result.state);toast('Copia restaurada. Reiniciando NOVA 7…');setTimeout(()=>location.reload(),350);}catch{toast('No se pudo aplicar la copia restaurada.');}};
+  $('#update').onclick=async()=>{await showUpdateCenter()};
+async function showUpdateCenter(){
+  const d=await ipc.invoke('update-check').catch(()=>({ok:false}));
+  const st=await ipc.invoke('update-state').catch(()=>null);
+  renderUpdateDrawer(st||d?.state||{status:'idle'});
+}
+function renderUpdateDrawer(st){
+  const avail=!!st?.available; const dl=!!st?.downloaded; const prog=Math.max(0,Math.min(100,Number(st?.progress)||0));
+  const statusText= st?.status==='checking'?'Comprobando…': st?.status==='available'?'Nueva versión disponible': st?.status==='downloading'?`Descargando ${prog}%`: st?.status==='downloaded'?'Descargada y lista para instalar': st?.status==='error'?`Error: ${String(st?.error||'').slice(0,100)}`:'Nova está al día';
+  showDrawer('Nova Update Center',`<div class="section-card"><div class="row"><div><strong>Versiones</strong><div class="sub">Actual: ${esc(APP_VERSION)}${st?.version?` · Disponible: ${esc(st.version)}`:''}</div></div><span class="pill" id="updateDrawerStatus">${esc(statusText)}</span></div>${st?.status==='downloading'?`<div class="nova-progress"><span style="width:${prog}%"></span></div>`:''}<div class="row" style="justify-content:flex-end;gap:8px"><button class="btn" id="updCheck">Comprobar ahora</button>${avail&&!dl?'<button class="btn primary" id="updDownload">Descargar</button>':''}${dl?'<button class="btn primary" id="updInstall">Instalar y reiniciar</button>':''}</div></div><p class="sub">Nova comprueba actualizaciones al iniciar. Instalar reinicia Nova para aplicar la versión nueva.</p>`);
+  $('#updCheck').onclick=async()=>{$('#updateDrawerStatus').textContent='Comprobando…';await showUpdateCenter()};
+  const bd=$('#updDownload'); if(bd)bd.onclick=async()=>{const r=await ipc.invoke('update-download').catch(()=>null);if(r&&!r.ok)toast(r?.error||'No se pudo descargar');};
+  const bi=$('#updInstall'); if(bi)bi.onclick=async()=>{const r=await ipc.invoke('update-install').catch(()=>null);if(r&&!r.ok)toast(r?.error||'No se pudo instalar');};
+}
 }
 
 function showTour(){
@@ -733,7 +652,7 @@ function showTour(){
 function showWhatsNew(force=false){
   const key='nova-whatsnew-seen-'+APP_VERSION;
   if(!force && localStorage.getItem(key)==='1')return;
-  let i=0;const cards=[['../assets/brand/nova-mark.svg','NOVA 9' ,'Se conserva el emblema original del proyecto y se aplica la identidad NOVA 9 a la interfaz y a la distribución.'],['../assets/illustrations/performance.svg','Nova Assist','Asistente local mediante Ollama. Tus consultas no se envían a un proveedor cloud de IA.'],['../assets/illustrations/onboarding.svg','Nova Media y Translate','Biblioteca multimedia manual y traducción cloud bajo petición. El texto enviado a traducción sale del dispositivo.'],['../assets/brand/nova-mark.svg','Tema secreto','Pulsa diez veces el logo de la esquina superior izquierda para desbloquear el tema secreto y activarlo en Ajustes → Apariencia.'],['../assets/illustrations/renderer.svg','Navegación flexible','Pestañas horizontales o verticales, pantalla dividida y Reader Mode. Ctrl+K abre Command Center.']];const m=document.createElement('div');m.className='modal on';m.innerHTML=`<div class="modal-card"><div class="modal-head"><strong>NOVA 9 · ${esc(APP_VERSION)} · Complete Experience</strong><button class="icon-btn" id="wnClose">×</button></div><div class="modal-body"><div id="wnCard" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:center"></div><div class="tour-dots">${cards.map((_,k)=>`<span class="dot ${k===0?'on':''}" data-dot="${k}"></span>`).join('')}</div><div style="display:flex;justify-content:flex-end"><button class="btn primary" id="wnNext">Siguiente</button></div></div></div>`;document.body.appendChild(m);const keyClose=()=>{localStorage.setItem(key,'1');m.remove()};$('#wnClose').onclick=keyClose;$('#wnNext').onclick=()=>{if(i<cards.length-1){i++;paint()}else keyClose()};function paint(){const c=cards[i];$('#wnCard').innerHTML=`<img class="tour-img" src="${c[0]}" onerror="this.style.display='none'" alt=""><div><h2 style="margin-top:0">${esc(c[1])}</h2><p class="muted">${esc(c[2])}</p></div>`;m.querySelectorAll('[data-dot]').forEach(x=>x.classList.toggle('on',+x.dataset.dot===i));$('#wnNext').textContent=i===cards.length-1?'Terminar':'Siguiente'}paint();
+  let i=0;const cards=[['../assets/brand/nova-mark.svg','NOVA X · 8.0.0','La actualización mayor de Nova: hibernación de pestañas, notas rápidas, tres temas nuevos y un centro de actualizaciones completo.'],['../assets/illustrations/performance.svg','Pestañas dormidas','Las pestañas que no usas se duermen solas y despiertan al clicarlas. Configura el tiempo en Ajustes → Privacidad.'],['../assets/illustrations/onboarding.svg','Notas rápidas','Notas locales en la barra lateral: sin cuentas, sin nube y sin salir del navegador.'],['../assets/brand/nova-mark.svg','Temas nuevos','Aurora, Carbon y Solar se unen a Nova: paletas nuevas para claro y oscuro en Ajustes → Apariencia.'],['../assets/illustrations/renderer.svg','Enlaces limpios','El menú contextual copia enlaces sin parámetros de rastreo y el Reader Mode se adapta al tema oscuro.']];const m=document.createElement('div');m.className='modal on';m.innerHTML=`<div class="modal-card"><div class="modal-head"><strong>NOVA 7 · ${esc(APP_VERSION)} · FLOW Reborn</strong><button class="icon-btn" id="wnClose">×</button></div><div class="modal-body"><div id="wnCard" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:center"></div><div class="tour-dots">${cards.map((_,k)=>`<span class="dot ${k===0?'on':''}" data-dot="${k}"></span>`).join('')}</div><div style="display:flex;justify-content:flex-end"><button class="btn primary" id="wnNext">Siguiente</button></div></div></div>`;document.body.appendChild(m);const keyClose=()=>{localStorage.setItem(key,'1');m.remove()};$('#wnClose').onclick=keyClose;$('#wnNext').onclick=()=>{if(i<cards.length-1){i++;paint()}else keyClose()};function paint(){const c=cards[i];$('#wnCard').innerHTML=`<img class="tour-img" src="${c[0]}" onerror="this.style.display='none'" alt=""><div><h2 style="margin-top:0">${esc(c[1])}</h2><p class="muted">${esc(c[2])}</p></div>`;m.querySelectorAll('[data-dot]').forEach(x=>x.classList.toggle('on',+x.dataset.dot===i));$('#wnNext').textContent=i===cards.length-1?'Terminar':'Siguiente'}paint();
 }
 
 function showMenu(){
@@ -748,9 +667,6 @@ function showMenu(){
     ['Nova Assist','',()=>setInternal('assistant')],
     ['Nova Media','',()=>setInternal('media')],
     ['Nova Translate','',()=>setInternal('translate')],
-    ['NOVA Time Machine','',()=>setInternal('time-machine')],
-    ['NOVA Companion','',()=>setInternal('companion')],
-    ['NOVA Gaming',state.gamingMode?'Desactivar':'Abrir',()=>setInternal('gaming')],
     ['Reader Mode','',()=>toggleReaderMode()],
     ['Pantalla dividida','',()=>toggleSplitView()],
     ['DevTools','F12',()=>activeTab?.wv?.openDevTools?.()],
@@ -763,10 +679,9 @@ function showMenu(){
   showDrawer('Menú',actions.map((x,i)=>(i===1||i===7||i===12||i===15?'<div class="menu-sep"></div>':'')+`<button class="menu-item" data-menu="${i}"><span>${esc(x[0])}</span><span class="muted">${esc(x[1])}</span></button>`).join(''));
   document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>{hideDrawer();actions[+b.dataset.menu]?.[2]?.()});
 }
-function showAbout(){const info=RUNTIME_INFO;showDrawer('Acerca de NOVA 9',`<div style="text-align:center;padding:10px 0 16px"><img src="../assets/brand/nova-icon.png" style="width:76px;height:76px;object-fit:contain"><h2 style="margin:8px 0 2px">NOVA 9</h2><div class="muted">Complete Experience · ${esc(APP_VERSION)}</div></div><div class="section-card"><div class="row"><span>Chromium</span><strong>${esc(info.chromium||'No disponible')}</strong></div><div class="row"><span>Electron</span><strong>${esc(info.electron||'No disponible')}</strong></div><div class="row"><span>Node</span><strong>${esc(info.node||'No disponible')}</strong></div><div class="row"><span>Sistema</span><strong>${esc(info.platform||'')} · ${esc(info.arch||'')}</strong></div></div><div class="sub">NOVA 9 · ${esc(APP_VERSION)} · Perfil local</div>`)}
+function showAbout(){const info=RUNTIME_INFO;showDrawer('Acerca de NOVA 7',`<div style="text-align:center;padding:10px 0 16px"><img src="../assets/brand/nova-icon.png" style="width:76px;height:76px;object-fit:contain"><h2 style="margin:8px 0 2px">NOVA 7</h2><div class="muted">FLOW Reborn · ${esc(APP_VERSION)}</div></div><div class="section-card"><div class="row"><span>Chromium</span><strong>${esc(info.chromium||'No disponible')}</strong></div><div class="row"><span>Electron</span><strong>${esc(info.electron||'No disponible')}</strong></div><div class="row"><span>Node</span><strong>${esc(info.node||'No disponible')}</strong></div><div class="row"><span>Sistema</span><strong>${esc(info.platform||'')} · ${esc(info.arch||'')}</strong></div></div><div class="sub">NOVA 7 · ${esc(APP_VERSION)} · Perfil local</div>`)}
 
 $('#newTab').innerHTML=iconSvg('plus');$('#newTab').onclick=()=>newTab();
-$('#companionButton').innerHTML=iconSvg('sparkles');$('#companionButton').onclick=()=>setInternal('companion');
 $('#brand').setAttribute('role','button');$('#brand').setAttribute('aria-label','Logo de Nova. Pulsa diez veces para desbloquear Nova Eclipse');$('#brand').setAttribute('tabindex','0');$('#brand').addEventListener('click',()=>{if(state.eclipseUnlocked)return;logoTapCount++;if(logoTapTimer)clearTimeout(logoTapTimer);logoTapTimer=setTimeout(()=>{logoTapCount=0;logoTapTimer=null;},4500);if(logoTapCount>=10){logoTapCount=0;clearTimeout(logoTapTimer);logoTapTimer=null;state.eclipseUnlocked=true;state.eclipseActive=true;saveState();applyAppearance();refreshAllNewTabs();toast('Has desbloqueado Nova Eclipse. Disponible en Ajustes → Apariencia.');}});$('#brand').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('#brand').click();}});
 $('#back').innerHTML=iconSvg('back');$('#forward').innerHTML=iconSvg('forward');$('#reload').innerHTML=iconSvg('reload');$('#star').innerHTML=iconSvg('star');$('#sidebarToggle').innerHTML=iconSvg('sidebar');$('#menuButton').innerHTML=iconSvg('menu');$('#readerToggle').innerHTML=iconSvg('reader');$('#splitToggle').innerHTML=iconSvg('split');$('#tabModeToggle').innerHTML=iconSvg('tabs');
 $('#accentButton').querySelector('.accent-dot').style.removeProperty('background');
@@ -780,7 +695,7 @@ ipc.on('key',(_,key)=>{const k=String(key||'').toLowerCase();if(k==='t')newTab()
 ipc.on('ctx-search',(_,term)=>{const value=String(term||'').trim();if(value)navigate(value);});
 ipc.on('ask-ai',(_,payload)=>{setInternal('assistant');setTimeout(()=>{const p=$('#assistantPrompt');if(p)p.value=payload?.m==='tr'?'Traduce este texto al español:\n'+String(payload?.t||''):'Explica este texto de forma clara:\n'+String(payload?.t||'');},80);});
 ipc.on('zoom-changed',(_,d)=>{if(activeTab?.wv?.getWebContentsId?.()===d?.webContentsId)toast(`Zoom ${Math.round((Number(d.factor)||1)*100)} %`);});
-ipc.on('update-state',(_,d)=>{if(d?.status==='downloading')toast(`Descargando actualización: ${Math.round(Number(d.progress)||0)} %`);else if(d?.status==='downloaded')toast('Actualización descargada. Lista para instalar.');else if(d?.status==='error')toast('Error al actualizar: '+String(d.error||'desconocido').slice(0,120));});
+ipc.on('update-state',(_,d)=>{if(document.querySelector('#updateDrawerStatus'))renderUpdateDrawer(d);if(d?.status==='downloading')toast(`Descargando actualización: ${Math.round(Number(d.progress)||0)} %`);else if(d?.status==='downloaded')toast('Actualización descargada. Lista para instalar.');else if(d?.status==='error')toast('Error al actualizar: '+String(d.error||'desconocido').slice(0,120));});
 ipc.on('blocked',(_,n)=>toast(`${n} solicitudes bloqueadas`));ipc.on('dl',(_,d)=>{const entry={id:d?.id??null,name:String(d?.name||'archivo'),path:String(d?.path||''),state:String(d?.state||''),recv:Number(d?.recv)||0,total:Number(d?.total)||0,ts:Date.now()};const idx=entry.id!==null?state.downloads.findIndex(x=>String(x.id)===String(entry.id)):-1;if(idx>=0)state.downloads[idx]={...state.downloads[idx],...entry};else state.downloads.unshift(entry);state.downloads=state.downloads.slice(0,100);saveState();if(internalView==='downloads'){const p=$('#internalPanel');if(p)renderInternal(p,'downloads')}if(['done','completed'].includes(entry.state))toast(`Descarga completada: ${entry.name}`)});ipc.on('tab-health',(_,d)=>{if(d?.type==='unresponsive')toast('Una pestaña no responde');if(d?.type==='responsive')toast('Pestaña recuperada')});
 function showCommand(){
   document.getElementById('novaCommand')?.remove();
@@ -791,23 +706,28 @@ function showCommand(){
   <button class="command-node" data-action="history"><span class="command-glyph"><img src="../assets/icons/history.svg" alt=""></span><b>Historial</b><small>Actividad reciente</small></button>
   <button class="command-node" data-action="downloads"><span class="command-glyph"><img src="../assets/icons/download.svg" alt=""></span><b>Descargas</b><small>Archivos y progreso</small></button>
   <button class="command-node" data-action="bookmarks"><span class="command-glyph"><img src="../assets/icons/star.svg" alt=""></span><b>Favoritos</b><small>Páginas guardadas</small></button>
+  <button class="command-node" data-action="notes"><span class="command-glyph"><img src="../assets/icons/notes.svg" alt=""></span><b>Notas</b><small>Notas rápidas</small></button>
+  <button class="command-node" data-action="sleep-tabs"><span class="command-glyph"><img src="../assets/icons/timer.svg" alt=""></span><b>Dormir</b><small>Pestañas inactivas</small></button>
+  <button class="command-node" data-action="dedupe-tabs"><span class="command-glyph"><img src="../assets/icons/close.svg" alt=""></span><b>Limpiar</b><small>Cerrar duplicadas</small></button>
   <button class="command-node" data-action="privacy"><span class="command-glyph"><img src="../assets/icons/bolt.svg" alt=""></span><b>Privacidad</b><small>Protección y permisos</small></button>
   </div><form class="command-search" id="commandSearch"><span>⌕</span><input id="commandQuery" autocomplete="off" placeholder="Buscar páginas, ajustes o escribir una dirección…"><kbd>ESC</kbd></form><div class="command-results" id="commandResults" hidden></div><p class="command-hint">Pulsa una sección o busca cualquier cosa en Nova</p></section>`;
   document.body.appendChild(overlay);
   const close=()=>{overlay.classList.add('closing');setTimeout(()=>overlay.remove(),160)};
   overlay.querySelector('.command-close').onclick=close;
   overlay.querySelector('.command-backdrop').onclick=close;
-  const open=(action)=>{close();if(action==='settings')setInternal('settings');else if(action==='tabs'){showDrawer('Pestañas abiertas',tabs.map((t,i)=>`<button class="menu-item" data-tab-index="${i}">${esc(t.title||getTabUrl(t)||'Nueva pestaña')}</button>`).join('')||'<div class="empty">No hay pestañas.</div>');document.querySelectorAll('#drawer [data-tab-index]').forEach(b=>b.onclick=()=>{const tab=tabs[Number(b.dataset.tabIndex)];if(tab)selectTab(tab);hideDrawer();});}else if(action==='history')setInternal('history');else if(action==='downloads')setInternal('downloads');else if(action==='bookmarks')setInternal('favorites');else if(action==='privacy'){setInternal('settings');setTimeout(()=>{const card=[...document.querySelectorAll('#internalPanel .section-card')].find(x=>x.querySelector('h2')?.textContent==='Privacidad y seguridad');card?.scrollIntoView({behavior:state.animations?'smooth':'auto',block:'start'});},60);}};
+  const open=(action)=>{close();if(action==='settings')setInternal('settings');else if(action==='tabs'){showDrawer('Pestañas abiertas',tabs.map((t,i)=>`<button class="menu-item" data-tab-index="${i}">${esc(t.title||getTabUrl(t)||'Nueva pestaña')}</button>`).join('')||'<div class="empty">No hay pestañas.</div>');document.querySelectorAll('#drawer [data-tab-index]').forEach(b=>b.onclick=()=>{const tab=tabs[Number(b.dataset.tabIndex)];if(tab)selectTab(tab);hideDrawer();});}else if(action==='history')setInternal('history');
+  else if(action==='notes')setInternal('notes');
+  else if(action==='sleep-tabs'){const n=tabs.filter(t=>t!==activeTab&&!t.sleeping).length;tabs.slice().forEach(hibernateTab);toast(n?n+' pestañas dormidas':'No hay pestañas para dormir')}
+  else if(action==='dedupe-tabs'){const seen=new Set();let n=0;tabs.slice().forEach(t=>{const u=getTabUrl(t);if(!u||isNewTabUrl(u))return;if(seen.has(u)){closeTab(t);n++}else seen.add(u)});toast(n?n+' pestañas duplicadas cerradas':'No hay pestañas duplicadas')}else if(action==='downloads')setInternal('downloads');else if(action==='bookmarks')setInternal('favorites');else if(action==='privacy'){setInternal('settings');setTimeout(()=>{const card=[...document.querySelectorAll('#internalPanel .section-card')].find(x=>x.querySelector('h2')?.textContent==='Privacidad y seguridad');card?.scrollIntoView({behavior:state.animations?'smooth':'auto',block:'start'});},60);}};
   overlay.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>open(b.dataset.action));
   const input=overlay.querySelector('#commandQuery'),results=overlay.querySelector('#commandResults'),orbit=overlay.querySelector('#commandOrbit');
-  const paint=()=>{const q=input.value.trim().toLowerCase();if(!q){results.hidden=true;orbit.hidden=false;return;}const found=[];tabs.forEach(t=>{const title=String(t.title||'Pestaña'),url=getTabUrl(t);if((title+' '+url).toLowerCase().includes(q))found.push({label:title,detail:url,run:()=>selectTab(t)});});state.bookmarks.forEach(b=>{if((b.title+' '+b.url).toLowerCase().includes(q))found.push({label:b.title||b.url,detail:'Favorito',run:()=>navigate(b.url)});});[['Ajustes','settings'],['Historial','history'],['Descargas','downloads'],['Favoritos','bookmarks'],['Privacidad','privacy'],['Extensiones','extensions'],['Nova Assist','assistant'],['Rendimiento','performance'],['Time Machine','time-machine'],['Companion','companion'],['Gaming','gaming']].forEach(([label,key])=>{if(label.toLowerCase().includes(q))found.push({label,detail:'Sección de Nova',run:()=>setInternal(key)});});results.innerHTML=found.slice(0,8).map((x,i)=>`<button class="command-result" data-result="${i}"><span><b>${esc(x.label)}</b><small>${esc(x.detail)}</small></span><kbd>↵</kbd></button>`).join('')||'<div class="empty">No se encontraron resultados.</div>';results.hidden=false;orbit.hidden=true;results.querySelectorAll('[data-result]').forEach(b=>b.onclick=()=>{const item=found[+b.dataset.result];close();item?.run();});};
+  const paint=()=>{const q=input.value.trim().toLowerCase();if(!q){results.hidden=true;orbit.hidden=false;return;}const found=[];tabs.forEach(t=>{const title=String(t.title||'Pestaña'),url=getTabUrl(t);if((title+' '+url).toLowerCase().includes(q))found.push({label:title,detail:url,run:()=>selectTab(t)});});state.bookmarks.forEach(b=>{if((b.title+' '+b.url).toLowerCase().includes(q))found.push({label:b.title||b.url,detail:'Favorito',run:()=>navigate(b.url)});});[['Ajustes','settings'],['Historial','history'],['Descargas','downloads'],['Favoritos','bookmarks'],['Privacidad','privacy'],['Extensiones','extensions'],['Nova Assist','assistant'],['Rendimiento','performance']].forEach(([label,key])=>{if(label.toLowerCase().includes(q))found.push({label,detail:'Sección de Nova',run:()=>setInternal(key)});});results.innerHTML=found.slice(0,8).map((x,i)=>`<button class="command-result" data-result="${i}"><span><b>${esc(x.label)}</b><small>${esc(x.detail)}</small></span><kbd>↵</kbd></button>`).join('')||'<div class="empty">No se encontraron resultados.</div>';results.hidden=false;orbit.hidden=true;results.querySelectorAll('[data-result]').forEach(b=>b.onclick=()=>{const item=found[+b.dataset.result];close();item?.run();});};
   input.oninput=paint;overlay.querySelector('#commandSearch').onsubmit=e=>{e.preventDefault();const q=input.value.trim();if(!q)return;const first=results.querySelector('[data-result]');if(first){first.click();return;}close();navigate(q);};
   overlay.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();close();}else if(e.key==='Enter'&&results.hidden===false){const first=results.querySelector('[data-result]');if(first){e.preventDefault();first.click();}}});
   requestAnimationFrame(()=>{overlay.classList.add('visible');input.focus();});
 }
 
 applyAppearance();
-ipc.invoke('performance-mode',!!(state.energy||state.gamingMode)).catch(()=>{});
 renderBookmarkBar();
 applyTabLayout();
 const initialSession = state.restoreSession && Array.isArray(state.sessionTabs) ? state.sessionTabs.slice(-50).filter(x=>x&&/^https?:\/\//i.test(typeof x==='string'?x:x.url||'')) : [];
@@ -819,4 +739,5 @@ if (initialSession.length) {
   restoringSession = false;
   persistSession();
 } else newTab();
-setTimeout(()=>{maybeCreateAutomaticSnapshot(); const whatsNewKey='nova-whatsnew-seen-'+APP_VERSION; if(localStorage.getItem(whatsNewKey)!=='1') showWhatsNew(false); else if(state.showTourOnStart){ state.showTourOnStart=false; state.firstRun=false; saveState(); showTour(); } },900);
+setInterval(()=>{ const min=Number(state.hibernateMin)||0; if(!min)return; const now=Date.now(); tabs.slice().forEach(t=>{ if(t===activeTab||t===splitSecondary||t.sleeping)return; if(now-(t.lastActive||now)>min*60000) hibernateTab(t); }); },30000);
+setTimeout(()=>{ const whatsNewKey='nova-whatsnew-seen-'+APP_VERSION; if(localStorage.getItem(whatsNewKey)!=='1') showWhatsNew(false); else if(state.showTourOnStart){ state.showTourOnStart=false; state.firstRun=false; saveState(); showTour(); } },900);

@@ -1,0 +1,33 @@
+NOVA 7 — 7.1.0 — VALIDACIÓN
+
+Origen: Nova 7.0.0. Actualización de motor y dependencias; sin cambios de comportamiento en la interfaz.
+
+Alcance de la actualización:
+- Electron 44.4.5 → 45.3.0 (Chromium 152.0.7977.169 → 156.0.8078.96; Node.js 24.22.2).
+- electron-builder 26.17.0 → 26.18.0; electron-updater 6.8.10 → 6.8.11.
+- @ghostery/adblocker-electron 2.18.2 → 2.20.3; sql.js 1.14.2 → 1.16.0; cross-fetch 4.1.0 (sin cambio, última publicada).
+- Versión SemVer 7.1.0; artefactos Setup y Portable renombrados a 7.1.0.
+
+Compatibilidad revisada con los cambios de ruptura de Electron 45:
+- El preload con sandbox (shell/preload.js, shell/newtab-preload.js) solo usa require('electron') y la URL global; no depende de los shims de Node eliminados (events, timers, url, Buffer, setImmediate).
+- No se usan safeStorage síncrono (deprecado), contentTracing heredado, net.request con Sec-Fetch-Dest de navegación ni desktopCapturer con chromeMediaSource: 'desktop'.
+- La política de permisos niega por defecto los permisos desconocidos, incluido el nuevo 'display-capture'; no se requiere cambio de código.
+- clipboard.writeText se usa solo en el proceso principal; el renderer usa navigator.clipboard.
+- Configuración de seguridad del renderer sin cambios: sandbox: true, contextIsolation: true, nodeIntegration: false.
+
+Comprobaciones ejecutadas en este entorno Linux (Node.js 20.20.2, npm 10.8.2):
+- npm run check:distribution-config — PASS.
+- npm run check:project — PASS; 74 archivos de proyecto, límite 100.
+- npm run check:syntax — PASS; 17 archivos JavaScript.
+- npm run qa:7 — PASS; configuración dual, política de permisos, Portable y checks de integración.
+- npm run check:build-assets — PASS; recursos locales presentes.
+- npm run check:performance — PASS; microbenchmark de resolución de URL/búsqueda (no mide el arranque de Electron).
+- npm run check:security — PASS; aislamiento del renderer, preload y servicios locales.
+- npm install con las versiones nuevas — sin errores de resolución.
+
+Comprobaciones de runtime pendientes en Windows:
+- Compilar y abrir Setup y Portable; confirmar que Setup no solicita elevación y que los datos están separados.
+- Verificar la actualización automática desde 7.0.0 publicando el release 7.1.0 en GitHub (canal electron-updater).
+- Probar navegación real, Nova Shield con listas descargadas, Nova Media/Translate/Focus y la primera apertura del panel Novedades 7.1.0.
+
+No se afirma que los ejecutables Windows se hayan generado o probados localmente en este entorno Linux.

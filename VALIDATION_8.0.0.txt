@@ -1,0 +1,27 @@
+NOVA 7 — 8.0.0 (Edición X) — VALIDACIÓN
+
+Origen: Nova 7.1.1. Actualización mayor de producto sobre la base Electron 45.3.0 / Chromium 156.
+
+Alcance implementado en esta entrega:
+- Hibernación de pestañas: sueño automático configurable (hibernateMin), sueño manual desde menú de pestaña y Command Center, despertar al seleccionar (wakeTab), refactor del ciclo de eventos de webview (attachTabEvents) reutilizado por crear y despertar pestañas.
+- Notas rápidas: vista 'notes' en la barra lateral y Command Center, editor con guardar/editar/eliminar, límite 50 notas × 2.000 caracteres, persistencia en el estado local.
+- Temas Aurora/Carbon/Solar: tokens claros y oscuros en nova.css y newtab.html, opciones en Ajustes, whitelist del estado ampliada.
+- Update Center completo: showUpdateCenter/renderUpdateDrawer con estado en vivo, barra de progreso y botones Descargar / Instalar y reiniciar sobre los canales update-download / update-install existentes.
+- Copiar enlace limpio: stripTrackingParams en el proceso principal, aplicado al menú contextual de enlaces y de página.
+- Reader Mode: detección de tema oscuro y controles A− / A+ de tamaño de letra.
+- Command Center: nodos Notas / Dormir / Cerrar duplicadas con acciones reales sobre las pestañas.
+- Historial configurable (300/1.000/3.000) aplicado en normalización, registro e importación.
+
+Comprobaciones ejecutadas en este entorno Linux (Node.js 20.20.2, npm 10.8.2):
+- npm run check — pipeline completo PASS: check:distribution-config, check:project (incluye agujas de notas, hibernación, Update Center, enlaces limpios y notes.svg), check:syntax (17 archivos JS), qa:7 (con asserts NOVA X), check:build-assets, check:performance, check:security.
+- Análisis estático manual del ciclo dormir/despertar: getTabUrl consciente de pestañas dormidas, persistSession y syncTabFromWeb protegidos, menús y vistas tolerantes a t.wv nulo (optional chaining en toda la base).
+- Verificación de canales IPC: las nuevas invocaciones (update-download, update-install, update-state) ya estaban en la lista blanca del preload; notas e hibernación no añaden canales nuevos.
+
+Comprobaciones de runtime pendientes en Windows:
+- Dormir pestañas con una web con audio/vídeo y despertarlas; verificar memoria liberada en el panel de Rendimiento.
+- Flujo completo de actualización en una instalación real: comprobar, descargar con progreso, instalar y reiniciar.
+- Los tres temas nuevos en claro y oscuro, en el navegador y en la nueva pestaña.
+- Notas: crear, editar, eliminar, reiniciar y confirmar persistencia.
+- Menú contextual: Copiar enlace limpio sobre enlaces con utm_* y confirmar el portapapeles.
+
+No se afirma que los ejecutables Windows se hayan generado o probados localmente en este entorno Linux.

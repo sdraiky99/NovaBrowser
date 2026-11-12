@@ -1,0 +1,17 @@
+NOVA 7 — 7.1.1 — VALIDACIÓN
+
+Origen: Nova 7.1.0. Corrección aislada del parser de noticias; sin cambios de interfaz, motor o configuración de seguridad.
+
+Comprobaciones ejecutadas en este entorno Linux (Node.js 20.20.2, npm 10.8.2):
+- Reproducción del fallo: con la lógica original, Xataka/Genbeta/The Verge/PC Gamer devolvían 0 ítems (feeds descargaban correctamente; el descarte ocurría al extraer titulares).
+- Causa raíz confirmada: newsStripHtml eliminaba los bloques CDATA completos (incluido el texto del titular) por el patrón de etiquetas HTML.
+- Verificación de la corrección con la lógica real del main.js modificado: Xataka 26, Genbeta 16, MuyComputer 20, Ars Technica 20, Ars Technica Gaming 20, The Verge 10, PC Gamer 50, Steam CS2 3 (ítems en ruso filtrados).
+- npm run check — pipeline completo PASS (ver salida de la ejecución en este entorno).
+- Diagnóstico complementario: las URLs antiguas de Xataka/Genbeta responden 301 a /feedburner.xml (redirección seguida por node-fetch, URLs actualizadas de todos modos); Steam API devuelve ítems comunitarios en ruso pese al parámetro de idioma (filtrado añadido); el feed de PC Gamer pesa ~2,1 MB sin comprimir y node-fetch 2.7 no negocia compresión (timeout ampliado a 12 s).
+
+Comprobaciones de runtime pendientes en Windows:
+- Abrir la nueva pestaña y confirmar titulares de las 7 fuentes y de Steam en el tema de noticias.
+- Verificar la carga del panel con conexión lenta (feeds grandes) y el botón Actualizar (refresco forzado).
+- Confirmar que el caché local en disco se reescribe con las nuevas fuentes tras la primera carga.
+
+No se afirma que los ejecutables Windows se hayan generado o probados localmente en este entorno Linux.

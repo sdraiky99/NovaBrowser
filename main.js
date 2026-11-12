@@ -11,7 +11,7 @@ try {
   }
 } catch (e) { console.warn('Nova updater unavailable:', e.message); }
 const APP_ID = 'com.nova.browser';
-app.setName('NOVA 9');
+app.setName('NOVA 7');
 const { configurePortableUserData } = require('./portable-user-data.js');
 const { normalizeHttpOrigin, isHttpOrigin, permissionKeysForRequest, permissionDecision, permissionRequestLabel } = require('./permission-policy.js');
 const portableDataStatus = configurePortableUserData(app, process.env);
@@ -154,12 +154,12 @@ async function registerBrowser(force) {
   const rows = [
     ['Software\\Classes\\NovaURL', '', 'Nova URL'], ['Software\\Classes\\NovaURL', 'URL Protocol', ''], ['Software\\Classes\\NovaURL\\DefaultIcon', '', ico], ['Software\\Classes\\NovaURL\\shell\\open\\command', '', cmd],
     ['Software\\Classes\\NovaHTML', '', 'Nova HTML Document'], ['Software\\Classes\\NovaHTML\\DefaultIcon', '', ico], ['Software\\Classes\\NovaHTML\\shell\\open\\command', '', cmd],
-    [C, '', 'NOVA 9'], [C + '\\DefaultIcon', '', ico], [C + '\\shell\\open\\command', '', `"${exe}"`],
-    [C + '\\Capabilities', 'ApplicationName', 'NOVA 9'], [C + '\\Capabilities', 'ApplicationIcon', ico],
+    [C, '', 'NOVA 7'], [C + '\\DefaultIcon', '', ico], [C + '\\shell\\open\\command', '', `"${exe}"`],
+    [C + '\\Capabilities', 'ApplicationName', 'NOVA 7'], [C + '\\Capabilities', 'ApplicationIcon', ico],
     [C + '\\Capabilities', 'ApplicationDescription', 'Navegador web moderno basado en Chromium'],
     [C + '\\Capabilities\\URLAssociations', 'http', 'NovaURL'], [C + '\\Capabilities\\URLAssociations', 'https', 'NovaURL'],
     [C + '\\Capabilities\\FileAssociations', '.html', 'NovaHTML'], [C + '\\Capabilities\\FileAssociations', '.htm', 'NovaHTML'],
-    ['Software\\RegisteredApplications', 'NOVA 9', C + '\\Capabilities']
+    ['Software\\RegisteredApplications', 'NOVA 7', C + '\\Capabilities']
   ];
   for (const [k, n, v] of rows) await regAdd(k, n, v);
   prefs.reg = sig; savePrefs();
@@ -194,6 +194,7 @@ function applyLogo(id) {
 
 const isMainRenderer = sender => !!(win && !win.isDestroyed() && sender === win.webContents);
 const denyUntrusted = e => !isMainRenderer(e.sender);
+const stripTrackingParams = u => { try { const x = new URL(String(u||'')); ['utm_source','utm_medium','utm_campaign','utm_term','utm_content','utm_id','fbclid','gclid','dclid','msclkid','yclid','mc_cid','mc_eid','_hsenc','_hsmi','igshid','ref_src','ref_url','cmpid','spm'].forEach(k=>x.searchParams.delete(k)); return x.href; } catch { return String(u||''); } };
 const safeWebUrl = u => {
   try {
     const x = new URL(u);
@@ -217,7 +218,7 @@ const isTrustedNewTabContents = contents => {
 function createMain() {
   win = new BrowserWindow({
     width: 1280, height: 800, minWidth: 720, minHeight: 480,
-    frame: false, show: false, title: 'NOVA 9',
+    frame: false, show: false, title: 'NOVA 7',
     icon: logoImg(prefs.logo),
     backgroundColor: '#0d0b1a',
     webPreferences: { preload: path.join(__dirname, 'shell', 'preload.js'), nodeIntegration: false, contextIsolation: true, sandbox: true, webviewTag: true, webSecurity: true, allowRunningInsecureContent: false }
@@ -488,7 +489,7 @@ app.whenReady().then(() => {
     c.on('context-menu', (e, p) => {
       const T = [], nav = c.navigationHistory, send = (ch, d) => win.webContents.send(ch, d);
       if (p.linkURL) T.push({ label: 'Abrir enlace en pestaña nueva', click: () => send('open-tab', p.linkURL) },
-        { label: 'Copiar dirección del enlace', click: () => clipboard.writeText(p.linkURL) }, { type: 'separator' });
+        { label: 'Copiar dirección del enlace', click: () => clipboard.writeText(p.linkURL) }, { label: 'Copiar enlace limpio (sin rastreo)', click: () => clipboard.writeText(stripTrackingParams(p.linkURL)) }, { type: 'separator' });
       if (p.mediaType === 'image') T.push({ label: 'Copiar imagen', click: () => c.copyImageAt(p.x, p.y) },
         { label: 'Copiar dirección de la imagen', click: () => clipboard.writeText(p.srcURL) },
         { label: 'Guardar imagen', click: () => c.downloadURL(p.srcURL) },
@@ -508,6 +509,7 @@ app.whenReady().then(() => {
         { label: 'Adelante', enabled: nav.canGoForward(), click: () => nav.goForward() },
         { label: 'Recargar', click: () => c.reload() }, { type: 'separator' },
         { label: 'Copiar dirección de la página', click: () => clipboard.writeText(c.getURL()) },
+        { label: 'Copiar dirección limpia (sin rastreo)', click: () => clipboard.writeText(stripTrackingParams(c.getURL())) },
         { label: 'Captura de pantalla', click: async () => { try { const shot = await c.capturePage(); const result = await dialog.showSaveDialog(win, { defaultPath: 'Nova-Captura.png', filters: [{ name: 'Imagen PNG', extensions: ['png'] }] }); if (!result.canceled && result.filePath) fs.writeFileSync(result.filePath, shot.toPNG()); } catch (error) { console.warn('[Nova] No se pudo guardar la captura:', error?.message); } } },
         { label: 'Inspeccionar elemento', click: () => c.inspectElement(p.x, p.y) });
       Menu.buildFromTemplate(T).popup({ window: win });
@@ -544,7 +546,7 @@ ipcMain.on('win', (e, a) => {
 ipcMain.on('extension-catalog', e => { if (denyUntrusted(e)) return; e.returnValue = EXT.CATALOG.map(({id,name,cat,desc}) => ({id,name,cat,desc})); });
 ipcMain.on('extension-script', (e, id) => { if (denyUntrusted(e) || typeof id !== 'string' || !EXT.byId(id)) return; e.returnValue = EXT.on(id); });
 ipcMain.on('app-version', e => { if (denyUntrusted(e)) return; e.returnValue = app.getVersion(); });
-ipcMain.on('runtime-info', e => { if (denyUntrusted(e)) return; e.returnValue = { version: app.getVersion(), chromium: process.versions.chrome, electron: process.versions.electron, node: process.versions.node, platform: process.platform, arch: process.arch, product: 'NOVA 9' }; });
+ipcMain.on('runtime-info', e => { if (denyUntrusted(e)) return; e.returnValue = { version: app.getVersion(), chromium: process.versions.chrome, electron: process.versions.electron, node: process.versions.node, platform: process.platform, arch: process.arch, product: 'NOVA 7' }; });
 ipcMain.on('prefs-get', e => { if (denyUntrusted(e)) return; e.returnValue = JSON.parse(JSON.stringify(prefs)); });
 ipcMain.on('prefs-set', (e, p) => {
   if (denyUntrusted(e)) return;
@@ -693,7 +695,7 @@ ipcMain.handle('backup-export', async (e, raw) => {
   if (denyUntrusted(e) || typeof raw !== 'string' || raw.length > 8 * 1024 * 1024) return {ok:false,error:'Copia no válida.'};
   try {
     const obj=cleanBackupData(JSON.parse(raw)); if(!obj||typeof obj!=='object'||Array.isArray(obj)) return {ok:false,error:'La copia no contiene un estado válido.'};
-    const picked=await dialog.showSaveDialog(win,{title:'Exportar copia de NOVA 9',defaultPath:path.join(app.getPath('documents'),`NOVA-9-Backup-${new Date().toISOString().slice(0,10)}.json`),filters:[{name:'Copia NOVA 9',extensions:['json']}]});
+    const picked=await dialog.showSaveDialog(win,{title:'Exportar copia de NOVA 7',defaultPath:path.join(app.getPath('documents'),`NOVA-7-Backup-${new Date().toISOString().slice(0,10)}.json`),filters:[{name:'Copia NOVA 7',extensions:['json']}]});
     if(picked.canceled||!picked.filePath)return {ok:false,canceled:true};
     delete obj.key; atomicWrite(picked.filePath,JSON.stringify(obj)); return {ok:true,path:picked.filePath};
   } catch(error){return {ok:false,error:String(error?.message||error).slice(0,200)};}
@@ -701,7 +703,7 @@ ipcMain.handle('backup-export', async (e, raw) => {
 ipcMain.handle('backup-import', async e => {
   if (denyUntrusted(e)) return {ok:false,error:'Solicitud no válida.'};
   try {
-    const picked=await dialog.showOpenDialog(win,{title:'Importar copia de NOVA 9',properties:['openFile'],filters:[{name:'Copia NOVA 9',extensions:['json']}]});
+    const picked=await dialog.showOpenDialog(win,{title:'Importar copia de NOVA 7',properties:['openFile'],filters:[{name:'Copia NOVA 7',extensions:['json']}]});
     if(picked.canceled||!picked.filePaths?.[0])return {ok:false,canceled:true};
     const stat=fs.statSync(picked.filePaths[0]); if(!stat.isFile()||stat.size>8*1024*1024)return {ok:false,error:'El archivo supera el tamaño permitido.'};
     const raw=fs.readFileSync(picked.filePaths[0],'utf8');const obj=cleanBackupData(JSON.parse(raw));if(!obj||typeof obj!=='object'||Array.isArray(obj))return {ok:false,error:'El archivo no es una copia válida.'};
@@ -770,8 +772,8 @@ ipcMain.handle('launch-web-app', async (e, payload) => {
 // ---------- Live news for Nova New Tab ----------
 const newsCache = new Map();
 const NEWS_SOURCES = [
-  { name: 'Xataka', url: 'https://www.xataka.com/index.xml', site: 'https://www.xataka.com/', topics:['tecnologia','informatica','ia','ciencia'] },
-  { name: 'Genbeta', url: 'https://www.genbeta.com/index.xml', site: 'https://www.genbeta.com/', topics:['tecnologia','codigo','informatica','ia'] },
+  { name: 'Xataka', url: 'https://www.xataka.com/feedburner.xml', site: 'https://www.xataka.com/', topics:['tecnologia','informatica','ia','ciencia'] },
+  { name: 'Genbeta', url: 'https://www.genbeta.com/feedburner.xml', site: 'https://www.genbeta.com/', topics:['tecnologia','codigo','informatica','ia'] },
   { name: 'MuyComputer', url: 'https://www.muycomputer.com/feed/', site: 'https://www.muycomputer.com/', topics:['tecnologia','informatica','ciencia'] },
   { name: 'Ars Technica', url: 'https://feeds.arstechnica.com/arstechnica/index', site: 'https://arstechnica.com/', topics:['tecnologia','codigo','ciencia'] },
   { name: 'Ars Technica Gaming', url: 'https://feeds.arstechnica.com/arstechnica/gaming', site: 'https://arstechnica.com/gaming/', topics:['videojuegos'] },
@@ -788,7 +790,7 @@ const NEWS_FALLBACK = []; // Nunca presentar contenido editorial de ejemplo como
 const NEWS_LIVE_CACHE = () => userFile('news-live-cache.json');
 const readLiveNewsCache = () => { try { const x=JSON.parse(fs.readFileSync(NEWS_LIVE_CACHE(),'utf8')); return x&&typeof x==='object'?x:{}; } catch { return {}; } };
 const writeLiveNewsCache = x => { try { atomicWrite(NEWS_LIVE_CACHE(), JSON.stringify(x)); } catch {} };
-const newsStripHtml = v => String(v ?? '').replace(/<script[\s\S]*?<\/script>/gi,' ').replace(/<style[\s\S]*?<\/style>/gi,' ').replace(/<[^>]+>/g,' ').replace(/&nbsp;/gi,' ').replace(/&amp;/gi,'&').replace(/&quot;/gi,'"').replace(/&#39;/gi,"'").replace(/&lt;/gi,'<').replace(/&gt;/gi,'>').replace(/\s+/g,' ').trim();
+const newsStripHtml = v => String(v ?? '').replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1').replace(/<script[\s\S]*?<\/script>/gi,' ').replace(/<style[\s\S]*?<\/style>/gi,' ').replace(/<[^>]+>/g,' ').replace(/&nbsp;/gi,' ').replace(/&amp;/gi,'&').replace(/&quot;/gi,'"').replace(/&#39;/gi,"'").replace(/&lt;/gi,'<').replace(/&gt;/gi,'>').replace(/\s+/g,' ').trim();
 const newsXmlField = (item, tag) => { const m = item.match(new RegExp(`<${tag}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${tag}>`, 'i')); return m ? newsStripHtml(m[1]) : ''; };
 const newsLinkField = item => { let m=item.match(/<link[^>]*>([\s\S]*?)<\/link>/i); if(m)return newsStripHtml(m[1]); m=item.match(/<link[^>]+href=["']([^"']+)["'][^>]*\/?>(?:<\/link>)?/i); return m ? m[1] : ''; };
 const newsPick = (items, topic) => {
@@ -810,7 +812,7 @@ const newsPick = (items, topic) => {
   return (ranked.length>=4?ranked:pool).sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,6);
 };
 async function fetchNewsFeed(url, source) {
-  const r = await fetch(url, { headers:{'user-agent':'NovaBrowser/'+app.getVersion()+' (+https://github.com/sdraiky99/NovaBrowser)','accept':'application/rss+xml, application/atom+xml, text/xml;q=0.9, */*;q=0.1'}, signal:AbortSignal.timeout(7000) });
+  const r = await fetch(url, { headers:{'user-agent':'NovaBrowser/'+app.getVersion()+' (+https://github.com/sdraiky99/NovaBrowser)','accept':'application/rss+xml, application/atom+xml, text/xml;q=0.9, */*;q=0.1'}, signal:AbortSignal.timeout(12000) });
   if(!r.ok) throw new Error('HTTP '+r.status);
   const xml=await r.text();
   const rss=[...xml.matchAll(/<item\b[\s\S]*?<\/item>/gi)].map(m=>m[0]);
@@ -847,7 +849,7 @@ async function fetchSteamNews(source) {
     date: Number(item?.date) ? new Date(Number(item.date)*1000).toISOString() : '',
     ts: Number(item?.date)*1000 || 0,
     kind: 'api', topics:['videojuegos']
-  })).filter(x => x.title && x.url);
+  })).filter(x => x.title && x.url && !/[\u0400-\u04FF]/.test(x.title));
 }
 ipcMain.handle('news-feed', async (e, payload) => {
   if (denyUntrusted(e) && !isTrustedNewTabContents(e.sender)) return { ok:false, items:[], live:false, stale:false, sources:[], error:'Origen no autorizado' };
@@ -873,7 +875,7 @@ ipcMain.handle('news-feed', async (e, payload) => {
   const value={ok:true,items:[],live:false,stale:false,sources:[],error:'Las fuentes de noticias no están disponibles y no hay caché local.'}; newsCache.set(key,{at:Date.now(),value}); return value;
 });
 
-// NOVA 9 Translate: MyMemory cloud service. Text is sent only after an explicit user action.
+// NOVA 7 Translate: MyMemory cloud service. Text is sent only after an explicit user action.
 function splitTranslationText(input, maxBytes = 440) {
   const chunks=[]; let current='';
   const pieces=String(input).split(/(?<=[.!?。！？])\s+|\n+/u).filter(Boolean);
@@ -960,7 +962,7 @@ ipcMain.handle('update-install',async e=>{
   if(denyUntrusted(e)||!autoUpdater||!updateState.downloaded)return {ok:false,error:'No hay una actualización descargada.'};
   try{autoUpdater.quitAndInstall(false,true);return {ok:true};}catch(err){return {ok:false,error:String(err?.message||err)};}
 });
-/* ---------- Cuenta Nova: registro, inicio de sesión y sincronización ---------- */
+/* ---------- Migración e importación de perfiles externos ---------- */
 ipcMain.handle('migration-scan', e => { if (denyUntrusted(e)) return []; try { return migration.scan(); } catch { return []; } });
 ipcMain.handle('migration-read', async (e, data) => {
   if (denyUntrusted(e) || !data || typeof data !== 'object' || typeof data.id !== 'string' || data.id.length > 64) return { error: 'Solicitud no válida.' };
@@ -1031,7 +1033,7 @@ ipcMain.handle('security-state', e => {
 ipcMain.handle('ollama-models', async e => {
   if (denyUntrusted(e)) return { ok:false, error:'Solicitud no válida.' };
   try {
-    const base = 'http://127.0.1.1:11434';
+    const base = 'http://127.0.0.1:11434';
     const versionResponse = await fetch(`${base}/api/version`, { signal:AbortSignal.timeout(2500) });
     if (!versionResponse.ok) return { ok:false, error:`El servicio de Ollama respondió HTTP ${versionResponse.status} al consultar su versión.` };
     const versionData = await versionResponse.json().catch(() => ({}));
@@ -1042,7 +1044,7 @@ ipcMain.handle('ollama-models', async e => {
     return { ok:true, version:String(versionData.version||''), models };
   } catch (err) {
     const detail = String(err?.cause?.code || err?.code || err?.message || 'conexión rechazada');
-    return { ok:false, error:`No se puede conectar con Ollama en 127.0.1.1:11434 (${detail}). Abre Ollama y espera a que el servicio esté iniciado. Si no está instalado, instálalo desde ollama.com.` };
+    return { ok:false, error:`No se puede conectar con Ollama en 127.0.0.1:11434 (${detail}). Abre Ollama y espera a que el servicio esté iniciado. Si no está instalado, instálalo desde ollama.com.` };
   }
 });
 ipcMain.handle('ollama-ai', async (e, data) => {
@@ -1051,7 +1053,7 @@ ipcMain.handle('ollama-ai', async (e, data) => {
   if (!Array.isArray(messages) || messages.length < 1 || messages.length > 20 || typeof system !== 'string' || system.length > 12000 || typeof model !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,99}$/.test(model)) return { ok:false, error:'Parámetros de IA local no válidos.' };
   if (messages.some(m => !m || typeof m !== 'object' || !['user','assistant'].includes(m.role) || typeof m.content !== 'string' || m.content.length > 16000)) return { ok:false, error:'El mensaje supera los límites admitidos.' };
   try {
-    const base='http://127.0.1.1:11434';
+    const base='http://127.0.0.1:11434';
     const tags=await fetch(`${base}/api/tags`,{signal:AbortSignal.timeout(5000)});
     if(!tags.ok) return {ok:false,error:`Ollama no pudo listar los modelos (HTTP ${tags.status}).`};
     const tagData=await tags.json().catch(()=>({}));
@@ -1069,7 +1071,7 @@ ipcMain.handle('ollama-ai', async (e, data) => {
   } catch (err) {
     const code=String(err?.cause?.code||err?.code||'');
     const msg=String(err?.message||err||'Error desconocido');
-    return { ok:false, error:msg.toLowerCase().includes('timeout')||msg.toLowerCase().includes('aborted')?'Ollama tardó más de 3 minutos. Prueba un modelo más pequeño o reduce el contexto.':`Error al conectar con Ollama (${code||msg.slice(0,120)}). Comprueba que sigue activo en 127.0.1.1:11434.` };
+    return { ok:false, error:msg.toLowerCase().includes('timeout')||msg.toLowerCase().includes('aborted')?'Ollama tardó más de 3 minutos. Prueba un modelo más pequeño o reduce el contexto.':`Error al conectar con Ollama (${code||msg.slice(0,120)}). Comprueba que sigue activo en 127.0.0.1:11434.` };
   }
 });
 

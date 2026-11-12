@@ -8,7 +8,7 @@ const root = path.resolve(__dirname, '..');
 const read = rel => fs.readFileSync(path.join(root, rel), 'utf8');
 const pkg = JSON.parse(read('package.json'));
 const ok = message => console.log('OK', message);
-assert.equal(pkg.version, '7.0.1');
+assert.equal(pkg.version, '8.0.0');
 assert.match(pkg.description, /FLOW/);
 assert.ok(fs.existsSync(path.join(root, 'assets/brand/nova-mark.svg')));
 const brandSvg = read('assets/brand/nova-mark.svg');
@@ -57,7 +57,7 @@ try {
   ok('Setup/desarrollo mantiene el perfil normal de Windows');
 
   const exeDir=path.join(tempRoot,'PortableFresh'); fs.mkdirSync(exeDir,{recursive:true});
-  const exe=path.join(exeDir,'NOVA-7-Portable-7.0.1.exe');fs.writeFileSync(exe,'fake exe');
+  const exe=path.join(exeDir,'NOVA-7-Portable-8.0.0.exe');fs.writeFileSync(exe,'fake exe');
   const target=path.join(exeDir,'User Data');
   const freshApp=makeApp();
   const fresh=configurePortableUserData(freshApp,{PORTABLE_EXECUTABLE_FILE:exe,PORTABLE_EXECUTABLE_DIR:exeDir},{logger});
@@ -72,7 +72,7 @@ try {
   ok('actualización de Portable conserva su propio perfil');
 
   const importDir=path.join(tempRoot,'PortableImportOptIn');fs.mkdirSync(importDir,{recursive:true});
-  const importExe=path.join(importDir,'NOVA-7-Portable-7.0.1.exe');fs.writeFileSync(importExe,'fake exe');
+  const importExe=path.join(importDir,'NOVA-7-Portable-8.0.0.exe');fs.writeFileSync(importExe,'fake exe');
   const importApp=makeApp();const imported=configurePortableUserData(importApp,{PORTABLE_EXECUTABLE_FILE:importExe,PORTABLE_EXECUTABLE_DIR:importDir,NOVA_IMPORT_EXISTING_PROFILE:'1'},{logger});
   assert.equal(imported.active,true);assert.equal(imported.migrated,true);
   assert.equal(fs.readFileSync(path.join(importDir,'User Data','prefs.json'),'utf8'),'{"theme":"dark"}');
@@ -100,14 +100,19 @@ assert.ok(read('shell/nova.css').includes('body[data-theme-preset=\"midnight\"]'
 assert.ok(ui.includes('logoTapCount>=10') && ui.includes("e.key.toLowerCase()==='p'"), 'Easter egg and quick actions must be wired');
 assert.ok(home.includes('id="openAssistant"') && home.includes('nova?.openAssistant?.()'), 'new tab must link to Nova Assist');
 assert.ok(read('assets/icons/sparkles.svg').includes('<svg') && read('shell/index.html').includes('data-view="assistant"'), 'assistant sidebar icon and route must exist');
-assert.ok(home.includes('NOVA 7 · 7.0.1'));
+assert.ok(home.includes('NOVA 7 · 8.0.0'));
 assert.ok(home.includes('Novedades de NOVA 7'));
 assert.ok(read('shell/index.html').includes('../assets/brand/nova-mark.svg'));
-assert.ok(read('shell/splash.html').includes('FLOW REBORN · 7.0.1'));
+assert.ok(read('shell/splash.html').includes('FLOW REBORN · 8.0.0'));
 ok('identidad FLOW Reborn integrada: SVG transparente, nueva pestaña, favicon y splash');
 assert.ok(main.includes('const cleanBackupData = value =>') && main.includes('password|passwd|credential|cookie|secret|token|api[_-]?key'), 'backups deben eliminar campos sensibles de forma recursiva');
 assert.ok(main.includes('permission-sites-list') && main.includes('permission-site-set') && main.includes('permission-site-reset'));
 assert.ok(main.includes('Permitir siempre') && main.includes('Bloquear siempre'));
+assert.ok(main.includes('stripTrackingParams'), 'el menú contextual debe limpiar parámetros de rastreo');
+assert.ok(ui.includes('renderNotes(r)') && ui.includes('hibernateTab(t)') && ui.includes('renderUpdateDrawer'), 'NOVA X: notas, hibernación y Update Center deben estar cableados');
+assert.ok(ui.includes('wakeTab') && ui.includes('attachTabEvents'), 'el ciclo de sueño/despertar de pestañas debe existir');
+assert.ok(ui.includes('data-nedit'), 'el editor de notas debe estar integrado');
+assert.ok(ui.includes('aurora') && ui.includes('carbon') && ui.includes('solar'), 'los tres temas nuevos deben registrarse');
 assert.ok(main.includes("ipcMain.handle('news-feed'") && main.includes('The Verge') && main.includes('PC Gamer')); // RSS feed handler remains present
 assert.ok(ui.includes('id="newsToggle"') && ui.includes('refreshAllNewTabs()'));
 assert.ok(ui.includes('Crear / asignar grupo') && ui.includes('tab-group-badge'));
@@ -140,4 +145,4 @@ for (const [name, content] of [['build',build],['release',release]]) {
   assert.ok(!content.includes("fs.writeFileSync(\"package.json\""));
 }
 ok('GitHub Actions compila y verifica ambos artefactos sin mutar package.json');
-console.log('QA Nova 7.0.1: PASS');
+console.log('QA Nova 8.0.0: PASS');

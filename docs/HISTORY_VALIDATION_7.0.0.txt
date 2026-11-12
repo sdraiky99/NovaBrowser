@@ -1,0 +1,23 @@
+NOVA 7 — 7.0.0 — VALIDACIÓN
+
+Origen: Nova 6.4.1 FLOW Reborn.
+
+Comprobaciones ejecutadas en este entorno Linux (Node.js 22.16.0):
+- npm run check:distribution-config — PASS.
+- npm run check:project — PASS; 72 archivos de proyecto, límite 100.
+- npm run check:syntax — PASS; 17 archivos JavaScript.
+- npm run qa:7 — PASS; configuración dual, política de permisos, Portable y checks de integración.
+- npm run check:build-assets — PASS; recursos locales presentes.
+- npm run check:performance — PASS; microbenchmark de resolución de URL/búsqueda (no mide el arranque de Electron).
+- npm run check:security — PASS; aislamiento del renderer, preload y servicios locales.
+- JavaScript interno de Reader Mode — parseo independiente PASS.
+
+Comprobaciones de runtime pendientes en Windows:
+- Compilar y abrir Setup y Portable; confirmar que Setup no solicita elevación y que los datos están separados.
+- Probar navegación real, marcadores, restauración de sesiones y pestañas verticales/horizontales.
+- Probar split view, Reader Mode, Nova Media con archivos de varios códecs, Nova Translate conectado a MyMemory y Nova Focus.
+- Probar Nova Shield con listas descargadas y comprobar permisos por sitio.
+- Probar exportación/restauración JSON y recuperación automática tras una pérdida de localStorage.
+- Confirmar funcionamiento real de actualizaciones automáticas y recuperación en un entorno de pruebas.
+
+No se afirma que los ejecutables Windows se hayan generado o probado localmente en este entorno Linux.

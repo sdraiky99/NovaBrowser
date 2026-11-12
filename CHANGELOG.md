@@ -1,27 +1,34 @@
-## 9.0.0 — NOVA Complete Experience
+# Changelog NOVA 7
 
-- Añadidas siete experiencias completas: NOVA Modern, Windows XP, Windows 7 Aero, Firefox clásico, Firefox 2017, Chrome 2017 y Edge Legacy.
-- Añadida NOVA Time Machine con puntos manuales, copia automática diaria y restauración local sin secretos.
-- Añadido NOVA Companion con controles multimedia de página, Picture-in-Picture compatible y lanzador de aplicaciones web.
-- Añadido NOVA Gaming con reducción de animaciones y política Chromium de imágenes animadas.
-- Añadido acceso al flujo de navegador predeterminado desde la nueva pestaña.
-- Se mantienen Setup per-user y Portable independiente.
+## 8.0.0 — NOVA X · la actualización mayor
+- Hibernación de pestañas: las pestañas inactivas se duermen solas (configurable: 5/10/30/60 min o desactivado) y despiertan al clicarlas. Dormir manual desde el menú de pestaña y desde Command Center.
+- Notas rápidas: notas locales en la barra lateral, sin cuentas ni nube; guardado, edición y borrado con límite de 50 notas.
+- Temas nuevos: Aurora (azul glaciar), Carbon (gris neutro) y Solar (ámbar cálido), en claro y oscuro, en el navegador y en la nueva pestaña.
+- Nova Update Center completo: estado en vivo, descarga con progreso y botón Instalar y reiniciar (el flujo de electron-updater ya estaba cableado por detrás).
+- Copiar enlace limpio: el menú contextual copia enlaces y direcciones sin parámetros de rastreo (utm_*, fbclid, gclid…).
+- Reader Mode renovado: respeta el tema oscuro y añade controles de tamaño de letra (A− / A+).
+- Command Center ampliado: nodos de Notas, Dormir pestañas inactivas y Cerrar duplicadas.
+- Historial configurable (300/1.000/3.000 entradas) desde Ajustes → Privacidad.
+- Sobre la base 7.1.1 (noticias corregidas y Electron 45 / Chromium 156).
 
-# Changelog
+## 7.1.1 — Corrección de noticias
+- Corregido el parser de noticias: los bloques CDATA se trataban como etiquetas HTML y borraban los titulares de Xataka, Genbeta, The Verge y PC Gamer (0 noticias de 4 de 7 fuentes).
+- Feeds de Xataka y Genbeta actualizados a su URL final (feedburner.xml, redirección 301).
+- Noticias de Steam filtradas por alfabeto latino: los ítems en ruso del feed comunitario ya no aparecen.
+- Tiempo de espera de descarga de feeds ampliado de 7 a 12 segundos para feeds grandes (PC Gamer ~2 MB).
 
-## 7.0.1 — Start Page & Essentials Recovery
-- Reworked the new-tab hero into a photo-led dashboard with three landscape choices and more natural spacing.
-- Added a visible browser-default status check and Windows default-app handoff for the Setup build.
-- Added a dedicated Passwords & Autofill settings section with Bitwarden Vault and official extension entry points.
-- Clarified Portable limitations and Electron extension compatibility instead of implying unsupported automatic installation.
-- Kept the Setup and Portable profiles separate.
+## 7.1.0 — Actualización de motor y dependencias
+- Motor actualizado a Electron 45.3.0 con Chromium 156.0.8078.96 y Node.js 24.22.2.
+- electron-builder 26.18.0, electron-updater 6.8.11, bloqueador Ghostery 2.20.3, sql.js 1.16.0 y cross-fetch 4.1.0.
+- Mantenida la configuración de seguridad del renderer (sandbox, contextIsolation, nodeIntegration desactivado).
+- Notas de versión y validación aisladas por entrega; artefactos Setup y Portable renombrados a 7.1.0.
 
-## 7.0.1 — NOVA 7 FLOW Recovery
+## 7.0.0 — NOVA 7 FLOW Recovery
 - Major update from 6.4.1; browser rebranded as NOVA 7.
 - Dual tab layouts, persistent bookmarks bar, split view and Reader Mode.
 - Nova Shield toolbar entry, Nova Media, cloud Translate, Focus timer and JSON backups.
 - Spanish-first RSS feeds plus Steam News API integration.
-- Setup/Portable artifact branding and CI validation for 7.0.1.
+- Setup/Portable artifact branding and CI validation for 7.0.0.
 
 # Nova — Changelog
 
