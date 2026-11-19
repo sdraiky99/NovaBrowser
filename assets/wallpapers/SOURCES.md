@@ -1,4 +1,4 @@
-# NOVA 9 Start Page Photography
+# NOVA X Start Page Photography
 
 The start-page hero uses direct Unsplash image URLs and therefore requires an internet connection to display.
 

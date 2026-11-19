@@ -7,7 +7,7 @@ const { URL } = globalThis;
 const INVOKE = new Set([
   'extensions-list','extension-pick-load','extension-toggle','extension-unload',
   'permission-sites-list','permission-site-set','permission-site-reset','default-browser',
-  'install-cfg','adblock','save-shot','pick-wp','toolbar-wallpaper-pick','toolbar-wallpaper-clear',
+  'install-cfg','adblock','adblock-stats','save-shot','pick-wp','toolbar-wallpaper-pick','toolbar-wallpaper-clear',
   'save-docx',
   'state-save','state-load','backup-export','backup-import','open-external','open-downloads-folder','show-in-folder','save-text',
   'launch-web-app','news-feed','cloud-translate','media-pick-files','media-open-external','update-check','update-state','update-download','update-install',

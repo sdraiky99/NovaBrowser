@@ -1,0 +1,51 @@
+NOVA X 10.0.0 — VALIDATION STATUS
+=================================
+
+Package scope
+-------------
+- Source package based on NOVA 9.0.0.
+- Electron target: 45.4.1; bundled Chromium: 156.0.8078.100.
+- Ghostery Electron blocker: 2.20.3.
+- Windows targets configured: NSIS Setup + Portable.
+- Setup configured per-user, with no elevation.
+- Portable configured with its own User Data directory.
+- Modern UI, dual tab layouts, compact Shield counter/panel and five-step tour implemented.
+- Shield counters wrap Ghostery’s actual `onBeforeRequest` callback and count only `cancel`/`redirectURL` decisions; Ghostery Electron does not expose a `request-blocked` event.
+
+Static validation executed
+--------------------------
+- `npm run check`: PASS (all configured static checks).
+- JavaScript syntax: PASS, 18 files checked with `node --check`.
+- Project structure: PASS, 79 files (limit: 100).
+- Distribution/build assets: PASS, 27 local SVG icons; NSIS + Portable configuration accepted.
+- QA: PASS, URL resolver, Setup/Portable separation, profile migration opt-in, preload/security contract and inherited feature markers.
+- Security static checks: PASS, context isolation, no renderer Node integration, preload allowlists and local-only Ollama bridge.
+- Performance smoke test: PASS; measures only pure URL/search resolution and is not an Electron or browser performance measurement.
+- HTML inline scripts: PASS, parsed as JavaScript by the QA script.
+
+Environment limitations
+-----------------------
+- Validation runtime: Node.js v22.16.0, npm 10.9.2, Linux container.
+- npm registry DNS was unavailable during lockfile generation (`EAI_AGAIN`); there is no committed `package-lock.json`.
+- No Windows .exe has been compiled in this environment.
+- No interactive Windows 11 installation or first-run test has been performed.
+- No Electron 45 GUI/webview session has been run here.
+- Shield counters and per-site attribution require end-to-end verification with live web pages and must be compared against the network requests cancelled by Ghostery.
+- Visual behavior, animations, accessibility and retro theme compatibility require manual review at different window sizes.
+- `npm install --package-lock-only` could not reach `registry.npmjs.org` (`EAI_AGAIN` DNS resolution). No `package-lock.json` was created; dependencies are pinned to exact versions in `package.json`.
+
+Required Windows test matrix
+----------------------------
+1. Install Setup as a standard user; verify there is no UAC/admin prompt.
+2. Run Portable from a writable directory; verify its User Data folder is isolated from Setup.
+3. Upgrade an existing NOVA 9 profile after creating a backup; confirm migration and rollback behavior.
+4. Open many tabs; switch horizontal/vertical layouts; verify groups, pinned tabs, drag/drop and session restore.
+5. Visit ad/tracker-heavy and clean sites; compare Shield counter to actual blocked requests; verify page changes refresh the counter.
+6. Disable and re-enable Shield; verify the session totals remain honest and the active status updates.
+7. Complete, skip and replay every tour step; check focus/keyboard and reduced-motion behavior.
+8. Exercise downloads, news, settings, extensions, permissions, import, backups, Time Machine and other inherited modules.
+9. Test dark/light mode, all historical visual modes, scaling and low-memory behavior on an 8 GB system.
+
+Status
+------
+This is a development source release. Static checks were executed and passed on 19 November 2026; Windows runtime and installer acceptance remain pending.

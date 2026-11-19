@@ -1,0 +1,34 @@
+NOVA 9.0.0 — INFORME DE VALIDACIÓN
+=================================
+
+Base: NOVA-7-Start-Page-Recovery-7.0.1.zip
+Entorno de validación: Linux · Node.js 22.16.0 · npm 10.9.2
+
+COMPROBACIONES AUTOMÁTICAS EJECUTADAS
+-------------------------------------
+- npm run check — PASS (pipeline completo).
+- check:distribution-config — PASS; version 9.0.0, NSIS per-user + Portable y workflows Windows.
+- check:project — PASS; 76 archivos activos, límite de 100 respetado.
+- check:syntax — PASS; 18 archivos JavaScript.
+- qa:9 — PASS; identidad, permisos por origen, Setup/Portable, búsqueda, modos, Time Machine, Companion, Gaming, noticias, sesiones e integración.
+- check:build-assets — PASS; iconos y recursos locales, 26 SVG.
+- check:performance — PASS; microbenchmark de resolución URL/búsqueda (mediana observada 5,24 ms en este entorno). No mide arranque de Electron ni RAM/CPU de webs.
+- check:security — PASS; aislamiento del renderer, allowlists de preload, ausencia de proveedores cloud de IA y conexión local de Ollama.
+- JavaScript inline de la nueva pestaña — parseo PASS dentro de QA.
+
+PRUEBAS DE RUNTIME PENDIENTES EN WINDOWS
+----------------------------------------
+- Generar y abrir realmente Setup y Portable en Windows 11. Confirmar que Setup no solicita elevación y que los perfiles permanecen separados.
+- Probar interacción visual de los siete modos en ventanas reales y revisar el ajuste a pantallas pequeñas.
+- Crear, borrar, cerrar y restaurar Time Machine; verificar la copia automática diaria y migración del estado existente.
+- Probar Companion con webs de audio/vídeo, Picture-in-Picture y ventanas web independientes. El soporte depende de la página.
+- Probar Gaming y su convivencia con Ahorro de energía en uso real. No se promete aumento de FPS.
+- Confirmar en Windows la apertura y finalización manual del flujo de navegador predeterminado.
+- Regresión de navegación, descargas, sesiones, Shield, noticias, importación, actualizaciones y carga de extensiones.
+
+LIMITACIONES DECLARADAS
+-----------------------
+- No se han generado ejecutables .exe en este entorno Linux. Los workflows configurados los compilan en Windows, pero aún deben ejecutarse.
+- Los modos históricos son recreaciones de interfaz con Chromium actual, no navegadores ni motores originales.
+- No se incluyen aún bóveda de contraseñas propia, sincronización de NOVA ni inicio de sesión de Google; la importación actual no traslada contraseñas.
+- Las pruebas estáticas y de lógica no sustituyen una sesión interactiva en Windows.
