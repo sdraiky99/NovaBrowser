@@ -1,0 +1,15 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+const root=path.resolve(__dirname,'..'),read=f=>fs.readFileSync(path.join(root,f),'utf8');
+const q=read('shell/quantum.js'),ui=read('shell/nova.js'),html=read('shell/index.html'),css=read('shell/nova.css'),main=read('main.js'),preload=read('shell/newtab-preload.js'),home=read('shell/newtab.html');
+for(const feature of ['quantumRenderAtlas','quantumRenderCapsules','quantumRenderActions','quantumRenderAppCenter','quantumRenderThemes','quantumRenderVault','quantumRenderProfiles','quantumRenderRecovery','quantumRenderMigration'])assert.ok(q.includes(feature),`missing ${feature}`);
+for(const id of ['aurora','arctic','obsidian','neon','solar','mono'])assert.ok(q.includes(`id:'${id}'`),`missing theme ${id}`);
+for(const view of ['atlas','capsules','actions','app-center','themes','vault','profiles','recovery','migration'])assert.ok(html.includes(`data-view="${view}"`),`missing route ${view}`);
+for(const id of ['atlasProjects','quantumActions','customThemes','quantumApps'])assert.ok(ui.includes(id),`missing persisted state ${id}`);
+assert.ok(ui.includes("'quantumApps','atlasProjects','quantumActions','customThemes'"),'Capsules must include safe Quantum workspace metadata');
+assert.ok(main.includes("ipcMain.handle('vault-save'")&&main.includes('safeStorage.encryptString'),'Vault save IPC missing');
+assert.ok(main.includes("ipcMain.handle('profiles-switch'")&&main.includes('persist:nova-${activeProfileId()}'),'profile isolation missing');
+assert.ok(home.includes('data-q-section="atlas"')&&preload.includes("'open-section'"),'new-tab bridge shortcuts missing');
+assert.ok(css.includes('.q-atlas-layout')&&css.includes('.q-theme-grid')&&css.includes('.q-app-grid'),'Quantum UI styles missing');assert.ok(q.includes("format:'nova-theme'")&&q.includes('data-q-theme-export'),'theme sharing must use safe JSON data only');
+assert.ok(!/eval\s*\(|new Function\s*\(/.test(q),'Quantum modules must not execute arbitrary code');
+console.log('QUANTUM CONTRACT OK: nine integrated modules, six themes, saved data and safe action model.');

@@ -1,0 +1,43 @@
+NOVA X QUANTUM 11.0.0 — VALIDATION REPORT
+Date: 2026-11-22
+Source base: NOVA X 10.0.0
+
+RESULT
+- `npm run check`: PASS on 2026-11-22.
+- Distribution configuration: PASS.
+- Project structure and feature contract: PASS (84 files; project ceiling is 100).
+- JavaScript syntax scan: PASS (21 JavaScript files).
+- Quantum QA and legacy compatibility QA: PASS.
+- Build assets: PASS (transparent icon assets and 27 local SVG interface icons).
+- Security static checks: PASS.
+- Performance smoke test: PASS (5.85 ms median in this run for URL/search resolution only).
+- Project file-count ceiling: enforced by check-project.js (maximum 100 files).
+- Quantum module contract tests, legacy compatibility QA, Portable data-path isolation, permission-policy unit tests, security static checks, build-asset checks and performance smoke checks all run within `npm run check`.
+
+IMPLEMENTATION SCOPE
+- Preserves Electron and the previous appId/product identity used for user-data continuity.
+- Personal profile retains persist:web and the existing nova-state key.
+- Additional profiles use separate persistent Chromium partitions and namespaced renderer state.
+- Vault encrypts stored passwords with Electron safeStorage when available; no autofill is included.
+- Capsules exclude cookies, credentials and authenticated sessions.
+- App Center stores shortcuts and opens isolated web-app windows; it is not a Windows executable store or universal PWA installer.
+- Actions only open validated HTTP(S) URLs; no arbitrary scripts or shell commands. Custom themes can be shared as constrained JSON data, not executable packages.
+- App Center web-app sessions ask separately before granting camera, microphone, geolocation or notifications; they do not inherit the main browser Shield filtering or counters.
+- Direct CRX loading and complete Chrome extension API compatibility are not claimed.
+- Setup is configured as per-user and non-elevated; Portable is configured with separate data.
+- Release workflow creates latest.yml for Setup updates; Portable updates are manual.
+
+NOT VERIFIED IN THIS ENVIRONMENT
+- No Windows NSIS Setup executable was compiled.
+- No Windows Portable executable was compiled or launched.
+- No graphical Electron runtime testing on Windows 11 was performed.
+- No real migration from an installed NOVA X 10.0.0 profile was run.
+- No real third-party extension compatibility matrix was executed.
+- No actual Ollama server integration was exercised.
+- No GitHub Actions workflow or published auto-update was executed end-to-end.
+- No representative 8 GB RAM device benchmark was performed.
+
+DEPENDENCY NOTE
+- The original project has no package-lock.json. Generating one could not be completed in this environment because the npm registry request timed out. The GitHub workflows therefore use npm install with pinned direct dependencies rather than npm ci. A committed lockfile is still recommended before a stable release.
+
+This report distinguishes static source checks from platform/runtime verification. Passing static checks does not guarantee that all runtime behavior is correct on every Windows system.

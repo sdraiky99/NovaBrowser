@@ -1,3 +1,16 @@
+# NOVA X QUANTUM — Changelog
+
+## 11.0.0 — Quantum Edition
+
+- Nueva identidad visual circular con degradado y sistema de temas Quantum.
+- Quantum Atlas, Capsules y Actions integrados.
+- App Center con biblioteca local de aplicaciones web.
+- Perfiles con particiones Chromium independientes.
+- Quantum Vault cifrado mediante el almacén seguro del sistema operativo.
+- Centro de recuperación y migración accesibles desde la interfaz.
+- Correcciones del puente de nueva pestaña, Ollama y metadatos de actualización.
+- Setup per-user y Portable con datos aislados.
+
 # NOVA X — Changelog
 
 ## 10.0.0 — NOVA X First Generation Rebuild

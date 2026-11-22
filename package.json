@@ -1,8 +1,8 @@
 {
   "name": "nova-browser",
   "productName": "NOVA X",
-  "version": "10.0.0",
-  "description": "NOVA X — rediseño completo del navegador Electron/Chromium, con navegación flexible, privacidad medible y enfoque en rendimiento.",
+  "version": "11.0.0",
+  "description": "NOVA X QUANTUM — navegador Chromium con App Center, perfiles, espacios de trabajo y herramientas integradas.",
   "author": "Nova",
   "main": "main.js",
   "scripts": {
@@ -11,14 +11,17 @@
     "dist:setup": "electron-builder --win nsis --publish never -c.directories.output=dist/setup",
     "dist:portable": "electron-builder --win portable --publish never -c.directories.output=dist/portable",
     "dist:win": "npm run dist:setup && npm run dist:portable",
-    "check": "npm run check:distribution-config && npm run check:project && npm run check:syntax && npm run qa:10 && npm run check:build-assets && npm run check:performance && npm run check:security",
+    "check": "npm run check:distribution-config && npm run check:project && npm run check:syntax && npm run qa:quantum && npm run qa:compat && npm run check:build-assets && npm run check:performance && npm run check:security && npm run check:quantum",
     "check:syntax": "node scripts/check-syntax-all.js",
     "check:project": "node scripts/check-project.js",
     "check:build-assets": "node scripts/check-build-assets.js",
     "check:distribution-config": "node scripts/check-distribution-config.js",
     "check:performance": "node scripts/performance-smoke.js",
     "check:security": "node scripts/check-security.js",
-    "qa:10": "node scripts/qa-10.js"
+    "dist:setup:release": "electron-builder --win nsis --publish never -c.directories.output=dist/setup",
+    "check:quantum": "node scripts/check-quantum.js",
+    "qa:quantum": "node scripts/qa-quantum.js",
+    "qa:compat": "node scripts/qa-10.js"
   },
   "dependencies": {
     "@ghostery/adblocker-electron": "2.20.3",
@@ -54,7 +57,7 @@
       "icon": "assets/brand/nova.ico"
     },
     "portable": {
-      "artifactName": "NOVA-X-Portable-${version}.exe"
+      "artifactName": "NOVA-X-QUANTUM-Portable-${version}.exe"
     },
     "publish": [
       {
@@ -65,7 +68,7 @@
     ],
     "copyright": "Copyright © 2026 Nova",
     "nsis": {
-      "artifactName": "NOVA-X-Setup-${version}.${ext}",
+      "artifactName": "NOVA-X-QUANTUM-Setup-${version}.${ext}",
       "oneClick": false,
       "perMachine": false,
       "allowElevation": false,
@@ -75,7 +78,9 @@
       "deleteAppDataOnUninstall": false,
       "installerIcon": "assets/brand/nova.ico",
       "uninstallerIcon": "assets/brand/nova.ico",
-      "installerHeaderIcon": "assets/brand/nova.ico"
+      "installerHeaderIcon": "assets/brand/nova.ico",
+      "shortcutName": "NOVA X QUANTUM",
+      "uninstallDisplayName": "NOVA X QUANTUM 11.0.0"
     }
   },
   "homepage": "https://github.com/sdraiky99/NovaBrowser",

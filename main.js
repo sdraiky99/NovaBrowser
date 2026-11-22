@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, session, dialog, Menu, clipboard, shell, webContents, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, session, dialog, Menu, clipboard, shell, webContents, nativeImage, safeStorage } = require('electron');
 const path = require('path'), fs = require('fs'), { execFile } = require('child_process');
 const fetch = require('cross-fetch');
 let autoUpdater = null;
@@ -31,7 +31,10 @@ const logoId = id => (LOGOS.includes(id) ? id : 'quantum');
 const logoIco = id => path.join(__dirname, 'assets/brand/nova.ico');      // único icono Nova dentro del paquete
 const logoImg = id => { const i = nativeImage.createFromPath(process.platform === 'win32' ? logoIco(id) : path.join(__dirname, 'assets/brand/nova-icon.png')); return i.isEmpty() ? nativeImage.createFromPath(path.join(__dirname, 'assets/brand/nova-icon.png')) : i; };
 // preferencias que el proceso principal necesita antes de abrir la interfaz (logo, animación de inicio, extensiones)
-let prefs = { logo: 'quantum', splash: true, ext: {}, reg: '', adblock: true };
+let prefs = { logo: 'quantum', splash: true, ext: {}, reg: '', adblock: true, activeProfile: 'personal', profiles: [{ id: 'personal', name: 'Personal', color: '#8b7cff' }], appPartitions:{}, safeMode: false };
+const PROFILE_ID = v => /^[a-z0-9_-]{1,40}$/.test(String(v || '')) ? String(v) : 'personal';
+const activeProfileId = () => PROFILE_ID(prefs.activeProfile);
+const webPartition = () => activeProfileId() === 'personal' ? 'persist:web' : `persist:nova-${activeProfileId()}`;
 const prefsFile = () => path.join(app.getPath('userData'), 'prefs.json');
 const atomicWrite = (file, data) => {
   const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
@@ -39,7 +42,18 @@ const atomicWrite = (file, data) => {
   fs.writeFileSync(tmp, data);
   fs.renameSync(tmp, file);
 };
-const loadPrefs = () => { try { prefs = Object.assign(prefs, JSON.parse(fs.readFileSync(prefsFile(), 'utf8'))); } catch { } prefs.logo = 'quantum'; savePrefs(); };
+const loadPrefs = () => {
+  try { prefs = Object.assign(prefs, JSON.parse(fs.readFileSync(prefsFile(), 'utf8'))); } catch { }
+  prefs.logo = 'quantum';
+  if (!Array.isArray(prefs.profiles)) prefs.profiles = [{ id: 'personal', name: 'Personal', color: '#8b7cff' }];
+  if(!prefs.appPartitions||typeof prefs.appPartitions!=='object'||Array.isArray(prefs.appPartitions))prefs.appPartitions={};
+  for(const [profile,parts] of Object.entries(prefs.appPartitions))prefs.appPartitions[profile]=Array.isArray(parts)?parts.filter(x=>typeof x==='string'&&/^persist:novaapp-[a-z0-9_-]{1,40}-[a-z0-9_-]{1,40}$/i.test(x)).slice(0,80):[];
+  prefs.profiles = prefs.profiles.filter(x => x && PROFILE_ID(x.id) === x.id && typeof x.name === 'string').slice(0, 12);
+  if (!prefs.profiles.some(x => x.id === 'personal')) prefs.profiles.unshift({ id: 'personal', name: 'Personal', color: '#8b7cff' });
+  if (!prefs.profiles.some(x => x.id === prefs.activeProfile)) prefs.activeProfile = 'personal';
+  prefs.safeMode = prefs.safeMode === true;
+  savePrefs();
+};
 const savePrefs = () => { try { atomicWrite(prefsFile(), JSON.stringify(prefs)); } catch { } };
 const { pathToFileURL, fileURLToPath } = require('url');
 const extUrl = a => { // enlace http(s) o archivo .html/.pdf/.svg... recibido desde Windows (navegador predeterminado)
@@ -56,16 +70,48 @@ else app.on('second-instance', (_, argv) => {
   const u = extUrl(argv); if (u) win.webContents.send('open-tab', u);
 });
 const applyExt = (wc, ids) => {
-  if (wc.isDestroyed()) return;
+  if (prefs.safeMode || wc.isDestroyed()) return;
   const run = id => { const p = wc.executeJavaScript(EXT.on(id)); const t = new Promise((_, reject) => setTimeout(() => reject(new Error('extension-timeout')), 5000)); return Promise.race([p, t]).catch(() => { }); };
   (ids || Object.keys(prefs.ext).filter(k => prefs.ext[k])).forEach(run);
 };
-const web = () => session.fromPartition('persist:web'); // datos de navegación aislados de la interfaz de Nova
+const web = () => session.fromPartition(webPartition()); // sesión Chromium aislada por perfil
+const quantumAppPermissionGrants = new WeakMap();
+const quantumAppPermissionSessions = new WeakSet();
+function configureQuantumAppPermissions(appSession) {
+  if (quantumAppPermissionSessions.has(appSession)) return;
+  quantumAppPermissionSessions.add(appSession);
+  const grants = new Set();
+  quantumAppPermissionGrants.set(appSession, grants);
+  const safe = ['fullscreen', 'clipboard-sanitized-write', 'pointerLock'];
+  const supported = new Set(['media', 'geolocation', 'notifications']);
+  const originFor = (wc, details, fallback) => {
+    try { const u = new URL(details?.securityOrigin || details?.requestingUrl || fallback || wc?.getURL?.() || ''); return ['http:', 'https:'].includes(u.protocol) ? u.origin : ''; }
+    catch { return ''; }
+  };
+  appSession.setPermissionCheckHandler((wc, permission, origin, details) => {
+    if (safe.includes(permission)) return true;
+    const site = originFor(wc, details, origin);
+    return !!site && grants.has(`${site}|${permission}`);
+  });
+  appSession.setPermissionRequestHandler((wc, permission, callback, details) => {
+    if (safe.includes(permission)) return callback(true);
+    if (!supported.has(permission)) return callback(false);
+    const site = originFor(wc, details);
+    if (!site) return callback(false);
+    const key = `${site}|${permission}`;
+    if (grants.has(key)) return callback(true);
+    const label = permission === 'media' ? 'cámara o micrófono' : permission === 'geolocation' ? 'ubicación' : 'notificaciones';
+    const owner = BrowserWindow.fromWebContents(wc);
+    dialog.showMessageBox(owner || undefined, { type: 'question', buttons: ['Permitir esta vez', 'Bloquear'], defaultId: 1, cancelId: 1, title: 'Permiso de aplicación web', message: `${site} solicita acceso a ${label}.`, detail: 'La autorización se mantiene solo durante esta sesión de NOVA.' })
+      .then(result => { const allowed = result.response === 0; if (allowed) grants.add(key); callback(allowed); })
+      .catch(() => callback(false));
+  });
+}
 
 const userFile = (...p) => path.join(app.getPath('userData'), ...p);
 const SITE_PERMISSION_KEYS = new Set(['cam','mic','geo','notif']);
 const SITE_PERMISSION_VALUES = new Set(['ask','allow','block']);
-const sitePermissionsFile = () => userFile('site-permissions.json');
+const sitePermissionsFile = () => activeProfileId()==='personal' ? userFile('site-permissions.json') : userFile(`site-permissions-${activeProfileId()}.json`);
 function readSitePermissions() {
   try {
     const data = JSON.parse(fs.readFileSync(sitePermissionsFile(), 'utf8'));
@@ -280,7 +326,7 @@ const isTrustedNewTabContents = contents => {
 function createMain() {
   win = new BrowserWindow({
     width: 1280, height: 800, minWidth: 720, minHeight: 480,
-    frame: false, show: false, title: 'NOVA X',
+    frame: false, show: false, title: 'NOVA X QUANTUM',
     icon: logoImg(prefs.logo),
     backgroundColor: '#0d0b1a',
     webPreferences: { preload: path.join(__dirname, 'shell', 'preload.js'), nodeIntegration: false, contextIsolation: true, sandbox: true, webviewTag: true, webSecurity: true, allowRunningInsecureContent: false }
@@ -303,6 +349,68 @@ function createMain() {
   });
 }
 
+
+/* ---------- QUANTUM PROFILES: independent persistent Chromium partitions ---------- */
+ipcMain.handle('profiles-list', e => {
+  if (denyUntrusted(e)) return { ok:false, profiles:[] };
+  return { ok:true, active:activeProfileId(), profiles:prefs.profiles.map(x=>({id:x.id,name:x.name,color:x.color||'#8b7cff'})) };
+});
+ipcMain.handle('profiles-create', (e, payload) => {
+  if (denyUntrusted(e) || !payload || typeof payload.name !== 'string') return {ok:false,error:'Nombre de perfil no válido.'};
+  const name=payload.name.trim().slice(0,32); if(!name)return {ok:false,error:'Escribe un nombre para el perfil.'};
+  if(prefs.profiles.length>=12)return {ok:false,error:'Se permiten hasta 12 perfiles.'};
+  const id=`p-${require('crypto').randomBytes(6).toString('hex')}`;
+  const color=/^#[0-9a-f]{6}$/i.test(payload.color||'')?payload.color:'#8b7cff';
+  prefs.profiles.push({id,name,color});savePrefs();return {ok:true,profile:{id,name,color}};
+});
+ipcMain.handle('profiles-switch', (e, id) => {
+  if (denyUntrusted(e) || typeof id !== 'string' || !prefs.profiles.some(x=>x.id===id)) return {ok:false,error:'Perfil no encontrado.'};
+  if (id===activeProfileId()) return {ok:true,unchanged:true};
+  prefs.activeProfile=id;savePrefs();app.relaunch();app.exit(0);return {ok:true,restarting:true};
+});
+ipcMain.handle('profiles-delete', async (e, id) => {
+  if (denyUntrusted(e) || typeof id!=='string' || id==='personal' || id===activeProfileId()) return {ok:false,error:'No se puede eliminar el perfil Personal ni el perfil activo.'};
+  const item=prefs.profiles.find(x=>x.id===id);if(!item)return {ok:false,error:'Perfil no encontrado.'};
+  const partitions=[`persist:nova-${PROFILE_ID(id)}`,...(prefs.appPartitions?.[id]||[])];
+  try { for(const partitionName of partitions){const part=session.fromPartition(partitionName);await part.clearStorageData();await part.clearCache();for(const ext of part.extensions.getAll())try{part.removeExtension(ext.id)}catch{}} }
+  catch(error){return {ok:false,error:`No se pudieron limpiar los datos del perfil: ${String(error?.message||error).slice(0,160)}`};}
+  try { const stored=loadRealExtStore();for(const partitionName of partitions)delete stored[partitionName];saveRealExtStore(stored); } catch {}
+  for(const f of [userFile(`vault-${id}.json`),userFile(`site-permissions-${id}.json`),userFile(`state-backup-${id}.json`),userFile(`state-backup-${id}.json.bak`)])try{fs.rmSync(f,{force:true})}catch{};
+  delete prefs.appPartitions[id];prefs.profiles=prefs.profiles.filter(x=>x.id!==id);savePrefs();return {ok:true};
+});
+
+/* ---------- QUANTUM VAULT: credentials encrypted with the operating system keystore ---------- */
+const vaultFile=()=>userFile(`vault-${activeProfileId()}.json`);
+const vaultAvailable=()=>{try{return !!safeStorage && safeStorage.isEncryptionAvailable()}catch{return false}};
+function readVault(){try{const data=JSON.parse(fs.readFileSync(vaultFile(),'utf8'));return data&&data.version===1&&Array.isArray(data.entries)?data:{version:1,entries:[]}}catch{return {version:1,entries:[]}}}
+function writeVault(data){try{atomicWrite(vaultFile(),JSON.stringify(data));return true}catch{return false}}
+ipcMain.handle('vault-status',e=>denyUntrusted(e)?{available:false,reason:'Solicitud no válida.'}:{available:vaultAvailable(),profile:activeProfileId()});
+ipcMain.handle('vault-list',e=>{
+  if(denyUntrusted(e)||!vaultAvailable())return {ok:false,items:[],error:'El almacén cifrado del sistema no está disponible.'};
+  const items=readVault().entries.filter(x=>x&&typeof x.id==='string').map(x=>({id:x.id,site:x.site,label:x.label,username:x.username,createdAt:x.createdAt}));
+  return {ok:true,items};
+});
+ipcMain.handle('vault-save',(e,payload)=>{
+  if(denyUntrusted(e)||!vaultAvailable()||!payload||typeof payload!=='object')return {ok:false,error:'El almacén seguro no está disponible.'};
+  const username=String(payload.username||'').trim().slice(0,180),password=String(payload.password||'');
+  if(!username||!password||password.length>4096)return {ok:false,error:'Completa usuario y contraseña (máximo 4.096 caracteres).'};
+  let site='';try{const u=new URL(String(payload.site||''));if(!['https:','http:'].includes(u.protocol))throw Error();site=u.origin}catch{return {ok:false,error:'Introduce una dirección HTTP o HTTPS válida.'}}
+  const label=String(payload.label||site).trim().slice(0,80)||site;
+  try{const data=readVault();const id=`v-${require('crypto').randomBytes(8).toString('hex')}`;data.entries.push({id,site,label,username,encryptedPassword:safeStorage.encryptString(password).toString('base64'),createdAt:Date.now()});if(!writeVault(data))return {ok:false,error:'No se pudo guardar el almacén cifrado.'};return {ok:true,id}}
+  catch(error){return {ok:false,error:`No se pudo cifrar la credencial: ${String(error?.message||error).slice(0,160)}`}}
+});
+ipcMain.handle('vault-copy',(e,payload)=>{
+  if(denyUntrusted(e)||!vaultAvailable()||!payload||typeof payload.id!=='string'||!['username','password'].includes(payload.field))return {ok:false,error:'Solicitud no válida.'};
+  const item=readVault().entries.find(x=>x.id===payload.id);if(!item)return {ok:false,error:'La credencial ya no existe.'};
+  try{const value=payload.field==='username'?item.username:safeStorage.decryptString(Buffer.from(item.encryptedPassword,'base64'));const copied=String(value||'');clipboard.writeText(copied);const clearTimer=setTimeout(()=>{try{if(clipboard.readText()===copied)clipboard.clear()}catch{}},20000);clearTimer.unref?.();return {ok:true}}
+  catch(error){return {ok:false,error:`No se pudo descifrar la credencial: ${String(error?.message||error).slice(0,160)}`}}
+});
+ipcMain.handle('vault-delete',(e,id)=>{
+  if(denyUntrusted(e)||typeof id!=='string')return {ok:false};const data=readVault();const next=data.entries.filter(x=>x.id!==id);if(next.length===data.entries.length)return {ok:false,error:'No se encontró la credencial.'};data.entries=next;return writeVault(data)?{ok:true}:{ok:false,error:'No se pudo actualizar el almacén.'};
+});
+ipcMain.handle('safe-mode-set',(e,enabled)=>{
+  if(denyUntrusted(e)||typeof enabled!=='boolean')return {ok:false};prefs.safeMode=enabled;savePrefs();app.relaunch();app.exit(0);return {ok:true,restarting:true};
+});
 
 /* ---------- Chromium extensions: load, enable/disable, remove and restore ---------- */
 const realExtensions = new Map(); // partition -> Map(extensionId, loaded metadata)
@@ -400,7 +508,7 @@ app.whenReady().then(() => {
   // Retira claves de proveedores externos heredadas: Nova Assist 6.4 es exclusivamente local.
   for (const legacyKey of ['nova.key', 'supercat-openai.key', 'nova-account-token.bin', 'nova-account.json']) { try { fs.rmSync(userFile(legacyKey), { force: true }); } catch {} }
   pendingUrl = extUrl(process.argv.slice(1));
-  restoreRealExtensions('persist:web').catch(() => {});
+  if (!prefs.safeMode) restoreRealExtensions(webPartition()).catch(() => {});
   Menu.setApplicationMenu(null);
   const ua = web().getUserAgent()
     .replace(/\s?Electron\/\S+/i, '').replace(/\s?nova-browser\/\S+/i, '').replace(/\s?Nova\/\S+/i, '') + ' NOVAX/' + app.getVersion();
@@ -416,9 +524,6 @@ app.whenReady().then(() => {
     splash.loadFile('shell/splash.html', { query: { logo: logoId(prefs.logo) } });
     splashAt = Date.now();
   }
-  createMain();
-  initAutoUpdater();
-  setTimeout(() => { registerBrowser(false).catch(() => { }); applyLogo('quantum'); }, 4000);
 
   const dlMap = new Map(), dlSend = new Map();
   web().on('will-download', (e, item) => {
@@ -581,6 +686,10 @@ app.whenReady().then(() => {
       }
     });
   });
+  // Register all webContents guards before the first BrowserWindow is created.
+  createMain();
+  initAutoUpdater();
+  setTimeout(() => { registerBrowser(false).catch(() => { }); applyLogo('quantum'); }, 4000);
 });
 
 ipcMain.on('fullscreen', e => { if (denyUntrusted(e) || !win || win.isDestroyed()) return; try { win.setFullScreen(!win.isFullScreen()); } catch { } });
@@ -607,7 +716,7 @@ ipcMain.on('win', (e, a) => {
 ipcMain.on('extension-catalog', e => { if (denyUntrusted(e)) return; e.returnValue = EXT.CATALOG.map(({id,name,cat,desc}) => ({id,name,cat,desc})); });
 ipcMain.on('extension-script', (e, id) => { if (denyUntrusted(e) || typeof id !== 'string' || !EXT.byId(id)) return; e.returnValue = EXT.on(id); });
 ipcMain.on('app-version', e => { if (denyUntrusted(e)) return; e.returnValue = app.getVersion(); });
-ipcMain.on('runtime-info', e => { if (denyUntrusted(e)) return; e.returnValue = { version: app.getVersion(), chromium: process.versions.chrome, electron: process.versions.electron, node: process.versions.node, platform: process.platform, arch: process.arch, product: 'NOVA X' }; });
+ipcMain.on('runtime-info', e => { if (denyUntrusted(e)) return; e.returnValue = { version: app.getVersion(), chromium: process.versions.chrome, electron: process.versions.electron, node: process.versions.node, platform: process.platform, arch: process.arch, product: 'NOVA X QUANTUM' }; });
 ipcMain.on('prefs-get', e => { if (denyUntrusted(e)) return; e.returnValue = JSON.parse(JSON.stringify(prefs)); });
 ipcMain.on('prefs-set', (e, p) => {
   if (denyUntrusted(e)) return;
@@ -634,6 +743,7 @@ ipcMain.handle('default-browser', async (e, set) => {
   return { portable, isDefault: await isWinDefault() };
 });
 ipcMain.on('userdata', e => { if (denyUntrusted(e)) return; e.returnValue = app.getPath('userData'); });
+ipcMain.on('browser-partition', e => { if (denyUntrusted(e)) return; e.returnValue = webPartition(); });
 ipcMain.on('portable-data-status', e => { if (denyUntrusted(e)) return; e.returnValue = { ...portableDataStatus, path: app.getPath('userData') }; });
 ipcMain.handle('install-cfg', e => { if (denyUntrusted(e)) return {}; 
   try { return JSON.parse(fs.readFileSync(userFile('install.json'), 'utf8')); } catch { return {}; }
@@ -758,7 +868,7 @@ ipcMain.handle('state-save', (e, raw) => {
   try {
     const obj = cleanBackupData(JSON.parse(raw));
     if (!obj || typeof obj !== 'object') return false; // nunca guardar credenciales, cookies ni claves en el backup
-    const f = userFile('state-backup.json'), bak = userFile('state-backup.json.bak');
+    const f = userFile(activeProfileId()==='personal'?'state-backup.json':`state-backup-${activeProfileId()}.json`), bak = userFile(activeProfileId()==='personal'?'state-backup.json.bak':`state-backup-${activeProfileId()}.json.bak`);
     const data = JSON.stringify(obj);
     // Mantén siempre la última versión válida como respaldo: si el siguiente guardado falla, se puede volver atrás.
     if (fs.existsSync(f)) { try { fs.copyFileSync(f, bak); stateBackupAt = Date.now(); } catch { } }
@@ -787,7 +897,7 @@ ipcMain.handle('backup-import', async e => {
 });
 ipcMain.handle('state-load', e => {
   if (denyUntrusted(e)) return null;
-  for (const f of [userFile('state-backup.json'), userFile('state-backup.json.bak')]) {
+  for (const f of activeProfileId()==='personal' ? [userFile('state-backup.json'), userFile('state-backup.json.bak')] : [userFile(`state-backup-${activeProfileId()}.json`), userFile(`state-backup-${activeProfileId()}.json.bak`)]) {
     try { const obj = cleanBackupData(JSON.parse(fs.readFileSync(f, 'utf8'))); return JSON.stringify(obj); } catch { }
   }
   return null;
@@ -836,7 +946,16 @@ ipcMain.handle('launch-web-app', async (e, payload) => {
   if (denyUntrusted(e) || !payload || typeof payload !== 'object') return { ok:false, error:'Solicitud no válida.' };
   let u = ''; try { const x = new URL(String(payload.url || '')); if (!['http:','https:'].includes(x.protocol)) return { ok:false, error:'URL no válida.' }; u = x.href; } catch { return { ok:false, error:'URL no válida.' }; }
   const name = String(payload.name || 'Nova App').replace(/[<>:"/\\|?*\x00-\x1f]/g,'_').trim().slice(0,80) || 'Nova App';
-  const bw = new BrowserWindow({ width:1100, height:760, minWidth:600, minHeight:420, title:name, icon:logoImg(prefs.logo), webPreferences:{ nodeIntegration:false, contextIsolation:true, sandbox:true, webSecurity:true, allowRunningInsecureContent:false } });
+  const host = new URL(u).hostname.replace(/^www\./i,'').split('.')[0].toLowerCase();
+  const appKey = /^[a-z0-9_-]{1,32}$/i.test(String(payload.id||'')) ? String(payload.id).toLowerCase() : (host.replace(/[^a-z0-9_-]/g,'').slice(0,24)||'webapp');
+  const partition = `persist:novaapp-${activeProfileId()}-${appKey}`;
+  const appSession = session.fromPartition(partition);
+  // Los permisos de cámara, micrófono, ubicación y notificaciones requieren
+  // confirmación explícita; no se heredan de la sesión principal del navegador.
+  configureQuantumAppPermissions(appSession);
+  if(!prefs.appPartitions) prefs.appPartitions={};
+  const parts=prefs.appPartitions[activeProfileId()]||[];if(!parts.includes(partition))prefs.appPartitions[activeProfileId()]=[...parts,partition].slice(-80);savePrefs();
+  const bw = new BrowserWindow({ width:1100, height:760, minWidth:600, minHeight:420, title:name, icon:logoImg(prefs.logo), webPreferences:{ partition, nodeIntegration:false, contextIsolation:true, sandbox:true, webSecurity:true, allowRunningInsecureContent:false } });
   bw.loadURL(u);
   bw.setTitle(name);
   bw.webContents.setWindowOpenHandler(({url}) => { if (/^https?:/i.test(url)) bw.loadURL(url).catch(()=>{}); return {action:'deny'}; });
@@ -1108,7 +1227,7 @@ ipcMain.handle('security-state', e => {
 ipcMain.handle('ollama-models', async e => {
   if (denyUntrusted(e)) return { ok:false, error:'Solicitud no válida.' };
   try {
-    const base = 'http://127.0.1.1:11434';
+    const base = 'http://127.0.0.1:11434';
     const versionResponse = await fetch(`${base}/api/version`, { signal:AbortSignal.timeout(2500) });
     if (!versionResponse.ok) return { ok:false, error:`El servicio de Ollama respondió HTTP ${versionResponse.status} al consultar su versión.` };
     const versionData = await versionResponse.json().catch(() => ({}));
@@ -1119,7 +1238,7 @@ ipcMain.handle('ollama-models', async e => {
     return { ok:true, version:String(versionData.version||''), models };
   } catch (err) {
     const detail = String(err?.cause?.code || err?.code || err?.message || 'conexión rechazada');
-    return { ok:false, error:`No se puede conectar con Ollama en 127.0.1.1:11434 (${detail}). Abre Ollama y espera a que el servicio esté iniciado. Si no está instalado, instálalo desde ollama.com.` };
+    return { ok:false, error:`No se puede conectar con Ollama en 127.0.0.1:11434 (${detail}). Abre Ollama y espera a que el servicio esté iniciado. Si no está instalado, instálalo desde ollama.com.` };
   }
 });
 ipcMain.handle('ollama-ai', async (e, data) => {
@@ -1128,7 +1247,7 @@ ipcMain.handle('ollama-ai', async (e, data) => {
   if (!Array.isArray(messages) || messages.length < 1 || messages.length > 20 || typeof system !== 'string' || system.length > 12000 || typeof model !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,99}$/.test(model)) return { ok:false, error:'Parámetros de IA local no válidos.' };
   if (messages.some(m => !m || typeof m !== 'object' || !['user','assistant'].includes(m.role) || typeof m.content !== 'string' || m.content.length > 16000)) return { ok:false, error:'El mensaje supera los límites admitidos.' };
   try {
-    const base='http://127.0.1.1:11434';
+    const base='http://127.0.0.1:11434';
     const tags=await fetch(`${base}/api/tags`,{signal:AbortSignal.timeout(5000)});
     if(!tags.ok) return {ok:false,error:`Ollama no pudo listar los modelos (HTTP ${tags.status}).`};
     const tagData=await tags.json().catch(()=>({}));
@@ -1146,7 +1265,7 @@ ipcMain.handle('ollama-ai', async (e, data) => {
   } catch (err) {
     const code=String(err?.cause?.code||err?.code||'');
     const msg=String(err?.message||err||'Error desconocido');
-    return { ok:false, error:msg.toLowerCase().includes('timeout')||msg.toLowerCase().includes('aborted')?'Ollama tardó más de 3 minutos. Prueba un modelo más pequeño o reduce el contexto.':`Error al conectar con Ollama (${code||msg.slice(0,120)}). Comprueba que sigue activo en 127.0.1.1:11434.` };
+    return { ok:false, error:msg.toLowerCase().includes('timeout')||msg.toLowerCase().includes('aborted')?'Ollama tardó más de 3 minutos. Prueba un modelo más pequeño o reduce el contexto.':`Error al conectar con Ollama (${code||msg.slice(0,120)}). Comprueba que sigue activo en 127.0.0.1:11434.` };
   }
 });
 
@@ -1163,7 +1282,7 @@ ipcMain.handle('nova51-diagnostics', e => {
   if (denyUntrusted(e)) return { ok:false, error:'Solicitud no válida.' };
   const exists = f => { try { return fs.existsSync(f); } catch { return false; } };
   const readJson = f => { try { return JSON.parse(fs.readFileSync(f,'utf8')); } catch { return null; } };
-  const pf = prefsFile(), sb = userFile('state-backup.json'), bak = userFile('state-backup.json.bak');
+  const pf = prefsFile(), sb = userFile(activeProfileId()==='personal'?'state-backup.json':`state-backup-${activeProfileId()}.json`), bak = userFile(activeProfileId()==='personal'?'state-backup.json.bak':`state-backup-${activeProfileId()}.json.bak`);
   let prefsOk=false, stateOk=false, backupOk=false;
   try { const x=readJson(pf); prefsOk=!!x && typeof x==='object'; } catch {}
   try { const x=readJson(sb); stateOk=!!x && typeof x==='object'; } catch {}
@@ -1178,17 +1297,17 @@ ipcMain.handle('nova51-diagnostics', e => {
 });
 ipcMain.handle('nova51-restore-backup', e => {
   if (denyUntrusted(e)) return {ok:false,error:'Solicitud no válida.'};
-  const backup=userFile('state-backup.json.bak');
+  const backup=userFile(activeProfileId()==='personal'?'state-backup.json.bak':`state-backup-${activeProfileId()}.json.bak`);
   try {
     if (!fs.existsSync(backup)) return {ok:false,error:'No hay una copia de seguridad disponible.'};
     const obj=cleanBackupData(JSON.parse(fs.readFileSync(backup,'utf8'))); if(!obj||typeof obj!=='object'||Array.isArray(obj)) return {ok:false,error:'La copia no es válida.'};
-    atomicWrite(userFile('state-backup.json'),JSON.stringify(obj));
+    atomicWrite(userFile(activeProfileId()==='personal'?'state-backup.json':`state-backup-${activeProfileId()}.json`),JSON.stringify(obj));
     return {ok:true,state:JSON.stringify(obj)};
   } catch(err){ return {ok:false,error:String(err?.message||err)}; }
 });
 ipcMain.handle('nova51-export-state', e => {
   if (denyUntrusted(e)) return null;
-  try { const raw=fs.readFileSync(userFile('state-backup.json'),'utf8'); JSON.parse(raw); return raw; } catch { return null; }
+  try { const raw=fs.readFileSync(userFile(activeProfileId()==='personal'?'state-backup.json':`state-backup-${activeProfileId()}.json`),'utf8'); JSON.parse(raw); return raw; } catch { return null; }
 });
 
 app.on('window-all-closed', () => app.quit());

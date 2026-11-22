@@ -12,10 +12,14 @@ try {
 
 if (isNovaNewTab) {
   const sendAction = (type, value) => {
-    if (!['navigate', 'open-tour', 'open-command', 'open-whats-new', 'open-settings', 'open-assistant', 'open-companion', 'default-browser', 'add-shortcut'].includes(type)) return;
+    if (!['navigate', 'open-tour', 'open-command', 'open-whats-new', 'open-settings', 'open-assistant', 'open-companion', 'open-section', 'default-browser', 'add-shortcut'].includes(type)) return;
     const payload = { type };
     if (type === 'navigate') {
       if (typeof value !== 'string' || value.length > 2048) return;
+      payload.value = value;
+    } else if (type === 'open-section') {
+      const allowed = ['app-center','atlas','capsules','actions','themes','vault','profiles','settings'];
+      if (!allowed.includes(value)) return;
       payload.value = value;
     } else if (type === 'add-shortcut') {
       if (!value || typeof value !== 'object' || typeof value.title !== 'string' || typeof value.url !== 'string') return;
@@ -33,6 +37,7 @@ if (isNovaNewTab) {
     openSettings: () => sendAction('open-settings'),
     openAssistant: () => sendAction('open-assistant'),
     openCompanion: () => sendAction('open-companion'),
+    openSection: value => sendAction('open-section', value),
     setDefaultBrowser: () => sendAction('default-browser'),
     addShortcut: (title, url) => sendAction('add-shortcut', { title, url }),
     newsFeed: payload => {

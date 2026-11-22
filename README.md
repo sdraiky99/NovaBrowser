@@ -1,52 +1,40 @@
-# NOVA X — Browser 10.0.0
+# NOVA X QUANTUM — 11.0.0
 
-NOVA X is a major rebuild of the NOVA desktop browser, based on Electron and its bundled Chromium engine. This first development package uses a radical new modern interface while preserving the browser features and local profile data model inherited from NOVA 9.
+NOVA X QUANTUM is a Windows Electron browser built on the existing NOVA X profile and installation identity. It keeps the current Chromium engine and adds a local-first suite of workspace, app and customization features.
 
-## What is new in NOVA X
+## Quantum features
 
-- **New modern browser chrome:** redesigned tab strip, navigation toolbar, address field, sidebar, bookmarks bar, internal panels and spacing. The NOVA symbol remains unchanged. Historical visual modes remain available as opt-in recreations.
-- **Both tab layouts:** switch between horizontal and vertical tabs without rebuilding the session. Pinned tabs, groups, tab restoration and split view remain available.
-- **Compact NOVA Shield:** a small counter in the upper toolbar shows actual blocked network requests for the active site. The panel reports page/session totals, resource types and destination hostnames. Statistics are session-only and retain origins and hostnames, not full request URLs. Ads/tracker labels are best-effort classifications from exposed rule text; unclassified matches remain in “Otros”.
-- **New welcome tour:** five short, skippable steps for the browser, navigation, tab layouts, Shield and personalisation. It can be replayed from the welcome action in NOVA.
-- **Runtime update:** Electron `45.4.1`, which bundles Chromium `156.0.8078.100`. Chromium is upgraded together with Electron, not separately.
-- **Updated blocker engine:** `@ghostery/adblocker-electron` `2.20.3`.
+- **Quantum Atlas:** local project maps that collect links and short references.
+- **Quantum Capsules:** snapshots of browser context, tabs, bookmarks, history, appearance and workspaces. Cookies, passwords and authenticated web sessions are never included.
+- **Quantum Actions:** user-created workflows that open up to 12 HTTP(S) destinations. No downloaded scripts or arbitrary command execution.
+- **App Center:** curated web-app shortcuts saved per browser profile and opened in independent windows with persistent per-app sessions. This is not a general Windows EXE store and does not claim to turn every site into an installable PWA.
+- **Quantum Themes:** Aurora, Arctic, Obsidian, Neon, Solar and Mono, plus the existing retro UI recreations.
+- **Quantum Vault:** encrypted credential storage through Electron `safeStorage` when the OS encryption facility is available. This release supports saving/copying/deleting entries; autofill is not implemented.
+- **Profiles:** separate Chromium partitions and separate NOVA renderer state for additional profiles. The existing Personal profile keeps the legacy `persist:web` partition.
+- **Recovery and Migration:** diagnostics, safe mode, cache cleanup, and compatible bookmark/history import.
 
-## Preserved features
+## Extension compatibility
 
-NOVA keeps the existing local-first browser features: bookmarks, history, downloads, workspaces, RSS news, extensions (subject to Electron compatibility), per-site permissions, Reader Mode, split view, import of supported bookmarks/history, local backups, Time Machine, Companion, Gaming, Media, Translate, Focus and Nova Assist via local Ollama.
+Electron supports a subset of Chromium extension APIs and loads unpacked extension directories. This release does not implement direct CRX loading or universal Chrome Web Store compatibility. Use the existing unpacked-extension loader and review permissions before loading an extension.
 
-The old Windows XP, Windows 7 Aero, Firefox Classic, Firefox 2017, Chrome 2017 and Edge Legacy modes remain visual recreations. They use the current Chromium engine; they are not historical browser engines.
+## Windows distribution
 
-## Windows distributions
+- Setup: per-user NSIS installation, no elevation, preserving the existing NOVA app identity and user-data location.
+- Portable: separate `User Data` beside the executable, isolated from Setup.
+- Automatic update metadata is generated and published by the tagged GitHub release workflow for Setup packages. Portable updates remain manual.
 
-The project is configured to produce two separate Windows deliverables:
+## Development
 
-- `NOVA-X-Setup-10.0.0.exe` — assisted per-user installer; no administrator elevation and no per-machine installation.
-- `NOVA-X-Portable-10.0.0.exe` — portable app with its own `User Data` folder, separate from the Setup profile.
+Requires Node.js 22.12 or newer.
 
-The ZIP supplied in this milestone contains the source project, not compiled Windows executables. Build and verify the Windows artifacts on a Windows machine or through the included GitHub Actions workflow.
-
-## Build on Windows
-
-Requires Node.js `>=22.12.0` and npm.
-
-```powershell
-npm install --no-audit --no-fund --engine-strict
+```bash
+npm install --no-audit --no-fund
 npm run check
-npm run dist:setup
-npm run dist:portable
+npm start
 ```
 
-To build both packages sequentially:
+Build on Windows: `npm run dist:win`.
 
-```powershell
-npm run dist:win
-```
+## Validation boundaries
 
-## Important validation notes
-
-Static checks are included for JavaScript syntax, project structure, security boundaries, distribution configuration, portable profile isolation, and the browser feature contract. They do not replace running the application on Windows. The first NOVA X build still needs interactive testing of Electron 45 webviews, Ghostery request events and counters, both tab layouts, the onboarding tour, Setup permissions, Portable profile isolation and upgrades from NOVA 9.
-
-Known inherited limitations remain: the import flow does not import passwords; NOVA does not yet provide its own audited password vault or account-based sync; Google Chrome Sync is not supported; extension and codec compatibility varies with Electron.
-
-See `RELEASE_NOTES_10.0.0.md` and `VALIDATION_10.0.0.txt`.
+Static checks can run cross-platform. A Windows build, Electron runtime QA, profile persistence, updater installation and real extension compatibility still require testing on Windows. The source bundle is not a prebuilt EXE release.

@@ -5,7 +5,7 @@ const { URL } = globalThis;
 
 // Explicit channel allowlists: the renderer never receives ipcRenderer itself.
 const INVOKE = new Set([
-  'extensions-list','extension-pick-load','extension-toggle','extension-unload',
+  'extensions-list','extension-pick-load','extension-toggle','extension-unload','profiles-list','profiles-create','profiles-switch','profiles-delete','vault-status','vault-list','vault-save','vault-copy','vault-delete','safe-mode-set',
   'permission-sites-list','permission-site-set','permission-site-reset','default-browser',
   'install-cfg','adblock','adblock-stats','save-shot','pick-wp','toolbar-wallpaper-pick','toolbar-wallpaper-clear',
   'save-docx',
@@ -16,7 +16,7 @@ const INVOKE = new Set([
   'nova51-restore-backup','nova51-export-state'
 ]);
 const SEND = new Set(['dl-ctl','prefs-set','win','fullscreen','perm-policy']);
-const SYNC = new Set(['app-version','runtime-info','prefs-get','userdata','portable-data-status']);
+const SYNC = new Set(['app-version','runtime-info','prefs-get','userdata','portable-data-status','browser-partition']);
 const EVENTS = new Set(['open-tab','open-tour','open-command','blocked','dl','tab-health','key','ctx-search','ask-ai','zoom-changed','update-state']);
 const listeners = new Map();
 const api = Object.freeze({

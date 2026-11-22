@@ -5,14 +5,14 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' file: data: blob:; object-src 'none'; base-uri 'none'; frame-src 'self' file:; img-src 'self' file: data: blob: https:; style-src 'self' 'unsafe-inline' file:; script-src 'self' file:; connect-src 'self' https:">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>NOVA X — Browser</title>
+<title>NOVA X QUANTUM — Browser</title>
 <link rel="icon" type="image/svg+xml" href="../assets/brand/nova-mark.svg">
 <link rel="stylesheet" href="nova.css">
 </head>
 <body>
 <div id="app">
   <header id="windowbar" aria-label="Barra de pestañas">
-    <div id="brand" title="NOVA X"><img src="../assets/brand/nova-mark.svg" alt=""><span>NOVA X</span></div>
+    <div id="brand" title="NOVA X QUANTUM"><img src="../assets/brand/nova-mark.svg" alt=""><span>NOVA X <small>QUANTUM</small></span></div>
     <div id="tabs" aria-label="Pestañas"></div>
     <button id="newTab" class="icon-btn tab-add" title="Nueva pestaña (Ctrl+T)" aria-label="Nueva pestaña">+</button>
     <div id="windowActions" aria-label="Ventana">
@@ -50,6 +50,15 @@
       <button class="side-item active" data-view="home" title="Inicio"><span class="sicon" data-icon="home"></span><span>Inicio</span></button>
       <button class="side-item" data-view="favorites" title="Favoritos"><span class="sicon" data-icon="star"></span><span>Favoritos</span></button>
       <button class="side-item" data-view="workspaces" title="Workspaces"><span class="sicon" data-icon="grid"></span><span>Workspaces</span></button>
+      <button class="side-item" data-view="atlas" title="Quantum Atlas"><span class="sicon" data-icon="grid"></span><span>Atlas</span></button>
+      <button class="side-item" data-view="capsules" title="Quantum Capsules"><span class="sicon" data-icon="history"></span><span>Capsules</span></button>
+      <button class="side-item" data-view="actions" title="Quantum Actions"><span class="sicon" data-icon="bolt"></span><span>Actions</span></button>
+      <button class="side-item" data-view="app-center" title="App Center"><span class="sicon" data-icon="grid"></span><span>App Center</span></button>
+      <button class="side-item" data-view="themes" title="Temas"><span class="sicon" data-icon="sparkles"></span><span>Temas</span></button>
+      <button class="side-item" data-view="vault" title="Quantum Vault"><span class="sicon" data-icon="shield"></span><span>Vault</span></button>
+      <button class="side-item" data-view="profiles" title="Perfiles"><span class="sicon" data-icon="tabs"></span><span>Perfiles</span></button>
+      <button class="side-item" data-view="recovery" title="Recuperación"><span class="sicon" data-icon="bolt"></span><span>Recovery</span></button>
+      <button class="side-item" data-view="migration" title="Migrar navegador"><span class="sicon" data-icon="history"></span><span>Migrar datos</span></button>
       <button class="side-item" data-view="history" title="Historial"><span class="sicon" data-icon="history"></span><span>Historial</span></button>
       <button class="side-item" data-view="downloads" title="Descargas"><span class="sicon" data-icon="download"></span><span>Descargas</span></button>
       <button class="side-item" data-view="extensions" title="Extensiones"><span class="sicon" data-icon="extensions"></span><span>Extensiones</span></button>
@@ -71,5 +80,6 @@
 <div id="drawer" aria-hidden="true"></div>
 <div id="toastStack" aria-live="polite"></div>
 <script src="nova.js"></script>
+<script src="quantum.js"></script>
 </body>
 </html>
